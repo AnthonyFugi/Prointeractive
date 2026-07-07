@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Syntax-check all modules
+        run: |
+          for f in server.js config/*.js models/*.js controllers/*.js routes/*.js middleware/*.js utils/*.js; do
+            node --check "$f"
+          done
+      - name: Boot smoke test (routes mount without a database)
+        run: |
+          node -e "
+          process.env.JWT_SECRET='ci-test-secret';
+          (async () => {
+            const express = (await import('express')).default;
+            const app = express();
+            app.use(express.json());
+            for (const r of ['auth','business','product','order','inquiry','upload','admin','payment']) {
+              app.use('/api/' + r, (await import('./routes/' + r + 'Routes.js')).default);
+            }
+            console.log('All routers mounted cleanly');
+          })().catch((e) => { console.error(e); process.exit(1); });
+          "
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
