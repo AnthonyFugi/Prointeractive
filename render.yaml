@@ -5,7 +5,7 @@ services:
     name: prointeractive
     runtime: docker
     region: frankfurt          # closest Render region to Zambia
-    plan: starter              # always-on: required so payment webhooks never hit a sleeping server
+    plan: free              # always-on: required so payment webhooks never hit a sleeping server
     healthCheckPath: /api/health
     autoDeploy: true           # deploy on every push to main
     envVars:
