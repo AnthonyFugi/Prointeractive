@@ -1,5 +1,6 @@
 import Product from '../models/Product.js';
 import Business from '../models/Business.js';
+import Category from '../models/Category.js';
 
 const getOwnedBusiness = async (userId) => Business.findOne({ owner: userId });
 
@@ -11,6 +12,12 @@ export const createProduct = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Create a business profile first' });
     }
     const { name, description, price, currency, images, category, stock } = req.body;
+    if (!Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ success: false, message: 'Add at least one product photo' });
+    }
+    if (category && !(await Category.exists({ name: String(category).toLowerCase() }))) {
+      return res.status(400).json({ success: false, message: 'Choose a category from the list' });
+    }
     const product = await Product.create({
       business: business._id, name, description, price, currency, images, category, stock,
     });
@@ -66,6 +73,12 @@ export const updateProduct = async (req, res, next) => {
     const owns = business && product.business.equals(business._id);
     if (!owns && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not your product' });
+    }
+    if (req.body.images !== undefined && (!Array.isArray(req.body.images) || req.body.images.length === 0)) {
+      return res.status(400).json({ success: false, message: 'A product needs at least one photo' });
+    }
+    if (req.body.category && !(await Category.exists({ name: String(req.body.category).toLowerCase() }))) {
+      return res.status(400).json({ success: false, message: 'Choose a category from the list' });
     }
     const allowed = ['name', 'description', 'price', 'currency', 'images', 'category', 'stock', 'isActive'];
     allowed.forEach((f) => {

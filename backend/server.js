@@ -18,6 +18,7 @@ import inquiryRoutes from './routes/inquiryRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === 'production';
@@ -60,6 +61,7 @@ app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // ---- Serve the built frontend in production ----
 if (isProd) {

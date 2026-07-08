@@ -107,6 +107,19 @@ export const orderStatusEmail = ({ order, customerEmail, businessName }) =>
     ctaPath: '/orders',
   });
 
+export const passwordResetEmail = ({ to, name, token }) =>
+  sendEmail({
+    to,
+    subject: 'Reset your Prointeractive password',
+    heading: `Password reset, ${name}`,
+    lines: [
+      'We received a request to reset your password. The link below is valid for 15 minutes and can be used once.',
+      'If you didn\'t request this, you can safely ignore this email — your password stays unchanged.',
+    ],
+    ctaText: 'Choose a new password',
+    ctaPath: `/reset-password?token=${token}`,
+  });
+
 export const inquiryEmail = ({ to, fromName, subject, preview, inquiryId }) =>
   sendEmail({
     to,

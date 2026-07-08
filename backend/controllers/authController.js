@@ -1,6 +1,7 @@
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { welcomeEmail } from '../utils/email.js';
+import { welcomeEmail, passwordResetEmail } from '../utils/email.js';
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
@@ -47,4 +48,64 @@ export const login = async (req, res, next) => {
 export const getMe = async (req, res) => {
   const { _id, name, email, role, avatarUrl, createdAt } = req.user;
   res.json({ success: true, user: { id: _id, name, email, role, avatarUrl, createdAt } });
+};
+
+
+const hashToken = (t) => crypto.createHash('sha256').update(t).digest('hex');
+
+// POST /api/auth/forgot-password  { email }
+// Always responds the same way, so this endpoint can't be used to
+// discover which emails are registered.
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const genericReply = () =>
+      res.json({ success: true, message: 'If that account exists, a reset link is on its way.' });
+
+    if (!email) return genericReply();
+
+    const user = await User.findOne({ email: String(email).toLowerCase().trim() });
+    if (!user) return genericReply();
+
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordTokenHash = hashToken(token);
+    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    await user.save();
+
+    passwordResetEmail({ to: user.email, name: user.name, token });
+    return genericReply();
+  } catch (err) {
+    next(err);
+  }
+};
+
+// POST /api/auth/reset-password  { token, password }
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ success: false, message: 'Token and new password are required' });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+
+    const user = await User.findOne({
+      resetPasswordTokenHash: hashToken(token),
+      resetPasswordExpires: { $gt: new Date() },
+    }).select('+password');
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'This reset link is invalid or has expired. Request a new one.' });
+    }
+
+    user.password = password;               // hashed by the pre-save hook
+    user.resetPasswordTokenHash = undefined; // single-use
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    sendAuth(res, user); // sign them straight in with a fresh JWT
+  } catch (err) {
+    next(err);
+  }
 };

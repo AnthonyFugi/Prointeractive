@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
+import PendingPaymentBanner from './components/PendingPaymentBanner.jsx';
 import Protected from './components/Protected.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
@@ -15,16 +16,21 @@ import InquiryThread from './pages/InquiryThread.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Admin from './pages/Admin.jsx';
 import PaymentResult from './pages/PaymentResult.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 
 export default function App() {
   return (
     <>
       <Navbar />
+      <PendingPaymentBanner />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/businesses" element={<Businesses />} />
           <Route path="/businesses/:id" element={<BusinessPage />} />
@@ -40,7 +46,11 @@ export default function App() {
       </main>
       <footer className="footer">
         <div className="container">
-          Pro<span style={{ color: 'var(--red)' }}>·</span>interactive — Making business interaction, Easy!
+          Pro<span style={{ color: 'var(--red)' }}>·</span>interactive — Making business interaction, Easy!{' '}
+          <span className="muted">
+            · by{' '}
+            <a href="https://fugipay.com" target="_blank" rel="noopener noreferrer">fugipay</a>
+          </span>
         </div>
       </footer>
     </>

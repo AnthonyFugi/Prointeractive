@@ -63,11 +63,18 @@ a:hover { text-decoration: underline; }
 .nav-links { display: flex; gap: 1rem; align-items: center; margin-left: auto; flex-wrap: wrap; }
 .nav-links a { color: var(--ink); font-weight: 500; font-size: 0.95rem; }
 .nav-links a.active { color: var(--navy); font-weight: 600; }
-.cart-pill {
+.cart-pill,
+.nav-links a.cart-pill {
   background: var(--navy); color: #fff; border-radius: 999px;
   padding: 0.3rem 0.85rem; font-weight: 600; font-size: 0.9rem;
 }
 .cart-pill:hover { text-decoration: none; background: #001a4d; }
+.count-badge {
+  display: inline-block; margin-left: 0.35rem;
+  background: var(--navy); color: #fff;
+  border-radius: 999px; padding: 0.05rem 0.5rem;
+  font-size: 0.75rem; font-weight: 700; vertical-align: middle;
+}
 
 /* ---------- Buttons & inputs ---------- */
 .btn {

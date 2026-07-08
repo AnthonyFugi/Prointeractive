@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import VerifiedBadge from '../components/VerifiedBadge.jsx';
 
 export default function BusinessPage() {
   const { id } = useParams();
@@ -44,7 +45,7 @@ export default function BusinessPage() {
       <div className="panel">
         <div className="row spread">
           <div>
-            <h1>{business.name} {business.verified && <span className="badge verified">verified</span>}</h1>
+            <h1>{business.name}{business.verified && <VerifiedBadge size={22} />}</h1>
             <p className="muted">{business.category}{business.location && ` · ${business.location}`}{business.phone && ` · ${business.phone}`}</p>
             {business.description && <p>{business.description}</p>}
           </div>

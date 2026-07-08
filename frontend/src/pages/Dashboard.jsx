@@ -20,6 +20,7 @@ export default function Dashboard() {
 
   // Products
   const [products, setProducts] = useState([]);
+  const [productCategories, setProductCategories] = useState([]);
   const [productForm, setProductForm] = useState(EMPTY_PRODUCT);
   const [editingId, setEditingId] = useState(null);
 
@@ -83,6 +84,7 @@ export default function Dashboard() {
     api('/orders/business').then((d) => setOrders(d.orders)).catch(() => {});
     api('/businesses/payout').then((d) => setPayout(d.payout)).catch(() => {});
     api('/payments/banks?country=ZM').then((d) => setBanks(d.banks)).catch(() => {});
+    api('/categories').then((d) => setProductCategories(d.categories)).catch(() => {});
   }, [business]);
 
   const savePayout = async (e) => {
@@ -117,6 +119,9 @@ export default function Dashboard() {
   const saveProduct = async (e) => {
     e.preventDefault();
     setError('');
+    if (!productForm.images || productForm.images.length === 0) {
+      return setError('Add at least one product photo before saving.');
+    }
     const body = { ...productForm, price: Number(productForm.price), stock: Number(productForm.stock) };
     try {
       if (editingId) {
@@ -228,11 +233,15 @@ export default function Dashboard() {
               </div>
               <div style={{ flex: 1 }}>
                 <label htmlFor="pcat">Category</label>
-                <input id="pcat" value={productForm.category}
-                  onChange={(e) => setProductForm({ ...productForm, category: e.target.value })} />
+                <select id="pcat" required value={productForm.category}
+                  onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}>
+                  {productCategories.map((c) => (
+                    <option key={c._id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
-            <label htmlFor="pimg">Photos (JPEG, PNG, or WebP — up to 5 MB)</label>
+            <label htmlFor="pimg">Photos — at least one required (JPEG, PNG, or WebP, up to 5 MB)</label>
             <input id="pimg" type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadImage} disabled={uploading} />
             {uploading && <p className="muted">Uploading…</p>}
             {productForm.images?.length > 0 && (

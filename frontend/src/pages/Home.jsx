@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import ProductCard from '../components/ProductCard.jsx';
 
-const CATEGORIES = ['fashion', 'electronics', 'food', 'agriculture', 'health', 'services', 'general'];
-
 export default function Home() {
+  const [categories, setCategories] = useState([]);
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -12,6 +11,10 @@ export default function Home() {
   const [data, setData] = useState({ products: [], pages: 1, total: 0 });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -46,13 +49,13 @@ export default function Home() {
           <button className="btn btn-navy" type="submit">Search</button>
         </form>
         <div className="chips" role="group" aria-label="Filter by category">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
-              key={c}
-              className={`chip ${category === c ? 'on' : ''}`}
-              onClick={() => { setPage(1); setCategory(category === c ? '' : c); }}
+              key={c._id}
+              className={`chip ${category === c.name ? 'on' : ''}`}
+              onClick={() => { setPage(1); setCategory(category === c.name ? '' : c.name); }}
             >
-              {c}
+              {c.name}
             </button>
           ))}
         </div>

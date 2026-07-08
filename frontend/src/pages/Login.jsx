@@ -41,6 +41,7 @@ export default function Login() {
         </form>
         <hr className="divider" />
         <p className="muted">New here? <Link to="/register">Create an account</Link></p>
+        <p className="muted"><Link to="/forgot-password">Forgot your password?</Link></p>
       </div>
     </div>
   );

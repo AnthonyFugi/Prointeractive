@@ -4,6 +4,7 @@ import { api, money } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import Rating from '../components/Rating.jsx';
+import VerifiedBadge from '../components/VerifiedBadge.jsx';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -85,7 +86,7 @@ export default function ProductDetail() {
             <p className="muted">
               Sold by{' '}
               <Link to={`/businesses/${product.business._id}`}>{product.business.name}</Link>
-              {product.business.verified && <span className="badge verified" style={{ marginLeft: 6 }}>verified</span>}
+              {product.business.verified && <VerifiedBadge size={15} />}
               {product.business.location && ` · ${product.business.location}`}
             </p>
             {product.ratingCount > 0 && <Rating value={product.ratingAverage} count={product.ratingCount} />}

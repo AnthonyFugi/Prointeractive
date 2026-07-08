@@ -1,10 +1,12 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
+import { useOrderCounts } from '../context/OrderCountsContext.jsx';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { count } = useCart();
+  const { active } = useOrderCounts();
 
   return (
     <header className="nav">
@@ -17,7 +19,11 @@ export default function Navbar() {
           <NavLink to="/">Shop</NavLink>
           <NavLink to="/businesses">Businesses</NavLink>
           {user && <NavLink to="/inbox">Inbox</NavLink>}
-          {user && user.role === 'customer' && <NavLink to="/orders">My orders</NavLink>}
+          {user && user.role === 'customer' && (
+            <NavLink to="/orders">
+              My orders{active > 0 && <span className="count-badge">{active}</span>}
+            </NavLink>
+          )}
           {user && user.role === 'business' && <NavLink to="/dashboard">Dashboard</NavLink>}
           {user && user.role === 'admin' && <NavLink to="/admin">Admin</NavLink>}
           {user ? (
