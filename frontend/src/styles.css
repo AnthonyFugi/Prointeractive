@@ -60,7 +60,12 @@ a:hover { text-decoration: underline; }
 .wordmark img { height: 34px; width: auto; display: block; }
 .wordmark { display: flex; align-items: center; gap: 0.5rem; }
 .wordmark .dot { color: var(--red); }
-.nav-links { display: flex; gap: 1rem; align-items: center; margin-left: auto; flex-wrap: wrap; }
+.nav-right { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; order: 3; }
+.nav-toggle {
+  display: none; background: none; border: none; cursor: pointer;
+  font-size: 1.5rem; line-height: 1; color: var(--ink); padding: 0.25rem 0.4rem;
+}
+.nav-links { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; order: 2; margin-left: auto; }
 .nav-links a { color: var(--ink); font-weight: 500; font-size: 0.95rem; }
 .nav-links a.active { color: var(--navy); font-weight: 600; }
 .cart-pill,
@@ -176,7 +181,12 @@ textarea { resize: vertical; min-height: 90px; }
   text-align: center; color: var(--muted); padding: 3rem 1rem;
   border: 1.5px dashed var(--line); border-radius: var(--radius);
 }
-.tabs { display: flex; gap: 0.25rem; border-bottom: 1.5px solid var(--line); margin-bottom: 1.25rem; }
+.tabs {
+  display: flex; gap: 0.25rem; border-bottom: 1.5px solid var(--line); margin-bottom: 1.25rem;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab { white-space: nowrap; flex-shrink: 0; }
 .tab {
   background: none; border: none; cursor: pointer;
   font-family: var(--font-body); font-weight: 600; font-size: 0.95rem;
@@ -201,10 +211,25 @@ textarea { resize: vertical; min-height: 90px; }
 
 main { min-height: 70vh; padding-bottom: 2rem; }
 
+@media (max-width: 768px) {
+  .nav-inner { flex-wrap: wrap; height: auto; padding: 0.7rem 0; }
+  .nav-right { order: 2; margin-left: auto; }
+  .nav-toggle { display: block; }
+  .nav-links {
+    display: none; order: 4; width: 100%;
+    flex-direction: column; align-items: flex-start; gap: 0.25rem;
+    padding: 0.5rem 0 0.75rem; border-top: 1px solid var(--line); margin-top: 0.6rem;
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a, .nav-links .btn { padding: 0.55rem 0; width: 100%; text-align: left; }
+}
+
 @media (max-width: 640px) {
-  .nav-inner { flex-wrap: wrap; height: auto; padding: 0.6rem 0; }
-  .nav-links { margin-left: 0; width: 100%; }
   .searchbar { flex-direction: column; }
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+  .hero { padding: 2rem 0 1.25rem; }
+  .container { padding: 0 1rem; }
+  .panel { padding: 1rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
