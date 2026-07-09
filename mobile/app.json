@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.prointeractive.app"
+      "bundleIdentifier": "com.prointeractive"
     },
     "android": {
       "package": "com.prointeractive.app",
@@ -24,12 +24,11 @@
       "versionCode": 1
     },
     "extra": {
-      "apiUrl": "https://YOUR-SERVICE.onrender.com"
+      "apiUrl": "https://prointeractive.onrender.com"
     },
     "icon": "./assets/icon.png",
     "plugins": [
       "expo-secure-store",
-      "expo-status-bar",
       "expo-web-browser"
     ]
   }
