@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Prointeractive",
+    "slug": "prointeractive",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "prointeractive",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.prointeractive.app"
+    },
+    "android": {
+      "package": "com.prointeractive.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "versionCode": 1
+    },
+    "extra": {
+      "apiUrl": "https://YOUR-SERVICE.onrender.com"
+    },
+    "icon": "./assets/icon.png",
+    "plugins": [
+      "expo-secure-store",
+      "expo-status-bar",
+      "expo-web-browser"
+    ]
+  }
+}
