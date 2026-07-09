@@ -17,9 +17,15 @@ const sendAuth = (res, user, status = 200) => {
 // POST /api/auth/register
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, acceptedTerms } = req.body;
+    if (!acceptedTerms) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please accept the Terms & Conditions to create an account',
+      });
+    }
     const safeRole = role === 'business' ? 'business' : 'customer'; // never allow self-made admins
-    const user = await User.create({ name, email, password, role: safeRole });
+    const user = await User.create({ name, email, password, role: safeRole, termsAcceptedAt: new Date() });
     welcomeEmail(user);
     sendAuth(res, user, 201);
   } catch (err) {

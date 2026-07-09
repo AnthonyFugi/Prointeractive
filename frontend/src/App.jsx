@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import PendingPaymentBanner from './components/PendingPaymentBanner.jsx';
 import Protected from './components/Protected.jsx';
@@ -18,6 +18,8 @@ import Admin from './pages/Admin.jsx';
 import PaymentResult from './pages/PaymentResult.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
+import Terms from './pages/Terms.jsx';
+import Privacy from './pages/Privacy.jsx';
 
 export default function App() {
   return (
@@ -31,6 +33,8 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/businesses" element={<Businesses />} />
           <Route path="/businesses/:id" element={<BusinessPage />} />
@@ -46,11 +50,21 @@ export default function App() {
       </main>
       <footer className="footer">
         <div className="container">
-          Pro<span style={{ color: 'var(--red)' }}>·</span>interactive — Making business interaction, Easy!{' '}
-          <span className="muted">
-            · by{' '}
-            <a href="https://fugipay.com" target="_blank" rel="noopener noreferrer">fugipay</a>
-          </span>
+          <div>
+            Pro<span style={{ color: 'var(--red)' }}>·</span>interactive — Making business interaction, Easy!{' '}
+            <span className="muted">
+              · by{' '}
+              <a href="https://fugipay.com" target="_blank" rel="noopener noreferrer">fugipay</a>
+            </span>
+          </div>
+          <div className="muted" style={{ marginTop: '0.5rem' }}>
+            Prointeractive Trading Limited · Lusaka, Zambia ·{' '}
+            <a href="mailto:hello@fugipay.com">hello@fugipay.com</a>
+            {' · '}
+            <Link to="/terms">Terms &amp; Conditions</Link>
+            {' · '}
+            <Link to="/privacy">Privacy Policy</Link>
+          </div>
         </div>
       </footer>
     </>

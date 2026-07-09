@@ -6,6 +6,7 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer' });
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -13,7 +14,7 @@ export default function Register() {
     e.preventDefault();
     setBusy(true); setError('');
     try {
-      await register(form);
+      await register({ ...form, acceptedTerms: accepted });
       navigate(form.role === 'business' ? '/dashboard' : '/');
     } catch (err) {
       setError(err.message);
@@ -40,8 +41,21 @@ export default function Register() {
             <option value="customer">Shop as a customer</option>
             <option value="business">Sell as a business</option>
           </select>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontWeight: 400, marginTop: '1rem' }}>
+            <input
+              type="checkbox"
+              required
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+              style={{ width: 'auto', marginTop: '0.2rem' }}
+            />
+            <span>
+              I agree to the <Link to="/terms" target="_blank">Terms &amp; Conditions</Link> and{' '}
+              <Link to="/privacy" target="_blank">Privacy Policy</Link>
+            </span>
+          </label>
           {error && <p className="error-text">{error}</p>}
-          <button className="btn btn-red" style={{ marginTop: '1rem', width: '100%' }} disabled={busy}>
+          <button className="btn btn-red" style={{ marginTop: '1rem', width: '100%' }} disabled={busy || !accepted}>
             {busy ? 'Creating…' : 'Create account'}
           </button>
         </form>

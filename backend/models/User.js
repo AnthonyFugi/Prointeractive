@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema(
       default: 'customer',
     },
     avatarUrl: { type: String, default: '' },
+    termsAcceptedAt: { type: Date },
     resetPasswordTokenHash: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
   },
