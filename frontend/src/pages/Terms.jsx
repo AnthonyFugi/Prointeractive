@@ -7,7 +7,7 @@ export default function Terms() {
       <div className="panel">
         <h3>1. About Prointeractive</h3>
         <p>
-          Prointeractive is an online marketplace operated by <strong>Prointeractive Trading Limited</strong>,
+          Prointeractive is an online marketplace operated by <strong>Fugipay Technology Limited</strong>,
           a company registered in Zambia ("we", "us"). Prointeractive connects independent businesses
           ("Sellers") with customers ("Buyers") and facilitates communication and payments between them.
         </p>
@@ -64,7 +64,7 @@ export default function Terms() {
 
         <h3>9. Contact</h3>
         <p>
-          Prointeractive Trading Limited, Lusaka, Zambia.<br />
+          Fugipay Technology Limited, Lusaka, Zambia.<br />
           Email: <a href="mailto:hello@fugipay.com">hello@fugipay.com</a>
         </p>
       </div>

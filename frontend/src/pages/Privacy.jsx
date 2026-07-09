@@ -39,7 +39,7 @@ export default function Privacy() {
 
         <h3>Contact</h3>
         <p>
-          Prointeractive Trading Limited, Lusaka, Zambia — <a href="mailto:hello@fugipay.com">hello@fugipay.com</a>
+          Fugipay Technology Limited, Lusaka, Zambia — <a href="mailto:hello@fugipay.com">hello@fugipay.com</a>
         </p>
       </div>
     </div>
