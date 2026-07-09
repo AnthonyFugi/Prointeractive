@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 
-const configured = () => !!process.env.SMTP_HOST;
+const apiConfigured = () => !!process.env.BREVO_API_KEY;
+const configured = () => apiConfigured() || !!process.env.SMTP_HOST;
 
 let transporter = null;
 const getTransport = () => {
@@ -41,15 +42,51 @@ const template = ({ heading, lines = [], ctaText, ctaPath }) => `
   </div>
 </div>`;
 
-/** Fire-and-forget safe sender. Never throws; logs when SMTP is absent. */
+/** Parse 'Name <email@x.com>' into Brevo's sender shape. */
+const parseFrom = () => {
+  const raw = FROM();
+  const m = raw.match(/^(.*)<\s*([^>]+)\s*>$/);
+  if (m) return { name: m[1].trim().replace(/^"|"$/g, ''), email: m[2].trim() };
+  return { email: raw.trim() };
+};
+
+/** Send via Brevo's HTTPS API (port 443 — works even where SMTP ports are blocked). */
+const sendViaApi = async ({ to, subject, html }) => {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: parseFrom(),
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || `Brevo API error ${res.status}`);
+  return data.messageId;
+};
+
+/** Fire-and-forget safe sender. Prefers the HTTPS API; falls back to SMTP. */
 export const sendEmail = async ({ to, subject, ...content }) => {
   if (!to) return;
   if (!configured()) {
-    console.log(`[email skipped — SMTP not configured] to=${to} subject="${subject}"`);
+    console.log(`[email skipped — email not configured] to=${to} subject="${subject}"`);
     return;
   }
+  const html = template(content);
   try {
-    await getTransport().sendMail({ from: FROM(), to, subject, html: template(content) });
+    if (apiConfigured()) {
+      const id = await sendViaApi({ to, subject, html });
+      console.log(`[email sent via api] to=${to} subject="${subject}" id=${id}`);
+    } else {
+      const info = await getTransport().sendMail({ from: FROM(), to, subject, html });
+      console.log(`[email sent via smtp] to=${to} subject="${subject}" id=${info.messageId}`);
+    }
   } catch (err) {
     console.error(`[email failed] to=${to} subject="${subject}":`, err.message);
   }
