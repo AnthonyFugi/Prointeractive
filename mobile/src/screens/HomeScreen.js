@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { useCallback } from 'react';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import ProductCard from '../components/ProductCard';
 import { colors, spacing } from '../theme';
@@ -11,21 +12,31 @@ export default function HomeScreen({ navigation }) {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
+  const load = useCallback(() => {
     const params = new URLSearchParams({ limit: 20 });
     if (query) params.set('q', query);
     if (category) params.set('category', category);
-    api(`/products?${params}`)
+    return api(`/products?${params}`)
       .then((d) => setProducts(d.products))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {});
   }, [query, category]);
+
+  useEffect(() => {
+    setLoading(true);
+    load().finally(() => setLoading(false));
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    Promise.all([load(), api('/categories').then((d) => setCategories(d.categories)).catch(() => {})])
+      .finally(() => setRefreshing(false));
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
@@ -85,6 +96,7 @@ export default function HomeScreen({ navigation }) {
           data={products}
           numColumns={2}
           keyExtractor={(p) => p._id}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={{ padding: spacing.m, paddingBottom: 40 }}
           ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.muted, marginTop: 40 }}>No products found</Text>}
           renderItem={({ item }) => (

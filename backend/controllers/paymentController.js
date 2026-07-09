@@ -47,6 +47,7 @@ const fulfillPayment = async (txRef, flwData) => {
   if (order.status === 'pending') {
     order.status = 'paid';
     order.paidAt = new Date();
+    if (order.platformFee?.amount > 0) order.platformFee.status = 'collected';
     await order.save();
 
     const [buyer, biz] = await Promise.all([

@@ -4,8 +4,15 @@ import { api, money } from '../api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 
 const CATEGORIES = ['retail', 'food', 'fashion', 'electronics', 'services', 'agriculture', 'health', 'education', 'other'];
-const NEXT_STATUS = { pending: 'paid', paid: 'shipped', shipped: 'delivered' };
-const NEXT_LABEL = { pending: 'Mark as paid', paid: 'Mark as shipped', shipped: 'Mark as delivered' };
+const ONLINE_NEXT = { pending: 'paid', paid: 'shipped', shipped: 'delivered' };
+const ONLINE_LABEL = { pending: 'Mark as paid', paid: 'Mark as shipped', shipped: 'Mark as delivered' };
+const COD_NEXT = { pending: 'shipped', shipped: 'delivered' };
+const COD_LABEL = { pending: 'Mark as shipped', shipped: 'Delivered · cash received' };
+
+const nextStatusFor = (o) =>
+  o.paymentMethod === 'cash_on_delivery' ? COD_NEXT[o.status] : ONLINE_NEXT[o.status];
+const nextLabelFor = (o) =>
+  o.paymentMethod === 'cash_on_delivery' ? COD_LABEL[o.status] : ONLINE_LABEL[o.status];
 
 const EMPTY_PRODUCT = { name: '', description: '', price: '', category: 'general', stock: '', images: [] };
 
@@ -155,7 +162,7 @@ export default function Dashboard() {
 
   const advanceOrder = async (o) => {
     try {
-      await api(`/orders/${o._id}/status`, { method: 'PATCH', body: { status: NEXT_STATUS[o.status] } });
+      await api(`/orders/${o._id}/status`, { method: 'PATCH', body: { status: nextStatusFor(o) } });
       const d = await api('/orders/business');
       setOrders(d.orders);
     } catch (err) {
@@ -318,6 +325,24 @@ export default function Dashboard() {
         </div>
       )}
 
+      {tab === 'orders' && (() => {
+        const feesDue = orders
+          .filter((o) => o.platformFee?.status === 'due')
+          .reduce((sum, o) => sum + o.platformFee.amount, 0);
+        return feesDue > 0 ? (
+          <div className="panel" style={{ background: 'var(--red-soft)' }}>
+            <div className="row spread">
+              <div>
+                <strong>Platform fees due: {money(feesDue)}</strong>
+                <p className="muted" style={{ margin: 0 }}>
+                  5% commission on cash-on-delivery and off-platform sales. Settled directly with Prointeractive.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null;
+      })()}
+
       {tab === 'orders' && (
         orders.length === 0 ? (
           <div className="empty"><h3>No orders yet</h3><p>Orders show up here as customers buy your products.</p></div>
@@ -336,10 +361,25 @@ export default function Dashboard() {
               ))}
             </ul>
             <div className="row spread">
-              <span className="price">{money(o.totalAmount, o.currency)}</span>
-              {NEXT_STATUS[o.status] && (
+              <span className="price">
+                {money(o.totalAmount, o.currency)}
+                {o.paymentMethod === 'cash_on_delivery' && (
+                  <span className="muted" style={{ fontWeight: 400, marginLeft: 8, fontSize: '0.85rem' }}>
+                    cash on delivery
+                  </span>
+                )}
+                {o.platformFee?.status === 'due' && (
+                  <span className="badge pending" style={{ marginLeft: 8 }}>
+                    fee due: {money(o.platformFee.amount, o.currency)}
+                  </span>
+                )}
+                {o.platformFee?.status === 'settled' && (
+                  <span className="badge delivered" style={{ marginLeft: 8 }}>fee settled</span>
+                )}
+              </span>
+              {nextStatusFor(o) && (
                 <button className="btn btn-navy btn-sm" onClick={() => advanceOrder(o)}>
-                  {NEXT_LABEL[o.status]}
+                  {nextLabelFor(o)}
                 </button>
               )}
             </div>

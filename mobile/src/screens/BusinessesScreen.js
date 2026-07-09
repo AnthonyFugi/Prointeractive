@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { colors, spacing } from '../theme';
@@ -8,12 +8,20 @@ export default function BusinessesScreen({ navigation }) {
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [businesses, setBusinesses] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     const params = new URLSearchParams({ limit: 30 });
     if (query) params.set('q', query);
-    api(`/businesses?${params}`).then((d) => setBusinesses(d.businesses)).catch(() => {});
+    return api(`/businesses?${params}`).then((d) => setBusinesses(d.businesses)).catch(() => {});
   }, [query]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load().finally(() => setRefreshing(false));
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.l }}>
@@ -29,6 +37,7 @@ export default function BusinessesScreen({ navigation }) {
         data={businesses}
         keyExtractor={(b) => b._id}
         style={{ marginTop: spacing.m }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.muted, marginTop: 40 }}>No businesses found</Text>}
         renderItem={({ item: b }) => (
           <Pressable

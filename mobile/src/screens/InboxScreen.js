@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { api } from '../api';
 import StatusBadge from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
@@ -9,11 +9,19 @@ import { colors, spacing } from '../theme';
 export default function InboxScreen({ navigation }) {
   const { user } = useAuth();
   const [inquiries, setInquiries] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useFocusEffect(useCallback(() => {
-    if (!user) return;
-    api('/inquiries').then((d) => setInquiries(d.inquiries)).catch(() => {});
-  }, [user]));
+  const load = useCallback(() => {
+    if (!user) return Promise.resolve();
+    return api('/inquiries').then((d) => setInquiries(d.inquiries)).catch(() => {});
+  }, [user]);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load().finally(() => setRefreshing(false));
+  };
 
   if (!user) {
     return (
@@ -33,6 +41,7 @@ export default function InboxScreen({ navigation }) {
       contentContainerStyle={{ padding: spacing.l }}
       data={inquiries}
       keyExtractor={(i) => i._id}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ListEmptyComponent={
         <Text style={{ textAlign: 'center', color: colors.muted, marginTop: 40 }}>
           No conversations yet. Open any product and tap "Ask the seller".

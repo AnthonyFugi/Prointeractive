@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Business from '../models/Business.js';
 import { orderPlacedEmails, orderStatusEmail } from '../utils/email.js';
+import { platformFeeFraction } from '../utils/flutterwave.js';
 
 /**
  * POST /api/orders  (customer)
@@ -45,14 +46,21 @@ export const createOrder = async (req, res, next) => {
       )
     );
 
+    const totalAmount = Math.round(total * 100) / 100;
+    const feePercent = platformFeeFraction() * 100;
     const order = await Order.create({
       customer: req.user._id,
       business: [...businessIds][0],
       items: orderItems,
-      totalAmount: Math.round(total * 100) / 100,
+      totalAmount,
       currency: products[0].currency,
       shippingAddress,
       paymentMethod,
+      platformFee: {
+        percent: feePercent,
+        amount: Math.round(totalAmount * (feePercent / 100) * 100) / 100,
+        status: 'pending',
+      },
     });
 
     const business = await Business.findById(order.business).populate('owner', 'email');
@@ -116,9 +124,17 @@ export const getOrder = async (req, res, next) => {
 };
 
 // PATCH /api/orders/:id/status  (seller advances status; customer may cancel while pending)
-const TRANSITIONS = {
+// Online payments: money first, then fulfilment. Cash on delivery: fulfilment
+// first, cash acknowledged at delivery.
+const ONLINE_TRANSITIONS = {
   pending: ['paid', 'cancelled'],
   paid: ['shipped', 'cancelled'],
+  shipped: ['delivered'],
+  delivered: [],
+  cancelled: [],
+};
+const COD_TRANSITIONS = {
+  pending: ['shipped', 'cancelled'],
   shipped: ['delivered'],
   delivered: [],
   cancelled: [],
@@ -137,6 +153,7 @@ export const updateOrderStatus = async (req, res, next) => {
     if (!isSeller && !cancellingOwnPending && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not allowed to change this order' });
     }
+    const TRANSITIONS = order.paymentMethod === 'cash_on_delivery' ? COD_TRANSITIONS : ONLINE_TRANSITIONS;
     if (!TRANSITIONS[order.status]?.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -152,8 +169,25 @@ export const updateOrderStatus = async (req, res, next) => {
         )
       );
     }
-    if (status === 'paid') order.paidAt = new Date();
-    if (status === 'delivered') order.deliveredAt = new Date();
+    if (status === 'paid') {
+      order.paidAt = new Date();
+      // Marked paid manually (seller/admin), so money moved OFF-platform:
+      // the commission was not auto-collected and is now owed.
+      if (order.platformFee?.amount > 0 && order.platformFee.status === 'pending') {
+        order.platformFee.status = 'due';
+      }
+    }
+    if (status === 'delivered') {
+      order.deliveredAt = new Date();
+      // COD: cash changes hands at the door — delivery IS payment,
+      // and the platform commission becomes due from the seller.
+      if (order.paymentMethod === 'cash_on_delivery' && !order.paidAt) {
+        order.paidAt = new Date();
+        if (order.platformFee?.amount > 0 && order.platformFee.status === 'pending') {
+          order.platformFee.status = 'due';
+        }
+      }
+    }
 
     order.status = status;
     await order.save();

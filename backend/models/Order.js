@@ -37,6 +37,17 @@ const orderSchema = new mongoose.Schema(
     },
     paidAt: Date,
     deliveredAt: Date,
+    platformFee: {
+      percent: { type: Number, default: 0 },
+      amount: { type: Number, default: 0 },
+      // pending: sale not final · collected: taken via Flutterwave split
+      // due: owed by seller (COD / off-platform payment) · settled: seller has paid it
+      status: {
+        type: String,
+        enum: ['pending', 'collected', 'due', 'settled'],
+        default: 'pending',
+      },
+    },
   },
   { timestamps: true }
 );

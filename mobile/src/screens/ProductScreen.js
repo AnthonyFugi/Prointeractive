@@ -16,14 +16,17 @@ export default function ProductScreen({ route, navigation }) {
   const [asking, setAsking] = useState(false);
 
   useEffect(() => {
-    api(`/products/${id}`).then((d) => setProduct(d.product)).catch(() => {});
+    api(`/products/${id}`).then((d) => {
+      setProduct(d.product);
+      navigation.setOptions({ title: d.product.name });
+    }).catch(() => {});
     api(`/products/${id}/reviews`).then((d) => setReviews(d.reviews)).catch(() => {});
   }, [id]);
 
   if (!product) return <ActivityIndicator color={colors.navy} style={{ marginTop: 60 }} />;
 
   const askSeller = async () => {
-    if (!user) return navigation.navigate('Login');
+    if (!user) return navigation.navigate('AccountTab', { screen: 'Login' });
     try {
       await api('/inquiries', {
         method: 'POST',

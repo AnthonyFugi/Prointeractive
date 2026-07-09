@@ -42,6 +42,15 @@ export default function Admin() {
     }
   };
 
+  const setFee = async (o, status) => {
+    try {
+      const d = await api(`/admin/orders/${o._id}/fee`, { method: 'PATCH', body: { status } });
+      setOrders((prev) => prev.map((x) => (x._id === o._id ? d.order : x)));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   const toggleVerify = async (b) => {
     try {
       const d = await api(`/admin/businesses/${b._id}/verify`, {
@@ -62,6 +71,7 @@ export default function Admin() {
     ['Orders', stats.orders],
     ['Open inquiries', stats.openInquiries],
     ['Revenue (paid+)', money(stats.revenue)],
+    ['Fees due from sellers', money(stats.feesDue)],
   ];
 
   return (
@@ -153,9 +163,22 @@ export default function Admin() {
             <strong>{o.customer?.name}</strong> → <strong>{o.business?.name}</strong>
             <p className="muted" style={{ margin: 0 }}>
               {new Date(o.createdAt).toLocaleString()} · {o.items.length} item(s) · {money(o.totalAmount, o.currency)}
+              {o.platformFee?.amount > 0 && ` · fee ${money(o.platformFee.amount, o.currency)} (${o.platformFee.status})`}
             </p>
           </div>
-          <StatusBadge status={o.status} />
+          <div className="row">
+            {o.platformFee?.status === 'due' && (
+              <button className="btn btn-navy btn-sm" onClick={() => setFee(o, 'settled')}>
+                Mark fee settled
+              </button>
+            )}
+            {o.platformFee?.status === 'settled' && (
+              <button className="btn btn-ghost btn-sm" onClick={() => setFee(o, 'due')}>
+                Reopen fee
+              </button>
+            )}
+            <StatusBadge status={o.status} />
+          </div>
         </div>
       ))}
     </div>

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing } from '../theme';
@@ -10,10 +10,16 @@ export default function ThreadScreen({ route }) {
   const { user } = useAuth();
   const [inquiry, setInquiry] = useState(null);
   const [reply, setReply] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(() => {
-    api(`/inquiries/${id}`).then((d) => setInquiry(d.inquiry)).catch(() => {});
+    return api(`/inquiries/${id}`).then((d) => setInquiry(d.inquiry)).catch(() => {});
   }, [id]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load().finally(() => setRefreshing(false));
+  };
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -34,6 +40,7 @@ export default function ThreadScreen({ route }) {
         contentContainerStyle={{ padding: spacing.l }}
         data={inquiry.messages}
         keyExtractor={(m, i) => String(i)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         renderItem={({ item: m }) => {
           const senderId = m.sender && m.sender._id ? m.sender._id : m.sender;
           const mine = user && senderId === user.id;

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { api } from '../api';
 import StatusBadge from '../components/StatusBadge';
@@ -10,11 +10,17 @@ import { colors, money, spacing } from '../theme';
 export default function OrdersScreen({ navigation }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(() => {
-    if (!user) return;
-    api('/orders/mine').then((d) => setOrders(d.orders)).catch(() => {});
+    if (!user) return Promise.resolve();
+    return api('/orders/mine').then((d) => setOrders(d.orders)).catch(() => {});
   }, [user]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load().finally(() => setRefreshing(false));
+  };
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -22,7 +28,7 @@ export default function OrdersScreen({ navigation }) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center', padding: spacing.l }}>
         <Text style={{ fontWeight: '700' }}>Sign in to see your orders</Text>
-        <Pressable onPress={() => navigation.navigate('Login')}
+        <Pressable onPress={() => navigation.navigate('AccountTab', { screen: 'Login' })}
           style={{ backgroundColor: colors.navy, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10, marginTop: spacing.m }}>
           <Text style={{ color: '#fff', fontWeight: '700' }}>Sign in</Text>
         </Pressable>
@@ -55,6 +61,7 @@ export default function OrdersScreen({ navigation }) {
       contentContainerStyle={{ padding: spacing.l }}
       data={orders}
       keyExtractor={(o) => o._id}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.muted, marginTop: 40 }}>No orders yet</Text>}
       renderItem={({ item: o }) => (
         <View style={{ backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.line, padding: spacing.l, marginBottom: spacing.s }}>

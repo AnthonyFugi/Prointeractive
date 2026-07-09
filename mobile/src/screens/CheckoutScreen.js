@@ -22,7 +22,7 @@ export default function CheckoutScreen({ navigation }) {
   const groupList = Object.values(groups);
 
   const placeOrders = async () => {
-    if (!user) return navigation.navigate('Login');
+    if (!user) return navigation.navigate('AccountTab', { screen: 'Login' });
     if (!address.line1 || !address.city) return Alert.alert('Missing details', 'Please fill in your delivery address.');
     setBusy(true);
     try {
@@ -44,7 +44,7 @@ export default function CheckoutScreen({ navigation }) {
         const pay = await api(`/payments/checkout/${created[0]._id}`, { method: 'POST' });
         await WebBrowser.openBrowserAsync(pay.link);
       }
-      navigation.navigate('Tabs', { screen: 'Orders' });
+      navigation.navigate('OrdersTab');
     } catch (e) {
       Alert.alert('Checkout failed', e.message);
     } finally {

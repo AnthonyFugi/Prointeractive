@@ -7,7 +7,7 @@ import Inquiry from '../models/Inquiry.js';
 // GET /api/admin/stats
 export const stats = async (req, res, next) => {
   try {
-    const [users, businesses, unverified, products, orders, openInquiries, revenue] = await Promise.all([
+    const [users, businesses, unverified, products, orders, openInquiries, revenue, feesDue] = await Promise.all([
       User.countDocuments(),
       Business.countDocuments(),
       Business.countDocuments({ verified: false }),
@@ -18,12 +18,17 @@ export const stats = async (req, res, next) => {
         { $match: { status: { $in: ['paid', 'shipped', 'delivered'] } } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
+      Order.aggregate([
+        { $match: { 'platformFee.status': 'due' } },
+        { $group: { _id: null, total: { $sum: '$platformFee.amount' } } },
+      ]),
     ]);
     res.json({
       success: true,
       stats: {
         users, businesses, unverified, products, orders, openInquiries,
         revenue: revenue[0]?.total || 0,
+        feesDue: feesDue[0]?.total || 0,
       },
     });
   } catch (err) {
@@ -82,6 +87,27 @@ export const listOrders = async (req, res, next) => {
       .sort('-createdAt')
       .limit(100);
     res.json({ success: true, orders });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// PATCH /api/admin/orders/:id/fee  { status: 'settled' | 'due' }
+export const setFeeStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (!['settled', 'due'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Status must be "settled" or "due"' });
+    }
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (!order.platformFee || order.platformFee.amount <= 0) {
+      return res.status(400).json({ success: false, message: 'No platform fee on this order' });
+    }
+    order.platformFee.status = status;
+    await order.save();
+    res.json({ success: true, order });
   } catch (err) {
     next(err);
   }
