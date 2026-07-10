@@ -29,6 +29,8 @@ const orderSchema = new mongoose.Schema(
       line1: { type: String, default: '' },
       city: { type: String, default: '' },
       country: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      note: { type: String, default: '' }, // landmarks, delivery instructions
     },
     paymentMethod: {
       type: String,

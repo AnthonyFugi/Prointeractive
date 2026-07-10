@@ -511,6 +511,13 @@ export default function Dashboard() {
                 <li key={idx}>{i.quantity} × {i.name}</li>
               ))}
             </ul>
+            {(o.shippingAddress?.line1 || o.shippingAddress?.phone) && (
+              <p className="muted" style={{ margin: '0.25rem 0 0.5rem' }}>
+                📍 {[o.shippingAddress.line1, o.shippingAddress.city].filter(Boolean).join(', ')}
+                {o.shippingAddress.phone && <> · 📞 <a href={`tel:${o.shippingAddress.phone}`}>{o.shippingAddress.phone}</a></>}
+                {o.shippingAddress.note && <><br />🗒 {o.shippingAddress.note}</>}
+              </p>
+            )}
             <div className="row spread">
               <span className="price">
                 {money(o.totalAmount, o.currency)}

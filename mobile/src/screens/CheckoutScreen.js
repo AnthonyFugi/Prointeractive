@@ -15,7 +15,7 @@ const METHODS = [
 export default function CheckoutScreen({ navigation }) {
   const { user } = useAuth();
   const { groups, total, clear } = useCart();
-  const [address, setAddress] = useState({ line1: '', city: '', country: 'Zambia' });
+  const [address, setAddress] = useState({ line1: '', city: '', country: 'Zambia', phone: '', note: '' });
   const [method, setMethod] = useState('mobile_money');
   const [busy, setBusy] = useState(false);
 
@@ -24,6 +24,7 @@ export default function CheckoutScreen({ navigation }) {
   const placeOrders = async () => {
     if (!user) return navigation.navigate('AccountTab', { screen: 'Login' });
     if (!address.line1 || !address.city) return Alert.alert('Missing details', 'Please fill in your delivery address.');
+    if (!address.phone) return Alert.alert('Phone needed', 'Add a phone number so the seller can reach you for delivery.');
     setBusy(true);
     try {
       const created = [];
@@ -70,6 +71,12 @@ export default function CheckoutScreen({ navigation }) {
         style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
       <TextInput placeholder="Country" value={address.country}
         onChangeText={(v) => setAddress({ ...address, country: v })}
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
+      <TextInput placeholder="Phone number (for the delivery)" keyboardType="phone-pad" value={address.phone}
+        onChangeText={(v) => setAddress({ ...address, phone: v })}
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
+      <TextInput placeholder="Delivery note — landmarks, directions (optional)" value={address.note}
+        onChangeText={(v) => setAddress({ ...address, note: v })}
         style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
 
       <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Payment method</Text>

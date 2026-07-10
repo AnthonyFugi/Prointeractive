@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext.jsx';
 export default function Checkout() {
   const { groups, total, clear, items } = useCart();
   const navigate = useNavigate();
-  const [address, setAddress] = useState({ line1: '', city: '', country: 'Zambia' });
+  const [address, setAddress] = useState({ line1: '', city: '', country: 'Zambia', phone: '', note: '' });
   const [paymentMethod, setPaymentMethod] = useState('mobile_money');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -71,6 +71,12 @@ export default function Checkout() {
         <label htmlFor="country">Country</label>
         <input id="country" required value={address.country}
           onChange={(e) => setAddress({ ...address, country: e.target.value })} />
+        <label htmlFor="aphone">Phone number (for the delivery)</label>
+        <input id="aphone" type="tel" required placeholder="e.g. 097 1234567" value={address.phone}
+          onChange={(e) => setAddress({ ...address, phone: e.target.value })} />
+        <label htmlFor="anote">Delivery note <span className="muted">(optional — landmarks, directions)</span></label>
+        <input id="anote" placeholder="e.g. Blue gate opposite the filling station" value={address.note}
+          onChange={(e) => setAddress({ ...address, note: e.target.value })} />
         <label htmlFor="pay">Payment method</label>
         <select id="pay" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
           <option value="mobile_money">Mobile money</option>
