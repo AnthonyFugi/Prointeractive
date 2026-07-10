@@ -34,10 +34,11 @@ export default function Home() {
     <div className="container">
       <section className="hero">
         <div className="eyebrow">Making business interaction, Easy!</div>
-        <h1>Buy from businesses you can actually talk to.</h1>
+        <h1>Get what you need, from businesses you trust.</h1>
         <p className="lede">
-          Every product on Prointeractive comes with a direct line to the business behind it.
-          Ask about stock, request bulk pricing, or just say hello before you buy.
+          Every product connects you straight to the business behind it.
+          Ask a question, agree the details, and pay your way — mobile money,
+          card, or cash on delivery.
         </p>
         <form
           className="searchbar"

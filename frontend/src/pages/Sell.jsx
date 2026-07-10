@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const STEPS = [
@@ -15,11 +17,28 @@ const BENEFITS = [
 ];
 
 export default function Sell() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
+  const navigate = useNavigate();
+  const [switching, setSwitching] = useState(false);
+  const [error, setError] = useState('');
+
+  const switchToBusiness = async () => {
+    setSwitching(true); setError('');
+    try {
+      await api('/auth/become-business', { method: 'POST' });
+      if (refresh) await refresh();
+      navigate('/dashboard');
+    } catch (e) {
+      setError(e.message);
+      setSwitching(false);
+    }
+  };
+
+  const isCustomer = user && user.role === 'customer';
   const cta = user
     ? user.role === 'business'
       ? { to: '/dashboard', label: 'Go to your dashboard' }
-      : { to: '/register?role=business', label: 'Create a business account' }
+      : null // customer: upgrade button instead of a link
     : { to: '/register?role=business', label: 'Start selling — it’s free' };
 
   return (
@@ -32,9 +51,22 @@ export default function Sell() {
           and payments that just work — mobile money, cards, or cash on delivery.
         </p>
         <div className="row" style={{ marginTop: '1rem' }}>
-          <Link to={cta.to} className="btn btn-red">{cta.label}</Link>
+          {isCustomer ? (
+            <button className="btn btn-red" onClick={switchToBusiness} disabled={switching}>
+              {switching ? 'Switching…' : 'Turn my account into a business account'}
+            </button>
+          ) : (
+            <Link to={cta.to} className="btn btn-red">{cta.label}</Link>
+          )}
           <Link to="/businesses" className="btn btn-ghost">See businesses already selling</Link>
         </div>
+        {isCustomer && (
+          <p className="muted" style={{ marginTop: '0.5rem' }}>
+            You're signed in as {user.name} — one click makes this account a seller account.
+            Your orders and messages stay exactly as they are.
+          </p>
+        )}
+        {error && <p className="error-text">{error}</p>}
       </section>
 
       <section style={{ marginTop: '1.5rem' }}>
@@ -63,9 +95,15 @@ export default function Sell() {
             </div>
           </div>
         ))}
-        <Link to={cta.to} className="btn btn-red" style={{ marginTop: '1.5rem', display: 'inline-block' }}>
-          {cta.label}
-        </Link>
+        {isCustomer ? (
+          <button className="btn btn-red" style={{ marginTop: '1.5rem' }} onClick={switchToBusiness} disabled={switching}>
+            {switching ? 'Switching…' : 'Turn my account into a business account'}
+          </button>
+        ) : (
+          <Link to={cta.to} className="btn btn-red" style={{ marginTop: '1.5rem', display: 'inline-block' }}>
+            {cta.label}
+          </Link>
+        )}
       </section>
     </div>
   );

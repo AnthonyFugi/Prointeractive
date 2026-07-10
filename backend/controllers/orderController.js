@@ -3,6 +3,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Business from '../models/Business.js';
 import { orderPlacedEmails, orderStatusEmail } from '../utils/email.js';
+import { sendPush } from '../utils/push.js';
 import { platformFeeFraction } from '../utils/flutterwave.js';
 
 /**
@@ -70,6 +71,16 @@ export const createOrder = async (req, res, next) => {
       ownerEmail: business?.owner?.email,
       businessName: business?.name || 'the business',
     });
+    // Push notification to the seller's phone (fire-and-forget)
+    Business.findById(order.business).populate('owner', 'expoPushToken').then((biz) => {
+      if (biz?.owner?.expoPushToken) {
+        sendPush(biz.owner.expoPushToken, {
+          title: 'New order 🛒',
+          body: `${order.items.length} item(s) · ${order.currency} ${order.totalAmount.toFixed(2)} · ${order.paymentMethod === 'cash_on_delivery' ? 'cash on delivery' : 'online payment'}`,
+          data: { type: 'order', orderId: String(order._id) },
+        });
+      }
+    }).catch(() => {});
 
     res.status(201).json({ success: true, order });
   } catch (err) {

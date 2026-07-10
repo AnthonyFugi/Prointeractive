@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from 'react-native';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { CartProvider, useCart } from './src/context/CartContext';
 import { colors } from './src/theme';
 
@@ -20,6 +20,10 @@ import InboxScreen from './src/screens/InboxScreen';
 import ThreadScreen from './src/screens/ThreadScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import SellerOrdersScreen from './src/screens/SellerOrdersScreen';
+import SellerProductsScreen from './src/screens/SellerProductsScreen';
+import ProductFormScreen from './src/screens/ProductFormScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -76,6 +80,35 @@ function OrdersStackScreen() {
   );
 }
 
+const SellerOrdersStack = makeStack();
+function SellerOrdersStackScreen() {
+  return (
+    <SellerOrdersStack.Navigator screenOptions={stackScreenOptions}>
+      <SellerOrdersStack.Screen name="SellerOrdersHome" component={SellerOrdersScreen} options={{ title: 'Orders' }} />
+    </SellerOrdersStack.Navigator>
+  );
+}
+
+const SellerProductsStack = makeStack();
+function SellerProductsStackScreen() {
+  return (
+    <SellerProductsStack.Navigator screenOptions={stackScreenOptions}>
+      <SellerProductsStack.Screen name="SellerProductsHome" component={SellerProductsScreen} options={{ title: 'My products' }} />
+      <SellerProductsStack.Screen name="ProductForm" component={ProductFormScreen} />
+    </SellerProductsStack.Navigator>
+  );
+}
+
+const InboxStack = makeStack();
+function InboxStackScreen() {
+  return (
+    <InboxStack.Navigator screenOptions={stackScreenOptions}>
+      <InboxStack.Screen name="InboxHome" component={InboxScreen} options={{ title: 'Inbox' }} />
+      <InboxStack.Screen name="Thread" component={ThreadScreen} options={{ title: 'Conversation' }} />
+    </InboxStack.Navigator>
+  );
+}
+
 const AccountStack = makeStack();
 function AccountStackScreen() {
   return (
@@ -85,14 +118,17 @@ function AccountStackScreen() {
       <AccountStack.Screen name="Thread" component={ThreadScreen} options={{ title: 'Conversation' }} />
       <AccountStack.Screen name="Login" component={LoginScreen} options={{ title: 'Sign in' }} />
       <AccountStack.Screen name="Register" component={RegisterScreen} options={{ title: 'Create account' }} />
+      <AccountStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Reset password' }} />
     </AccountStack.Navigator>
   );
 }
 
-const ICONS = { ShopTab: '🛍', BusinessesTab: '🏬', CartTab: '🛒', OrdersTab: '📦', AccountTab: '👤' };
+const ICONS = { ShopTab: '🛍', BusinessesTab: '🏬', CartTab: '🛒', OrdersTab: '📦', AccountTab: '👤', SellerOrdersTab: '📦', ProductsTab: '🏷', InboxTab: '💬' };
 
 function Tabs() {
   const { count } = useCart();
+  const { user } = useAuth();
+  const seller = user && user.role === 'business';
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -104,12 +140,24 @@ function Tabs() {
         ),
       })}
     >
-      <Tab.Screen name="ShopTab" component={ShopStackScreen} options={{ tabBarLabel: 'Shop' }} />
-      <Tab.Screen name="BusinessesTab" component={BizStackScreen} options={{ tabBarLabel: 'Businesses' }} />
-      <Tab.Screen name="CartTab" component={CartStackScreen}
-        options={{ tabBarLabel: 'Cart', tabBarBadge: count > 0 ? count : undefined }} />
-      <Tab.Screen name="OrdersTab" component={OrdersStackScreen} options={{ tabBarLabel: 'Orders' }} />
-      <Tab.Screen name="AccountTab" component={AccountStackScreen} options={{ tabBarLabel: 'Account' }} />
+      {seller ? (
+        <>
+          <Tab.Screen name="SellerOrdersTab" component={SellerOrdersStackScreen} options={{ tabBarLabel: 'Orders' }} />
+          <Tab.Screen name="ProductsTab" component={SellerProductsStackScreen} options={{ tabBarLabel: 'Products' }} />
+          <Tab.Screen name="InboxTab" component={InboxStackScreen} options={{ tabBarLabel: 'Inbox' }} />
+          <Tab.Screen name="ShopTab" component={ShopStackScreen} options={{ tabBarLabel: 'Shop' }} />
+          <Tab.Screen name="AccountTab" component={AccountStackScreen} options={{ tabBarLabel: 'Account' }} />
+        </>
+      ) : (
+        <>
+          <Tab.Screen name="ShopTab" component={ShopStackScreen} options={{ tabBarLabel: 'Shop' }} />
+          <Tab.Screen name="BusinessesTab" component={BizStackScreen} options={{ tabBarLabel: 'Businesses' }} />
+          <Tab.Screen name="CartTab" component={CartStackScreen}
+            options={{ tabBarLabel: 'Cart', tabBarBadge: count > 0 ? count : undefined }} />
+          <Tab.Screen name="OrdersTab" component={OrdersStackScreen} options={{ tabBarLabel: 'Orders' }} />
+          <Tab.Screen name="AccountTab" component={AccountStackScreen} options={{ tabBarLabel: 'Account' }} />
+        </>
+      )}
     </Tab.Navigator>
   );
 }

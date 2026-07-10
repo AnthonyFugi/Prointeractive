@@ -33,6 +33,7 @@ export default function Dashboard() {
   const [productForm, setProductForm] = useState(EMPTY_PRODUCT);
   const [editingId, setEditingId] = useState(null);
   const [showProductForm, setShowProductForm] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Orders
   const [orders, setOrders] = useState([]);
@@ -143,9 +144,14 @@ export default function Dashboard() {
   const saveProduct = async (e) => {
     e.preventDefault();
     setError('');
-    if (!productForm.images || productForm.images.length === 0) {
-      return setError('Add at least one product photo before saving.');
-    }
+    const fe = {};
+    if (!productForm.name.trim()) fe.name = 'Give the product a name.';
+    if (productForm.price === '' || Number(productForm.price) <= 0) fe.price = 'Enter a price greater than 0.';
+    if (productForm.stock === '' || Number(productForm.stock) < 0) fe.stock = 'Enter how many are in stock (0 or more).';
+    if (!productForm.category) fe.category = 'Pick a category.';
+    if (!productForm.images || productForm.images.length === 0) fe.images = 'Add at least one product photo.';
+    setFieldErrors(fe);
+    if (Object.keys(fe).length > 0) return;
     const body = { ...productForm, price: Number(productForm.price), stock: Number(productForm.stock) };
     try {
       if (editingId) {
@@ -335,7 +341,7 @@ export default function Dashboard() {
           )}
 
           {showProductForm && (
-            <form className="panel" onSubmit={saveProduct}>
+            <form className="panel" onSubmit={saveProduct} noValidate>
               <div className="row spread">
                 <h3 style={{ margin: 0 }}>{editingId ? 'Edit product' : 'Add a product'}</h3>
                 <button type="button" className="btn btn-ghost btn-sm"
@@ -346,6 +352,7 @@ export default function Dashboard() {
               <label htmlFor="pname">Name</label>
               <input id="pname" required value={productForm.name}
                 onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} />
+              {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
               <label htmlFor="pdesc">Description</label>
               <textarea id="pdesc" value={productForm.description}
                 onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
@@ -354,11 +361,13 @@ export default function Dashboard() {
                   <label htmlFor="pprice">Price (ZMW)</label>
                   <input id="pprice" type="number" min="0" step="0.01" required value={productForm.price}
                     onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} />
+                  {fieldErrors.price && <p className="field-error">{fieldErrors.price}</p>}
                 </div>
                 <div style={{ flex: 1 }}>
                   <label htmlFor="pstock">Stock</label>
                   <input id="pstock" type="number" min="0" required value={productForm.stock}
                     onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} />
+                  {fieldErrors.stock && <p className="field-error">{fieldErrors.stock}</p>}
                 </div>
                 <div style={{ flex: 1 }}>
                   <label htmlFor="pcat">Category</label>
@@ -368,6 +377,7 @@ export default function Dashboard() {
                       <option key={c._id} value={c.name}>{c.name}</option>
                     ))}
                   </select>
+                  {fieldErrors.category && <p className="field-error">{fieldErrors.category}</p>}
                 </div>
               </div>
               <label htmlFor="pimg">Photos — at least one required (JPEG, PNG, or WebP, up to 5 MB)</label>
@@ -375,6 +385,7 @@ export default function Dashboard() {
                 onChange={uploadTo((url) => setProductForm((f) => ({ ...f, images: [...(f.images || []), url] })))}
                 disabled={uploading} />
               {uploading && <p className="muted">Uploading…</p>}
+              {fieldErrors.images && <p className="field-error">{fieldErrors.images}</p>}
               {productForm.images?.length > 0 && (
                 <div className="row" style={{ marginTop: '0.5rem' }}>
                   {productForm.images.map((url) => (

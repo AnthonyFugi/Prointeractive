@@ -33,12 +33,13 @@ export default function ProductDetail() {
   }, [id]);
 
   if (error) return <div className="container"><p className="error-text">{error}</p></div>;
+
   if (!product) return <div className="container"><p className="muted">Loading…</p></div>;
 
   const addToCart = () => {
     add(product, qty);
     setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
+    setTimeout(() => setAdded(false), 3500);
   };
 
   const sendInquiry = async (e) => {
@@ -108,6 +109,12 @@ export default function ProductDetail() {
             </button>
           </div>
         </div>
+
+        {added && (
+          <div className="toast" role="status">
+            ✓ Added to cart — <Link to="/cart">View cart</Link>
+          </div>
+        )}
 
         {asking && (
           <form onSubmit={sendInquiry} style={{ marginTop: '1rem', maxWidth: 480 }}>

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import Rating from '../components/Rating.jsx';
 import VerifiedBadge from '../components/VerifiedBadge.jsx';
 
 const CATEGORIES = ['retail', 'food', 'fashion', 'electronics', 'services', 'agriculture', 'health', 'education', 'other'];
 
 export default function Businesses() {
+  const { user } = useAuth();
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -36,7 +38,11 @@ export default function Businesses() {
         <h1>Businesses on Prointeractive</h1>
         <p className="lede">
           Browse storefronts, check what they sell, and start a conversation.{' '}
-          <Link to="/sell" style={{ fontWeight: 600 }}>Own a business? Join them →</Link>
+          {user?.role === 'business' ? (
+            <Link to="/dashboard" style={{ fontWeight: 600 }}>Manage your storefront →</Link>
+          ) : user?.role === 'admin' ? null : (
+            <Link to="/sell" style={{ fontWeight: 600 }}>Own a business? Join them →</Link>
+          )}
         </p>
         <form
           className="searchbar"

@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema(
     },
     avatarUrl: { type: String, default: '' },
     termsAcceptedAt: { type: Date },
+    expoPushToken: { type: String, default: '' },
     resetPasswordTokenHash: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
   },

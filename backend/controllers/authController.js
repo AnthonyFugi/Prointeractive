@@ -115,3 +115,34 @@ export const resetPassword = async (req, res, next) => {
     next(err);
   }
 };
+
+
+// POST /api/auth/become-business  (self-service upgrade; customer -> business only)
+export const becomeBusiness = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'customer') {
+      return res.status(400).json({ success: false, message: 'Only customer accounts can switch to business' });
+    }
+    req.user.role = 'business';
+    await req.user.save();
+    res.json({ success: true, user: { id: req.user._id, name: req.user.name, email: req.user.email, role: 'business' } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// POST /api/auth/push-token  { token }  — store the device's Expo push token
+export const savePushToken = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (typeof token !== 'string' || !token.startsWith('ExponentPushToken')) {
+      return res.status(400).json({ success: false, message: 'Invalid push token' });
+    }
+    req.user.expoPushToken = token;
+    await req.user.save();
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { api, setToken, clearToken } from '../api';
+import { registerForPush } from '../push';
 
 const Ctx = createContext(null);
 export const useAuth = () => useContext(Ctx);
@@ -14,6 +15,10 @@ export function AuthProvider({ children }) {
       .catch(() => {})
       .finally(() => setReady(true));
   }, []);
+
+  useEffect(() => {
+    if (user) registerForPush();
+  }, [user]);
 
   const login = async (email, password) => {
     const d = await api('/auth/login', { method: 'POST', body: { email, password } });

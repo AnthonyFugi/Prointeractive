@@ -33,8 +33,14 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const refresh = async () => {
+    const d = await api('/auth/me');
+    setUser(d.user);
+    return d.user;
+  };
+
   return (
-    <AuthCtx.Provider value={{ user, ready, login, register, logout }}>
+    <AuthCtx.Provider value={{ user, ready, login, register, logout, refresh }}>
       {children}
     </AuthCtx.Provider>
   );

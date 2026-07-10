@@ -69,6 +69,20 @@ a:hover { text-decoration: underline; }
 .sell-link {
   color: var(--red) !important; font-weight: 700;
 }
+.toast {
+  position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fff; padding: 0.7rem 1.1rem; border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25); z-index: 200; font-size: 0.95rem;
+  animation: toast-in 0.25s ease;
+}
+.toast a { color: #fff; text-decoration: underline; font-weight: 700; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.field-error {
+  color: var(--red); font-size: 0.85rem; margin: 0.25rem 0 0;
+}
 .link-btn {
   background: none; border: none; padding: 0; cursor: pointer;
   color: var(--navy); font-weight: 600; font-size: inherit; font-family: inherit;
