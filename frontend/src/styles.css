@@ -205,9 +205,14 @@ textarea { resize: vertical; min-height: 90px; }
 
 /* ---------- Footer ---------- */
 .footer {
-  margin-top: 4rem; padding: 2rem 0; border-top: 1px solid var(--line);
-  color: var(--muted); font-size: 0.9rem;
+  margin-top: 4rem; padding: 1.1rem 0; border-top: 1px solid var(--line);
+  background: var(--surface); font-size: 0.85rem;
 }
+.footer-line {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 0.35rem 1.25rem;
+}
+.footer-line a { color: var(--navy); }
 
 main { min-height: 70vh; padding-bottom: 2rem; }
 

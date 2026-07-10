@@ -49,22 +49,14 @@ export default function App() {
         </Routes>
       </main>
       <footer className="footer">
-        <div className="container">
-          <div>
-            Pro<span style={{ color: 'var(--red)' }}>·</span>interactive — Making business interaction, Easy!{' '}
-            <span className="muted">
-              · by{' '}
-              <a href="https://fugipay.com" target="_blank" rel="noopener noreferrer">fugipay</a>
-            </span>
-          </div>
-          <div className="muted" style={{ marginTop: '0.5rem' }}>
-            Prointeractive Trading Limited · Lusaka, Zambia ·{' '}
-            <a href="mailto:hello@fugipay.com">hello@fugipay.com</a>
-            {' · '}
-            <Link to="/terms">Terms &amp; Conditions</Link>
-            {' · '}
-            <Link to="/privacy">Privacy Policy</Link>
-          </div>
+        <div className="container footer-line muted">
+          <span>
+            Pro<span style={{ color: 'var(--red)' }}>·</span>interactive · © {new Date().getFullYear()}{' '}
+            FugiPay Technology Limited, Lusaka, Zambia
+          </span>
+          <a href="mailto:hello@fugipay.com">hello@fugipay.com</a>
+          <Link to="/terms">Terms</Link>
+          <Link to="/privacy">Privacy</Link>
         </div>
       </footer>
     </>
