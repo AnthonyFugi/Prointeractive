@@ -34,7 +34,10 @@ export default function Businesses() {
       <section className="hero" style={{ paddingBottom: '1rem' }}>
         <div className="eyebrow">Directory</div>
         <h1>Businesses on Prointeractive</h1>
-        <p className="lede">Browse storefronts, check what they sell, and start a conversation.</p>
+        <p className="lede">
+          Browse storefronts, check what they sell, and start a conversation.{' '}
+          <Link to="/sell" style={{ fontWeight: 600 }}>Own a business? Join them →</Link>
+        </p>
         <form
           className="searchbar"
           onSubmit={(e) => { e.preventDefault(); setPage(1); setQuery(q); }}

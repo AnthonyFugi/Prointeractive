@@ -66,6 +66,9 @@ a:hover { text-decoration: underline; }
   font-size: 1.5rem; line-height: 1; color: var(--ink); padding: 0.25rem 0.4rem;
 }
 .nav-links { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; order: 2; margin-left: auto; }
+.sell-link {
+  color: var(--red) !important; font-weight: 700;
+}
 .nav-links a { color: var(--ink); font-weight: 500; font-size: 0.95rem; }
 .nav-links a.active { color: var(--navy); font-weight: 600; }
 .cart-pill,

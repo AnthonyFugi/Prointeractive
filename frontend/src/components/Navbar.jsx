@@ -35,6 +35,9 @@ export default function Navbar() {
         <nav className={`nav-links ${open ? 'open' : ''}`}>
           <NavLink to="/" onClick={close}>Shop</NavLink>
           <NavLink to="/businesses" onClick={close}>Businesses</NavLink>
+          {(!user || user.role === 'customer') && (
+            <NavLink to="/sell" onClick={close} className="sell-link">Sell</NavLink>
+          )}
           {user && <NavLink to="/inbox" onClick={close}>Inbox</NavLink>}
           {user && user.role === 'customer' && (
             <NavLink to="/orders" onClick={close}>

@@ -20,6 +20,7 @@ import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 import Terms from './pages/Terms.jsx';
 import Privacy from './pages/Privacy.jsx';
+import Sell from './pages/Sell.jsx';
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/sell" element={<Sell />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/businesses" element={<Businesses />} />
           <Route path="/businesses/:id" element={<BusinessPage />} />

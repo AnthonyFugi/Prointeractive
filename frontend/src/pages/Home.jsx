@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import ProductCard from '../components/ProductCard.jsx';
 
@@ -48,6 +49,9 @@ export default function Home() {
           />
           <button className="btn btn-navy" type="submit">Search</button>
         </form>
+        <p className="muted" style={{ marginTop: '0.75rem' }}>
+          Own a business? <Link to="/sell" style={{ fontWeight: 600 }}>Start selling on Prointeractive →</Link>
+        </p>
         <div className="chips" role="group" aria-label="Filter by category">
           {categories.map((c) => (
             <button

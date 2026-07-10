@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'customer' });
+  const [params] = useSearchParams();
+  const [form, setForm] = useState({
+    name: '', email: '', password: '',
+    role: params.get('role') === 'business' ? 'business' : 'customer',
+  });
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -28,7 +32,7 @@ export default function Register() {
   return (
     <div className="container" style={{ maxWidth: 440 }}>
       <div className="panel" style={{ marginTop: '3rem' }}>
-        <h1>Create account</h1>
+        <h1>{form.role === 'business' ? 'Create your business account' : 'Create account'}</h1>
         <form onSubmit={submit}>
           <label htmlFor="name">Name</label>
           <input id="name" required value={form.name} onChange={set('name')} />
