@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 
 export default function Home() {
+  const { user } = useAuth();
   const [categories, setCategories] = useState([]);
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
@@ -49,9 +51,15 @@ export default function Home() {
           />
           <button className="btn btn-navy" type="submit">Search</button>
         </form>
-        <p className="muted" style={{ marginTop: '0.75rem' }}>
-          Own a business? <Link to="/sell" style={{ fontWeight: 600 }}>Start selling on Prointeractive →</Link>
-        </p>
+        {user?.role === 'business' ? (
+          <p className="muted" style={{ marginTop: '0.75rem' }}>
+            Manage your storefront in the <Link to="/dashboard" style={{ fontWeight: 600 }}>Dashboard →</Link>
+          </p>
+        ) : user?.role === 'admin' ? null : (
+          <p className="muted" style={{ marginTop: '0.75rem' }}>
+            Own a business? <Link to="/sell" style={{ fontWeight: 600 }}>Start selling on Prointeractive →</Link>
+          </p>
+        )}
         <div className="chips" role="group" aria-label="Filter by category">
           {categories.map((c) => (
             <button

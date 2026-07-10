@@ -22,14 +22,17 @@ export default function Dashboard() {
   const [checked, setChecked] = useState(false);
   const [error, setError] = useState('');
 
-  // Business profile form
-  const [bizForm, setBizForm] = useState({ name: '', description: '', category: 'retail', location: '', phone: '' });
+  // Store profile
+  const [bizForm, setBizForm] = useState({ name: '', description: '', category: 'retail', location: '', phone: '', logoUrl: '' });
+  const [bizMsg, setBizMsg] = useState('');
+  const [savingBiz, setSavingBiz] = useState(false);
 
   // Products
   const [products, setProducts] = useState([]);
   const [productCategories, setProductCategories] = useState([]);
   const [productForm, setProductForm] = useState(EMPTY_PRODUCT);
   const [editingId, setEditingId] = useState(null);
+  const [showProductForm, setShowProductForm] = useState(false);
 
   // Orders
   const [orders, setOrders] = useState([]);
@@ -37,14 +40,15 @@ export default function Dashboard() {
   // Payouts (Flutterwave subaccount)
   const [payout, setPayout] = useState(null);
   const [banks, setBanks] = useState([]);
+  const [banksState, setBanksState] = useState('loading'); // loading | ready | error
+  const [banksError, setBanksError] = useState('');
   const [payoutForm, setPayoutForm] = useState({ accountBank: '', accountNumber: '' });
   const [payoutMsg, setPayoutMsg] = useState('');
   const [savingPayout, setSavingPayout] = useState(false);
 
-  // Image upload (S3 presigned)
+  // S3 presigned upload — generic, used by product photos and the store logo
   const [uploading, setUploading] = useState(false);
-
-  const uploadImage = async (e) => {
+  const uploadTo = (onDone) => async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
@@ -54,13 +58,9 @@ export default function Dashboard() {
         method: 'POST',
         body: { contentType: file.type, fileSize: file.size },
       });
-      const put = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
+      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
       if (!put.ok) throw new Error('Upload to storage failed');
-      setProductForm((f) => ({ ...f, images: [...(f.images || []), publicUrl] }));
+      onDone(publicUrl);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -68,49 +68,52 @@ export default function Dashboard() {
     }
   };
 
-  const removeImage = (url) =>
-    setProductForm((f) => ({ ...f, images: f.images.filter((u) => u !== url) }));
-
   const findMyBusiness = async () => {
-    // The API lists businesses publicly; identify mine via /auth/me + owner match
     const me = await api('/auth/me');
     const list = await api('/businesses?limit=100');
     return list.businesses.find((b) => b.owner === me.user.id || b.owner?._id === me.user.id) || null;
   };
 
+  const loadBanks = () => {
+    setBanksState('loading'); setBanksError('');
+    api('/payments/banks?country=ZM')
+      .then((d) => {
+        setBanks(d.banks || []);
+        setBanksState('ready');
+        if (!d.banks || d.banks.length === 0) {
+          setBanksState('error');
+          setBanksError('Flutterwave returned an empty list for Zambia. This usually resolves once live API keys are configured.');
+        }
+      })
+      .catch((e) => { setBanksState('error'); setBanksError(e.message); });
+  };
+
   useEffect(() => {
     findMyBusiness()
-      .then((b) => setBusiness(b))
+      .then((b) => {
+        setBusiness(b);
+        if (b) {
+          setBizForm({
+            name: b.name || '', description: b.description || '', category: b.category || 'retail',
+            location: b.location || '', phone: b.phone || '', logoUrl: b.logoUrl || '',
+          });
+        }
+      })
       .catch((e) => setError(e.message))
       .finally(() => setChecked(true));
   }, []);
 
   useEffect(() => {
     if (!business) return;
-    api(`/products?business=${business._id}&limit=100`).then((d) => setProducts(d.products)).catch(() => {});
+    api(`/products?business=${business._id}&limit=100`).then((d) => {
+      setProducts(d.products);
+      if (d.products.length === 0) setShowProductForm(true); // first product: no extra click
+    }).catch(() => {});
     api('/orders/business').then((d) => setOrders(d.orders)).catch(() => {});
     api('/businesses/payout').then((d) => setPayout(d.payout)).catch(() => {});
-    api('/payments/banks?country=ZM').then((d) => setBanks(d.banks)).catch(() => {});
     api('/categories').then((d) => setProductCategories(d.categories)).catch(() => {});
+    loadBanks();
   }, [business]);
-
-  const savePayout = async (e) => {
-    e.preventDefault();
-    setSavingPayout(true); setPayoutMsg('');
-    try {
-      const bank = banks.find((b) => String(b.code) === String(payoutForm.accountBank));
-      const d = await api('/businesses/payout', {
-        method: 'PUT',
-        body: { ...payoutForm, bankName: bank?.name || '' },
-      });
-      setPayout(d.payout);
-      setPayoutMsg('connected');
-    } catch (err) {
-      setPayoutMsg(err.message);
-    } finally {
-      setSavingPayout(false);
-    }
-  };
 
   const createBusiness = async (e) => {
     e.preventDefault();
@@ -120,6 +123,20 @@ export default function Dashboard() {
       setBusiness(d.business);
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const saveBusiness = async (e) => {
+    e.preventDefault();
+    setSavingBiz(true); setBizMsg('');
+    try {
+      const d = await api(`/businesses/${business._id}`, { method: 'PATCH', body: bizForm });
+      setBusiness(d.business);
+      setBizMsg('saved');
+    } catch (err) {
+      setBizMsg(err.message);
+    } finally {
+      setSavingBiz(false);
     }
   };
 
@@ -138,6 +155,7 @@ export default function Dashboard() {
       }
       setProductForm(EMPTY_PRODUCT);
       setEditingId(null);
+      setShowProductForm(false);
       const d = await api(`/products?business=${business._id}&limit=100`);
       setProducts(d.products);
     } catch (err) {
@@ -148,6 +166,7 @@ export default function Dashboard() {
   const editProduct = (p) => {
     setEditingId(p._id);
     setProductForm({ name: p.name, description: p.description, price: p.price, category: p.category, stock: p.stock, images: p.images || [] });
+    setShowProductForm(true);
     window.scrollTo({ top: 0 });
   };
 
@@ -167,6 +186,24 @@ export default function Dashboard() {
       setOrders(d.orders);
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const savePayout = async (e) => {
+    e.preventDefault();
+    setSavingPayout(true); setPayoutMsg('');
+    try {
+      const bank = banks.find((b) => String(b.code) === String(payoutForm.accountBank));
+      const d = await api('/businesses/payout', {
+        method: 'PUT',
+        body: { ...payoutForm, bankName: bank?.name || '' },
+      });
+      setPayout(d.payout);
+      setPayoutMsg('connected');
+    } catch (err) {
+      setPayoutMsg(err.message);
+    } finally {
+      setSavingPayout(false);
     }
   };
 
@@ -197,13 +234,39 @@ export default function Dashboard() {
     );
   }
 
+  const setupSteps = [
+    { done: !!(business.description && business.logoUrl), label: 'Complete your store profile (description + logo)', go: 'store' },
+    { done: products.length > 0, label: 'Add your first product', go: 'products' },
+    { done: !!payout?.connected, label: 'Connect your payout account', go: 'payouts' },
+  ];
+  const incomplete = setupSteps.filter((s) => !s.done);
+
   return (
     <div className="container">
       <div className="row spread" style={{ marginTop: '2rem' }}>
-        <h1>{business.name}</h1>
+        <div className="row" style={{ alignItems: 'center' }}>
+          {business.logoUrl && (
+            <img src={business.logoUrl} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--line)' }} />
+          )}
+          <h1 style={{ margin: 0 }}>{business.name}</h1>
+        </div>
         <Link to={`/businesses/${business._id}`} className="btn btn-ghost btn-sm">View public storefront</Link>
       </div>
       {error && <p className="error-text">{error}</p>}
+
+      {incomplete.length > 0 && (
+        <div className="panel" style={{ background: 'var(--navy-soft)' }}>
+          <strong>Finish setting up your store</strong>
+          {setupSteps.map((s) => (
+            <p key={s.label} style={{ margin: '0.35rem 0' }}>
+              {s.done ? '✅' : '⬜'}{' '}
+              {s.done ? <span className="muted">{s.label}</span> : (
+                <button className="link-btn" onClick={() => setTab(s.go)}>{s.label} →</button>
+              )}
+            </p>
+          ))}
+        </div>
+      )}
 
       <div className="tabs" role="tablist">
         <button className={`tab ${tab === 'products' ? 'on' : ''}`} onClick={() => setTab('products')}>
@@ -212,73 +275,143 @@ export default function Dashboard() {
         <button className={`tab ${tab === 'orders' ? 'on' : ''}`} onClick={() => setTab('orders')}>
           Orders ({orders.length})
         </button>
+        <button className={`tab ${tab === 'store' ? 'on' : ''}`} onClick={() => setTab('store')}>
+          Store settings
+        </button>
         <button className={`tab ${tab === 'payouts' ? 'on' : ''}`} onClick={() => setTab('payouts')}>
           Payouts {payout?.connected ? '✓' : ''}
         </button>
       </div>
 
+      {tab === 'store' && (
+        <form className="panel" style={{ maxWidth: 560 }} onSubmit={saveBusiness}>
+          <h3>Store profile</h3>
+          <p className="muted">This is what customers see in the directory and on your storefront page.</p>
+          <label htmlFor="sname">Business name</label>
+          <input id="sname" required value={bizForm.name} onChange={(e) => setBizForm({ ...bizForm, name: e.target.value })} />
+          <label htmlFor="sdesc">Description</label>
+          <textarea id="sdesc" rows={4} placeholder="What do you sell? What makes your business worth buying from?"
+            value={bizForm.description} onChange={(e) => setBizForm({ ...bizForm, description: e.target.value })} />
+          <div className="row">
+            <div style={{ flex: 1 }}>
+              <label htmlFor="scat">Category</label>
+              <select id="scat" value={bizForm.category} onChange={(e) => setBizForm({ ...bizForm, category: e.target.value })}>
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="sloc">Location</label>
+              <input id="sloc" placeholder="e.g. Kamwala, Lusaka" value={bizForm.location}
+                onChange={(e) => setBizForm({ ...bizForm, location: e.target.value })} />
+            </div>
+          </div>
+          <label htmlFor="sphone">Phone</label>
+          <input id="sphone" value={bizForm.phone} onChange={(e) => setBizForm({ ...bizForm, phone: e.target.value })} />
+          <label htmlFor="slogo">Logo (square works best — JPEG, PNG, or WebP, up to 5 MB)</label>
+          <div className="row" style={{ alignItems: 'center' }}>
+            {bizForm.logoUrl && (
+              <img src={bizForm.logoUrl} alt="Store logo" style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover', border: '1px solid var(--line)' }} />
+            )}
+            <input id="slogo" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading}
+              onChange={uploadTo((url) => setBizForm((f) => ({ ...f, logoUrl: url })))} />
+          </div>
+          {uploading && <p className="muted">Uploading…</p>}
+          {bizMsg === 'saved'
+            ? <p className="success-text">Store profile saved.</p>
+            : bizMsg && <p className="error-text">{bizMsg}</p>}
+          <button className="btn btn-red" style={{ marginTop: '1rem' }} disabled={savingBiz || uploading}>
+            {savingBiz ? 'Saving…' : 'Save profile'}
+          </button>
+        </form>
+      )}
+
       {tab === 'products' && (
         <>
-          <form className="panel" onSubmit={saveProduct}>
-            <h3>{editingId ? 'Edit product' : 'Add a product'}</h3>
-            <label htmlFor="pname">Name</label>
-            <input id="pname" required value={productForm.name}
-              onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} />
-            <label htmlFor="pdesc">Description</label>
-            <textarea id="pdesc" value={productForm.description}
-              onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
-            <div className="row">
-              <div style={{ flex: 1 }}>
-                <label htmlFor="pprice">Price (ZMW)</label>
-                <input id="pprice" type="number" min="0" step="0.01" required value={productForm.price}
-                  onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label htmlFor="pstock">Stock</label>
-                <input id="pstock" type="number" min="0" required value={productForm.stock}
-                  onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label htmlFor="pcat">Category</label>
-                <select id="pcat" required value={productForm.category}
-                  onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}>
-                  {productCategories.map((c) => (
-                    <option key={c._id} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <label htmlFor="pimg">Photos — at least one required (JPEG, PNG, or WebP, up to 5 MB)</label>
-            <input id="pimg" type="file" accept="image/jpeg,image/png,image/webp" onChange={uploadImage} disabled={uploading} />
-            {uploading && <p className="muted">Uploading…</p>}
-            {productForm.images?.length > 0 && (
-              <div className="row" style={{ marginTop: '0.5rem' }}>
-                {productForm.images.map((url) => (
-                  <span key={url} className="row" style={{ gap: '0.25rem' }}>
-                    <img src={url} alt="Product" style={{ height: 56, width: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} />
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => removeImage(url)} aria-label="Remove photo">×</button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="row" style={{ marginTop: '1rem' }}>
-              <button className="btn btn-red">{editingId ? 'Save changes' : 'Add product'}</button>
-              {editingId && (
-                <button type="button" className="btn btn-ghost"
-                  onClick={() => { setEditingId(null); setProductForm(EMPTY_PRODUCT); }}>
-                  Cancel edit
+          {!showProductForm && (
+            <button className="btn btn-red" style={{ marginBottom: '1rem' }}
+              onClick={() => { setEditingId(null); setProductForm(EMPTY_PRODUCT); setShowProductForm(true); }}>
+              + Add product
+            </button>
+          )}
+
+          {showProductForm && (
+            <form className="panel" onSubmit={saveProduct}>
+              <div className="row spread">
+                <h3 style={{ margin: 0 }}>{editingId ? 'Edit product' : 'Add a product'}</h3>
+                <button type="button" className="btn btn-ghost btn-sm"
+                  onClick={() => { setShowProductForm(false); setEditingId(null); setProductForm(EMPTY_PRODUCT); }}>
+                  Close
                 </button>
+              </div>
+              <label htmlFor="pname">Name</label>
+              <input id="pname" required value={productForm.name}
+                onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} />
+              <label htmlFor="pdesc">Description</label>
+              <textarea id="pdesc" value={productForm.description}
+                onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
+              <div className="row">
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="pprice">Price (ZMW)</label>
+                  <input id="pprice" type="number" min="0" step="0.01" required value={productForm.price}
+                    onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="pstock">Stock</label>
+                  <input id="pstock" type="number" min="0" required value={productForm.stock}
+                    onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="pcat">Category</label>
+                  <select id="pcat" required value={productForm.category}
+                    onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}>
+                    {productCategories.map((c) => (
+                      <option key={c._id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <label htmlFor="pimg">Photos — at least one required (JPEG, PNG, or WebP, up to 5 MB)</label>
+              <input id="pimg" type="file" accept="image/jpeg,image/png,image/webp"
+                onChange={uploadTo((url) => setProductForm((f) => ({ ...f, images: [...(f.images || []), url] })))}
+                disabled={uploading} />
+              {uploading && <p className="muted">Uploading…</p>}
+              {productForm.images?.length > 0 && (
+                <div className="row" style={{ marginTop: '0.5rem' }}>
+                  {productForm.images.map((url) => (
+                    <span key={url} className="row" style={{ gap: '0.25rem' }}>
+                      <img src={url} alt="Product" style={{ height: 56, width: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} />
+                      <button type="button" className="btn btn-ghost btn-sm"
+                        onClick={() => setProductForm((f) => ({ ...f, images: f.images.filter((u) => u !== url) }))}
+                        aria-label="Remove photo">×</button>
+                    </span>
+                  ))}
+                </div>
               )}
+              <div className="row" style={{ marginTop: '1rem' }}>
+                <button className="btn btn-red" disabled={uploading}>{editingId ? 'Save changes' : 'Add product'}</button>
+              </div>
+            </form>
+          )}
+
+          {products.length === 0 && !showProductForm && (
+            <div className="empty">
+              <h3>No products yet</h3>
+              <p>Add your first product — it appears in the shop the moment you save it.</p>
             </div>
-          </form>
+          )}
 
           {products.map((p) => (
             <div className="panel row spread" key={p._id}>
-              <div>
-                <strong>{p.name}</strong>
-                <p className="muted" style={{ margin: 0 }}>
-                  {money(p.price, p.currency)} · {p.stock} in stock · {p.category}
-                </p>
+              <div className="row" style={{ alignItems: 'center' }}>
+                {p.images?.[0] && (
+                  <img src={p.images[0]} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--line)' }} />
+                )}
+                <div>
+                  <strong>{p.name}</strong>
+                  <p className="muted" style={{ margin: 0 }}>
+                    {money(p.price, p.currency)} · {p.stock} in stock · {p.category}
+                  </p>
+                </div>
               </div>
               <div className="row">
                 <button className="btn btn-ghost btn-sm" onClick={() => editProduct(p)}>Edit</button>
@@ -300,16 +433,34 @@ export default function Dashboard() {
             </p>
           ) : (
             <p className="muted">
-              Connect your bank account to receive your share of every online payment
+              Connect your account to receive your share of every online payment
               automatically{payout ? ` (platform fee: ${payout.platformFeePercent}%)` : ''}.
               Until then, online payments are held by the platform and settled to you manually.
             </p>
           )}
+
+          {banksState === 'loading' && <p className="muted">Loading bank list from Flutterwave…</p>}
+          {banksState === 'error' && (
+            <div className="panel" style={{ background: 'var(--red-soft)' }}>
+              <p style={{ margin: 0 }}>
+                <strong>Couldn't load the bank list.</strong> {banksError}
+              </p>
+              <p className="muted" style={{ margin: '0.5rem 0 0' }}>
+                The list (banks and mobile money operators for Zambia) comes directly from Flutterwave —
+                nothing needs to be added by the platform admin. It populates fully once live
+                Flutterwave keys are active.
+              </p>
+              <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: '0.5rem' }} onClick={loadBanks}>
+                Try again
+              </button>
+            </div>
+          )}
+
           <form onSubmit={savePayout}>
-            <label htmlFor="bank">Bank</label>
-            <select id="bank" required value={payoutForm.accountBank}
+            <label htmlFor="bank">Bank / mobile money operator</label>
+            <select id="bank" required value={payoutForm.accountBank} disabled={banksState !== 'ready'}
               onChange={(e) => setPayoutForm({ ...payoutForm, accountBank: e.target.value })}>
-              <option value="">Select your bank…</option>
+              <option value="">{banksState === 'ready' ? 'Select…' : 'Unavailable — see above'}</option>
               {banks.map((b) => <option key={b.id || b.code} value={b.code}>{b.name}</option>)}
             </select>
             <label htmlFor="acct">Account number</label>
@@ -318,7 +469,7 @@ export default function Dashboard() {
             {payoutMsg === 'connected'
               ? <p className="success-text">Settlement account connected.</p>
               : payoutMsg && <p className="error-text">{payoutMsg}</p>}
-            <button className="btn btn-red" style={{ marginTop: '1rem' }} disabled={savingPayout}>
+            <button className="btn btn-red" style={{ marginTop: '1rem' }} disabled={savingPayout || banksState !== 'ready'}>
               {savingPayout ? 'Connecting…' : payout?.connected ? 'Update account' : 'Connect account'}
             </button>
           </form>
