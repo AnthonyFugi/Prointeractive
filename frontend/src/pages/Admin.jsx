@@ -9,6 +9,7 @@ export default function Admin() {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [reports, setReports] = useState([]);
+  const [bizFilter, setBizFilter] = useState('all');
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [error, setError] = useState('');
@@ -116,7 +117,32 @@ export default function Admin() {
         ) : <p className="muted">Loading…</p>
       )}
 
+      {tab === 'businesses' && (
+        <div className="row" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
+          {[
+            ['all', `All (${businesses.length})`],
+            ['verified', `Verified (${businesses.filter((b) => b.verified).length})`],
+            ['unverified', `Unverified (${businesses.filter((b) => !b.verified).length})`],
+            ['requested', `⚑ Requested (${businesses.filter((b) => b.verificationRequested && !b.verified).length})`],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              className={`btn btn-sm ${bizFilter === key ? 'btn-navy' : 'btn-ghost'}`}
+              onClick={() => setBizFilter(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {tab === 'businesses' && [...businesses]
+        .filter((b) => {
+          if (bizFilter === 'verified') return b.verified;
+          if (bizFilter === 'unverified') return !b.verified;
+          if (bizFilter === 'requested') return b.verificationRequested && !b.verified;
+          return true;
+        })
         .sort((a, b) => (b.verificationRequested && !b.verified ? 1 : 0) - (a.verificationRequested && !a.verified ? 1 : 0))
         .map((b) => (
         <div className="panel row spread" key={b._id}>
