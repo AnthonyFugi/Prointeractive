@@ -35,7 +35,7 @@ export default function Home() {
     <div className="container">
       <section className="hero">
         <div className="eyebrow">Making business interaction, Easy!</div>
-        <h1>What you need, from businesses you know.</h1>
+        <h1>What you need, from businesses you trust.</h1>
         <p className="lede">
           Every product connects you straight to the business behind it.
           Ask a question, agree the details, and pay your way — mobile money,
