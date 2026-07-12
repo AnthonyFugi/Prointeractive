@@ -22,7 +22,7 @@ export const createBusiness = async (req, res, next) => {
 export const listBusinesses = async (req, res, next) => {
   try {
     const { category, q, page = 1, limit = 12 } = req.query;
-    const filter = {};
+    const filter = { closed: { $ne: true } };
     if (category) filter.category = category;
     if (q) filter.name = { $regex: q, $options: 'i' };
 
@@ -40,7 +40,11 @@ export const listBusinesses = async (req, res, next) => {
 // GET /api/businesses/:id  (public)
 export const getBusiness = async (req, res, next) => {
   try {
-    const business = await Business.findById(req.params.id).populate('owner', 'name');
+    const { id } = req.params;
+    const business = (
+      /^[0-9a-fA-F]{24}$/.test(id) ? await Business.findById(id) : null
+    ) || await Business.findOne({ slug: id.toLowerCase() });
+    if (business) await business.populate('owner', 'name');
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
     res.json({ success: true, business });
   } catch (err) {

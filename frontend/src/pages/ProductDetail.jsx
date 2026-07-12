@@ -87,7 +87,7 @@ export default function ProductDetail() {
             <h1>{product.name}</h1>
             <p className="muted">
               Sold by{' '}
-              <Link to={`/businesses/${product.business._id}`}>{product.business.name}</Link>
+              <Link to={`/businesses/${product.business.slug || product.business._id}`}>{product.business.name}</Link>
               {product.business.verified && <VerifiedBadge size={15} />}
               {product.business.location && ` · ${product.business.location}`}
             </p>

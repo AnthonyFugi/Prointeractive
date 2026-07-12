@@ -256,7 +256,18 @@ export default function Dashboard() {
           )}
           <h1 style={{ margin: 0 }}>{business.name}</h1>
         </div>
-        <Link to={`/businesses/${business._id}`} className="btn btn-ghost btn-sm">View public storefront</Link>
+        <div className="row">
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              const url = `${window.location.origin}/businesses/${business.slug || business._id}`;
+              navigator.clipboard.writeText(url).then(() => alert(`Link copied:\n${url}`));
+            }}
+          >
+            Copy store link
+          </button>
+          <Link to={`/businesses/${business.slug || business._id}`} className="btn btn-ghost btn-sm">View public storefront</Link>
+        </div>
       </div>
       {error && <p className="error-text">{error}</p>}
 

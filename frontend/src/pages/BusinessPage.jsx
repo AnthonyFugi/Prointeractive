@@ -66,6 +66,16 @@ export default function BusinessPage() {
                 </button>
               );
             })()}
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                const url = `${window.location.origin}/businesses/${business.slug || business._id}`;
+                if (navigator.share) navigator.share({ title: business.name, url }).catch(() => {});
+                else navigator.clipboard.writeText(url).then(() => alert('Link copied'));
+              }}
+            >
+              Share
+            </button>
             <button className="btn btn-navy" onClick={() => setAsking(!asking)}>Message this business</button>
           </div>
         </div>

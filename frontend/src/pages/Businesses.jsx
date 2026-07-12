@@ -81,7 +81,7 @@ export default function Businesses() {
         <>
           <div className="grid">
             {data.businesses.map((b) => (
-              <Link key={b._id} to={`/businesses/${b._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Link key={b._id} to={`/businesses/${b.slug || b._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <article className="card">
                   <div className="card-img">
                     {b.logoUrl ? <img src={b.logoUrl} alt={b.name} /> : b.name[0].toUpperCase()}

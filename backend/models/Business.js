@@ -23,6 +23,7 @@ const businessSchema = new mongoose.Schema(
     phone: { type: String, default: '' },
     logoUrl: { type: String, default: '' },
     verified: { type: Boolean, default: false },
+    closed: { type: Boolean, default: false },
     ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0 },
     payout: {
@@ -36,12 +37,20 @@ const businessSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-businessSchema.pre('save', function (next) {
-  if (this.isModified('name')) {
-    this.slug =
-      this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') +
-      '-' + this._id.toString().slice(-4);
+const slugify = (name) =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+// Slug is generated once and never changes — printed links stay valid even if
+// the business renames. Suffix added only when the clean slug is taken.
+businessSchema.pre('save', async function (next) {
+  if (this.slug) return next();
+  const base = slugify(this.name) || 'business';
+  let candidate = base;
+  let n = 2;
+  while (await this.constructor.exists({ slug: candidate, _id: { $ne: this._id } })) {
+    candidate = `${base}-${n++}`;
   }
+  this.slug = candidate;
   next();
 });
 
