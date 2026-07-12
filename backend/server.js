@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
@@ -69,6 +70,51 @@ app.use('/api/reports', reportRoutes);
 if (isProd) {
   const dist = path.resolve(__dirname, '../frontend/dist');
   app.use(express.static(dist, { maxAge: '1d', index: false }));
+
+  // Rich link previews: inject per-business Open Graph tags server-side so
+  // crawlers (WhatsApp, Facebook, X) see the business, not the bare domain.
+  const escapeHtml = (str = '') =>
+    String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  let indexHtmlCache = null;
+  const loadIndexHtml = () => {
+    if (!indexHtmlCache) indexHtmlCache = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
+    return indexHtmlCache;
+  };
+
+  app.get('/businesses/:idOrSlug', async (req, res) => {
+    const html = loadIndexHtml();
+    try {
+      const { default: Business } = await import('./models/Business.js');
+      const { idOrSlug } = req.params;
+      const business = (
+        /^[0-9a-fA-F]{24}$/.test(idOrSlug) ? await Business.findById(idOrSlug) : null
+      ) || await Business.findOne({ slug: idOrSlug.toLowerCase() });
+
+      if (!business || business.closed) return res.send(html);
+
+      const base = process.env.APP_URL || 'https://proint.web.app';
+      const title = escapeHtml(`${business.name} — on Prointeractive`);
+      const desc = escapeHtml(
+        business.description ||
+        `${business.name} sells on Prointeractive. Browse products, ask questions, and pay your way.`
+      );
+      const url = `${base}/businesses/${business.slug || business._id}`;
+      const image = business.logoUrl || `${base}/og-image.png`;
+
+      const out = html
+        .replace(/<title>[\s\S]*?<\/title>/, `<title>${title}</title>`)
+        .replace(/(property="og:title" content=")[^"]*(")/, `$1${title}$2`)
+        .replace(/(property="og:description" content=")[^"]*(")/, `$1${desc}$2`)
+        .replace(/(property="og:url" content=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(property="og:image" content=")[^"]*(")/, `$1${escapeHtml(image)}$2`)
+        .replace(/(name="twitter:image" content=")[^"]*(")/, `$1${escapeHtml(image)}$2`)
+        .replace(/(name="description" content=")[^"]*(")/, `$1${desc}$2`);
+      res.send(out);
+    } catch (_err) {
+      res.send(html);
+    }
+  });
+
   app.get(/^(?!\/api\/).*/, (req, res) => res.sendFile(path.join(dist, 'index.html')));
 }
 
