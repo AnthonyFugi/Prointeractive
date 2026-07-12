@@ -33,8 +33,9 @@ export default function Privacy() {
 
         <h3>Retention &amp; your rights</h3>
         <p>
-          We keep transaction records as required for legal and accounting purposes. You may request access
-          to or deletion of your personal data by contacting us; some records must be retained by law.
+          We keep transaction records as required for legal and accounting purposes. You can delete your
+          account and personal data at any time on our <a href="/account-deletion">account deletion page</a>{' '}
+          or from the mobile app (Account → Delete account); some records must be retained by law.
         </p>
 
         <h3>Contact</h3>
