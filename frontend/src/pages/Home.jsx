@@ -10,6 +10,7 @@ export default function Home() {
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ products: [], pages: 1, total: 0 });
   const [error, setError] = useState('');
@@ -34,7 +35,7 @@ export default function Home() {
     <div className="container">
       <section className="hero">
         <div className="eyebrow">Making business interaction, Easy!</div>
-        <h1>Get what you need, from businesses you trust.</h1>
+        <h1>What you need, from businesses you know.</h1>
         <p className="lede">
           Every product connects you straight to the business behind it.
           Ask a question, agree the details, and pay your way — mobile money,

@@ -30,11 +30,16 @@ export const createProduct = async (req, res, next) => {
 // GET /api/products  (public: search, filter, paginate, sort)
 export const listProducts = async (req, res, next) => {
   try {
-    const { q, category, business, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
+    const { q, category, business, favorites, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
     const filter = { isActive: true };
     if (q) filter.$text = { $search: q };
     if (category) filter.category = category.toLowerCase();
     if (business) filter.business = business;
+    if (favorites === 'true') {
+      // Signed-in users only; anonymous requests get an empty result, not an error
+      const ids = req.user?.favoriteBusinesses || [];
+      filter.business = { $in: ids };
+    }
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);

@@ -17,6 +17,7 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [error, setError] = useState('');
   const [added, setAdded] = useState(false);
+  const [reported, setReported] = useState(false);
 
   // Ask-the-seller form
   const [asking, setAsking] = useState(false);
@@ -109,6 +110,30 @@ export default function ProductDetail() {
             </button>
           </div>
         </div>
+
+        <p style={{ marginTop: '0.75rem' }}>
+          {reported ? (
+            <span className="muted">Thanks — this listing has been reported for review.</span>
+          ) : (
+            <button
+              className="link-btn muted"
+              style={{ fontSize: '0.85rem', textDecoration: 'underline' }}
+              onClick={async () => {
+                const reason = window.prompt('Why are you reporting this listing? (spam / scam / counterfeit / inappropriate)');
+                if (reason === null) return;
+                try {
+                  await api('/reports', {
+                    method: 'POST',
+                    body: { targetType: 'product', targetId: product._id, reason: 'other', details: reason.slice(0, 500) },
+                  });
+                  setReported(true);
+                } catch (e) { alert(e.message); }
+              }}
+            >
+              Report this listing
+            </button>
+          )}
+        </p>
 
         {added && (
           <div className="toast" role="status">

@@ -99,6 +99,27 @@ export default function ProductScreen({ route, navigation }) {
         </View>
       ) : null}
 
+      <Text
+        style={{ color: colors.muted, fontSize: 13, textDecorationLine: 'underline', marginTop: spacing.m }}
+        onPress={() => {
+          const send = async (reason) => {
+            try {
+              await api('/reports', { method: 'POST', body: { targetType: 'product', targetId: product._id, reason } });
+              Alert.alert('Report sent', 'Thanks — this listing will be reviewed.');
+            } catch (e) { Alert.alert('Failed', e.message); }
+          };
+          Alert.alert('Report this listing', 'Why are you reporting it?', [
+            { text: 'Spam', onPress: () => send('spam') },
+            { text: 'Scam or fraud', onPress: () => send('scam_or_fraud') },
+            { text: 'Counterfeit', onPress: () => send('counterfeit') },
+            { text: 'Inappropriate', onPress: () => send('inappropriate_content') },
+            { text: 'Cancel', style: 'cancel' },
+          ]);
+        }}
+      >
+        Report this listing
+      </Text>
+
       <Text style={{ fontWeight: '800', fontSize: 17, marginTop: spacing.xl }}>Reviews</Text>
       {reviews.length === 0 ? (
         <Text style={{ color: colors.muted, marginTop: 4 }}>No reviews yet.</Text>

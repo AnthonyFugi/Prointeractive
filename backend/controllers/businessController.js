@@ -138,3 +138,30 @@ export const getPayoutAccount = async (req, res, next) => {
     next(err);
   }
 };
+
+
+// POST /api/businesses/:id/favorite  { favorited: true|false }
+export const setFavorite = async (req, res, next) => {
+  try {
+    const business = await Business.findById(req.params.id);
+    if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+    const favorited = !!req.body.favorited;
+    const op = favorited
+      ? { $addToSet: { favoriteBusinesses: business._id } }
+      : { $pull: { favoriteBusinesses: business._id } };
+    await req.user.updateOne(op);
+    res.json({ success: true, favorited });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/businesses/favorites/mine
+export const listMyFavorites = async (req, res, next) => {
+  try {
+    const me = await req.user.populate('favoriteBusinesses', 'name category location verified logoUrl');
+    res.json({ success: true, businesses: me.favoriteBusinesses || [] });
+  } catch (err) {
+    next(err);
+  }
+};

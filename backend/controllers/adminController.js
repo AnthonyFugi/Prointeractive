@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Business from '../models/Business.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
+import Report from '../models/Report.js';
 import Inquiry from '../models/Inquiry.js';
 
 // GET /api/admin/stats
@@ -108,6 +109,53 @@ export const setFeeStatus = async (req, res, next) => {
     order.platformFee.status = status;
     await order.save();
     res.json({ success: true, order });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// GET /api/admin/reports
+export const listReports = async (req, res, next) => {
+  try {
+    const reports = await Report.find(req.query.status ? { status: req.query.status } : {})
+      .populate('reporter', 'name email')
+      .sort('-createdAt')
+      .limit(200);
+    res.json({ success: true, reports });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/admin/reports/:id  { status: 'resolved' | 'open' }
+export const setReportStatus = async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    if (!['resolved', 'open'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+    const report = await Report.findByIdAndUpdate(
+      req.params.id,
+      { status, resolvedAt: status === 'resolved' ? new Date() : undefined },
+      { new: true }
+    ).populate('reporter', 'name email');
+    if (!report) return res.status(404).json({ success: false, message: 'Report not found' });
+    res.json({ success: true, report });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/admin/users/:id/suspend  { suspended: true|false }
+export const setSuspended = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.role === 'admin') return res.status(400).json({ success: false, message: 'Cannot suspend an admin' });
+    user.suspended = !!req.body.suspended;
+    await user.save();
+    res.json({ success: true, user: { id: user._id, suspended: user.suspended } });
   } catch (err) {
     next(err);
   }

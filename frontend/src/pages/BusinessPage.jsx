@@ -49,7 +49,25 @@ export default function BusinessPage() {
             <p className="muted">{business.category}{business.location && ` · ${business.location}`}{business.phone && ` · ${business.phone}`}</p>
             {business.description && <p>{business.description}</p>}
           </div>
-          <button className="btn btn-navy" onClick={() => setAsking(!asking)}>Message this business</button>
+          <div className="row">
+            {user && user.role === 'customer' && (() => {
+              const fav = user.favoriteBusinesses?.some((b) => String(b) === String(business._id));
+              return (
+                <button
+                  className={`btn btn-sm ${fav ? 'btn-red' : 'btn-ghost'}`}
+                  onClick={async () => {
+                    try {
+                      await api(`/businesses/${business._id}/favorite`, { method: 'POST', body: { favorited: !fav } });
+                      if (refresh) await refresh();
+                    } catch (e) { alert(e.message); }
+                  }}
+                >
+                  {fav ? '♥ Favorited' : '♡ Add to favorites'}
+                </button>
+              );
+            })()}
+            <button className="btn btn-navy" onClick={() => setAsking(!asking)}>Message this business</button>
+          </div>
         </div>
         {asking && (
           <form onSubmit={send} style={{ maxWidth: 480, marginTop: '1rem' }}>

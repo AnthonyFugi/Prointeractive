@@ -52,8 +52,11 @@ export const login = async (req, res, next) => {
 
 // GET /api/auth/me
 export const getMe = async (req, res) => {
-  const { _id, name, email, role, avatarUrl, createdAt } = req.user;
-  res.json({ success: true, user: { id: _id, name, email, role, avatarUrl, createdAt } });
+  const { _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses = [] } = req.user;
+  res.json({
+    success: true,
+    user: { id: _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses },
+  });
 };
 
 
@@ -142,6 +145,22 @@ export const savePushToken = async (req, res, next) => {
     req.user.expoPushToken = token;
     await req.user.save();
     res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// POST /api/auth/block  { userId, blocked: true|false }
+export const setBlocked = async (req, res, next) => {
+  try {
+    const { userId, blocked } = req.body;
+    if (!userId || String(userId) === String(req.user._id)) {
+      return res.status(400).json({ success: false, message: 'Invalid user' });
+    }
+    const op = blocked ? { $addToSet: { blockedUsers: userId } } : { $pull: { blockedUsers: userId } };
+    await req.user.updateOne(op);
+    res.json({ success: true, blocked: !!blocked });
   } catch (err) {
     next(err);
   }

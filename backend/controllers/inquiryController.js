@@ -1,5 +1,6 @@
 import Inquiry from '../models/Inquiry.js';
 import Business from '../models/Business.js';
+import User from '../models/User.js';
 import { inquiryEmail } from '../utils/email.js';
 
 // POST /api/inquiries  (customer starts a thread with a business)
@@ -9,8 +10,15 @@ export const createInquiry = async (req, res, next) => {
     if (!subject || !message) {
       return res.status(400).json({ success: false, message: 'Subject and message required' });
     }
-    const business = await Business.findById(businessId).populate('owner', 'email');
+    const business = await Business.findById(businessId).populate('owner', 'email blockedUsers');
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+
+    // Block enforcement (both directions)
+    const ownerBlockedMe = business.owner?.blockedUsers?.some((u) => u.equals(req.user._id));
+    const iBlockedOwner = req.user.blockedUsers?.some((u) => u.equals(business.owner?._id));
+    if (ownerBlockedMe || iBlockedOwner) {
+      return res.status(403).json({ success: false, message: 'Messaging is not available with this business' });
+    }
 
     const inquiry = await Inquiry.create({
       customer: req.user._id,
@@ -75,6 +83,16 @@ export const getInquiry = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+const participantsBlocked = async (inquiry, senderId) => {
+  const business = await Business.findById(inquiry.business).populate('owner', 'blockedUsers');
+  const ownerId = business?.owner?._id;
+  if (!ownerId) return false;
+  const customer = await User.findById(inquiry.customer).select('blockedUsers');
+  const ownerBlockedCustomer = business.owner.blockedUsers?.some((u) => u.equals(inquiry.customer));
+  const customerBlockedOwner = customer?.blockedUsers?.some((u) => u.equals(ownerId));
+  return ownerBlockedCustomer || customerBlockedOwner;
 };
 
 // POST /api/inquiries/:id/messages  (reply in a thread)

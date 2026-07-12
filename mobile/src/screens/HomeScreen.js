@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { useCallback } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import { colors, spacing } from '../theme';
 
 export default function HomeScreen({ navigation }) {
+  const { user } = useAuth();
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -22,10 +25,11 @@ export default function HomeScreen({ navigation }) {
     const params = new URLSearchParams({ limit: 20 });
     if (query) params.set('q', query);
     if (category) params.set('category', category);
+    if (favoritesOnly) params.set('favorites', 'true');
     return api(`/products?${params}`)
       .then((d) => setProducts(d.products))
       .catch(() => {});
-  }, [query, category]);
+  }, [query, category, favoritesOnly]);
 
   useEffect(() => {
     setLoading(true);
@@ -69,6 +73,18 @@ export default function HomeScreen({ navigation }) {
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
+          ListHeaderComponent={user && user.role === 'customer' && user.favoriteBusinesses && user.favoriteBusinesses.length > 0 ? (
+            <Pressable
+              onPress={() => setFavoritesOnly(!favoritesOnly)}
+              style={{
+                borderRadius: 999, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 5, marginRight: 8,
+                backgroundColor: favoritesOnly ? colors.red : colors.surface,
+                borderColor: colors.red,
+              }}
+            >
+              <Text style={{ color: favoritesOnly ? '#fff' : colors.red, fontSize: 13, fontWeight: '700' }}>♥ My stores</Text>
+            </Pressable>
+          ) : null}
           data={categories}
           keyExtractor={(c) => c._id}
           style={{ marginTop: spacing.m }}

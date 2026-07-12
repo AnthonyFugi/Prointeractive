@@ -8,6 +8,7 @@ export default function Admin() {
   const [businesses, setBusinesses] = useState([]);
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [reports, setReports] = useState([]);
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [error, setError] = useState('');
@@ -49,6 +50,20 @@ export default function Admin() {
     } catch (e) {
       setError(e.message);
     }
+  };
+
+  const resolveReport = async (r, status) => {
+    try {
+      const d = await api(`/admin/reports/${r._id}`, { method: 'PATCH', body: { status } });
+      setReports((prev) => prev.map((x) => (x._id === r._id ? d.report : x)));
+    } catch (e) { setError(e.message); }
+  };
+
+  const toggleSuspend = async (u) => {
+    try {
+      await api(`/admin/users/${u._id}/suspend`, { method: 'PATCH', body: { suspended: !u.suspended } });
+      setUsers((prev) => prev.map((x) => (x._id === u._id ? { ...x, suspended: !u.suspended } : x)));
+    } catch (e) { setError(e.message); }
   };
 
   const toggleVerify = async (b) => {
@@ -156,6 +171,27 @@ export default function Admin() {
           </span>
         </div>
       ))}
+
+      {tab === 'reports' && (reports.length === 0 ? (
+        <div className="empty"><h3>No reports</h3><p>User reports of content or behaviour will appear here.</p></div>
+      ) : reports.map((r) => (
+        <div className="panel row spread" key={r._id}>
+          <div>
+            <strong style={{ textTransform: 'capitalize' }}>{r.targetType}</strong>
+            <span className="muted"> · {r.reason.replace(/_/g, ' ')} · by {r.reporter?.name || 'Unknown'} · {new Date(r.createdAt).toLocaleString()}</span>
+            {r.details && <p className="muted" style={{ margin: '0.25rem 0 0' }}>"{r.details}"</p>}
+            <p className="muted" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem' }}>target id: {r.targetId}</p>
+          </div>
+          <div className="row">
+            {r.status === 'open' ? (
+              <button className="btn btn-navy btn-sm" onClick={() => resolveReport(r, 'resolved')}>Mark resolved</button>
+            ) : (
+              <button className="btn btn-ghost btn-sm" onClick={() => resolveReport(r, 'open')}>Reopen</button>
+            )}
+            <span className={`badge ${r.status === 'open' ? 'pending' : 'delivered'}`}>{r.status}</span>
+          </div>
+        </div>
+      )))}
 
       {tab === 'orders' && orders.map((o) => (
         <div className="panel row spread" key={o._id}>

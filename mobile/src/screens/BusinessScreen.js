@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Text, View } from 'react-native';
+import { useState as useS } from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { colors, spacing } from '../theme';
 
 export default function BusinessScreen({ route, navigation }) {
   const { id } = route.params;
+  const { user } = useAuth();
   const [business, setBusiness] = useState(null);
   const [products, setProducts] = useState([]);
+  const [fav, setFav] = useState(null); // null until user known
 
   useEffect(() => {
     api(`/businesses/${id}`).then((d) => setBusiness(d.business)).catch(() => {});
@@ -16,6 +20,19 @@ export default function BusinessScreen({ route, navigation }) {
   }, [id]);
 
   if (!business) return <ActivityIndicator color={colors.navy} style={{ marginTop: 60 }} />;
+
+  const isFav = fav !== null
+    ? fav
+    : !!(user && user.favoriteBusinesses && user.favoriteBusinesses.some((b) => String(b) === String(id)));
+
+  const toggleFav = async () => {
+    try {
+      await api(`/businesses/${id}/favorite`, { method: 'POST', body: { favorited: !isFav } });
+      setFav(!isFav);
+    } catch (e) {
+      Alert.alert('Failed', e.message);
+    }
+  };
 
   return (
     <FlatList
@@ -34,6 +51,19 @@ export default function BusinessScreen({ route, navigation }) {
             {business.category}{business.location ? ` · ${business.location}` : ''}
           </Text>
           {business.description ? <Text style={{ marginTop: spacing.s }}>{business.description}</Text> : null}
+          {user && user.role === 'customer' ? (
+            <Pressable onPress={toggleFav}
+              style={{
+                alignSelf: 'flex-start', marginTop: spacing.m, borderRadius: 999,
+                paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5,
+                backgroundColor: isFav ? colors.red : 'transparent',
+                borderColor: colors.red,
+              }}>
+              <Text style={{ color: isFav ? '#fff' : colors.red, fontWeight: '700', fontSize: 13 }}>
+                {isFav ? '♥ Favorited' : '♡ Add to favorites'}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       }
       ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.muted, marginTop: 20 }}>No products listed yet</Text>}

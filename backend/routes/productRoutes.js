@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { createProduct, listProducts, getProduct, updateProduct, deleteProduct } from '../controllers/productController.js';
 import { createReview, listReviews } from '../controllers/reviewController.js';
-import { protect, restrictTo } from '../middleware/auth.js';
+import { protect, restrictTo, maybeAuth } from '../middleware/auth.js';
 
 const router = Router();
 router.route('/')
-  .get(listProducts)
+  .get(maybeAuth, listProducts)
   .post(protect, restrictTo('business', 'admin'), createProduct);
 router.route('/:id')
   .get(getProduct)
