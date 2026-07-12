@@ -3,12 +3,13 @@ import Business from '../models/Business.js';
 import Product from '../models/Product.js';
 import Order from '../models/Order.js';
 import Report from '../models/Report.js';
+import { sendEmail } from '../utils/email.js';
 import Inquiry from '../models/Inquiry.js';
 
 // GET /api/admin/stats
 export const stats = async (req, res, next) => {
   try {
-    const [users, businesses, unverified, products, orders, openInquiries, revenue, feesDue] = await Promise.all([
+    const [users, businesses, unverified, products, orders, openInquiries, revenue, feesDue, verificationRequests] = await Promise.all([
       User.countDocuments(),
       Business.countDocuments(),
       Business.countDocuments({ verified: false }),
@@ -23,6 +24,7 @@ export const stats = async (req, res, next) => {
         { $match: { 'platformFee.status': 'due' } },
         { $group: { _id: null, total: { $sum: '$platformFee.amount' } } },
       ]),
+      Business.countDocuments({ verificationRequested: true, verified: false }),
     ]);
     res.json({
       success: true,
@@ -30,6 +32,7 @@ export const stats = async (req, res, next) => {
         users, businesses, unverified, products, orders, openInquiries,
         revenue: revenue[0]?.total || 0,
         feesDue: feesDue[0]?.total || 0,
+        verificationRequests,
       },
     });
   } catch (err) {
@@ -67,12 +70,21 @@ export const listBusinesses = async (req, res, next) => {
 // PATCH /api/admin/businesses/:id/verify  { verified: true|false }
 export const setVerified = async (req, res, next) => {
   try {
+    const verified = !!req.body.verified;
     const business = await Business.findByIdAndUpdate(
       req.params.id,
-      { verified: !!req.body.verified },
+      { verified, verificationRequested: false },
       { new: true }
     ).populate('owner', 'name email');
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+    if (verified && business.owner?.email) {
+      sendEmail({
+        to: business.owner.email,
+        subject: `${business.name} is now verified ✓`,
+        heading: 'You earned the blue tick',
+        body: `${business.name} is now a verified business on Prointeractive. The verification badge shows on your storefront and every product — customers use it as a signal they can buy with confidence.`,
+      });
+    }
     res.json({ success: true, business });
   } catch (err) {
     next(err);

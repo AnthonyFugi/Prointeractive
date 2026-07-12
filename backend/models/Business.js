@@ -23,6 +23,8 @@ const businessSchema = new mongoose.Schema(
     phone: { type: String, default: '' },
     logoUrl: { type: String, default: '' },
     verified: { type: Boolean, default: false },
+    verificationRequested: { type: Boolean, default: false },
+    verificationRequestedAt: Date,
     closed: { type: Boolean, default: false },
     ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0 },

@@ -1,4 +1,5 @@
 import Business from '../models/Business.js';
+import { sendEmail } from '../utils/email.js';
 import { isConfigured, createSubaccount, updateSubaccount, platformFeeFraction } from '../utils/flutterwave.js';
 
 // POST /api/businesses  (business role)
@@ -165,6 +166,36 @@ export const listMyFavorites = async (req, res, next) => {
   try {
     const me = await req.user.populate('favoriteBusinesses', 'name category location verified logoUrl');
     res.json({ success: true, businesses: me.favoriteBusinesses || [] });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// POST /api/businesses/:id/request-verification  (owner)
+export const requestVerification = async (req, res, next) => {
+  try {
+    const business = await Business.findById(req.params.id);
+    if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+    if (!business.owner.equals(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'Not your business' });
+    }
+    if (business.verified) {
+      return res.status(400).json({ success: false, message: 'This business is already verified' });
+    }
+    business.verificationRequested = true;
+    business.verificationRequestedAt = new Date();
+    await business.save();
+
+    // Nudge the admin (fire-and-forget)
+    sendEmail({
+      to: process.env.ADMIN_EMAIL || 'admin@fugipay.com',
+      subject: `Verification request: ${business.name}`,
+      heading: 'A business wants the blue tick',
+      body: `${business.name} (${business.category}${business.location ? ', ' + business.location : ''}) has requested verification. Review it in the admin panel → Businesses.`,
+    });
+
+    res.json({ success: true, business });
   } catch (err) {
     next(err);
   }

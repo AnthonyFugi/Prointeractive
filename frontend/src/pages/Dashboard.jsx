@@ -25,6 +25,7 @@ export default function Dashboard() {
   // Store profile
   const [bizForm, setBizForm] = useState({ name: '', description: '', category: 'retail', location: '', phone: '', logoUrl: '' });
   const [bizMsg, setBizMsg] = useState('');
+  const [requestingVerify, setRequestingVerify] = useState(false);
   const [savingBiz, setSavingBiz] = useState(false);
 
   // Products
@@ -270,6 +271,38 @@ export default function Dashboard() {
         </div>
       </div>
       {error && <p className="error-text">{error}</p>}
+
+      {!business.verified && (
+        <div className="panel" style={{ borderColor: 'var(--verify-blue, #1D9BF0)' }}>
+          <div className="row spread" style={{ alignItems: 'center' }}>
+            <div>
+              <strong>Get verified</strong>
+              <p className="muted" style={{ margin: '0.25rem 0 0' }}>
+                Verified businesses get the blue tick on their storefront and every product —
+                customers use it as a signal they can buy with confidence.
+              </p>
+            </div>
+            {business.verificationRequested ? (
+              <span className="badge pending">requested — under review</span>
+            ) : (
+              <button
+                className="btn btn-navy btn-sm"
+                disabled={requestingVerify}
+                onClick={async () => {
+                  setRequestingVerify(true);
+                  try {
+                    const d = await api(`/businesses/${business._id}/request-verification`, { method: 'POST' });
+                    setBusiness(d.business);
+                  } catch (e) { setError(e.message); }
+                  finally { setRequestingVerify(false); }
+                }}
+              >
+                {requestingVerify ? 'Sending…' : 'Request verification'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {incomplete.length > 0 && (
         <div className="panel" style={{ background: 'var(--navy-soft)' }}>

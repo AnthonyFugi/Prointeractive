@@ -82,6 +82,7 @@ export default function Admin() {
     ['Users', stats.users],
     ['Businesses', stats.businesses],
     ['Awaiting verification', stats.unverified],
+    ['Verification requests', stats.verificationRequests],
     ['Active products', stats.products],
     ['Orders', stats.orders],
     ['Open inquiries', stats.openInquiries],
@@ -115,13 +116,17 @@ export default function Admin() {
         ) : <p className="muted">Loading…</p>
       )}
 
-      {tab === 'businesses' && businesses.map((b) => (
+      {tab === 'businesses' && [...businesses]
+        .sort((a, b) => (b.verificationRequested && !b.verified ? 1 : 0) - (a.verificationRequested && !a.verified ? 1 : 0))
+        .map((b) => (
         <div className="panel row spread" key={b._id}>
           <div>
             <strong>{b.name}</strong>{' '}
             {b.verified
               ? <span className="badge verified">verified</span>
-              : <span className="badge pending">unverified</span>}
+              : b.verificationRequested
+                ? <span className="badge pending">⚑ verification requested</span>
+                : <span className="badge pending">unverified</span>}
             <p className="muted" style={{ margin: 0 }}>
               {b.category}{b.location && ` · ${b.location}`} · Owner: {b.owner?.name} ({b.owner?.email})
             </p>

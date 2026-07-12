@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createBusiness, listBusinesses, getBusiness, updateBusiness, setPayoutAccount, getPayoutAccount, setFavorite, listMyFavorites } from '../controllers/businessController.js';
+import { createBusiness, listBusinesses, getBusiness, updateBusiness, setPayoutAccount, getPayoutAccount, setFavorite, listMyFavorites, requestVerification } from '../controllers/businessController.js';
 import { protect, restrictTo } from '../middleware/auth.js';
 
 const router = Router();
@@ -11,6 +11,7 @@ router.route('/payout')
   .put(protect, restrictTo('business', 'admin'), setPayoutAccount);
 router.get('/favorites/mine', protect, listMyFavorites);
 router.post('/:id/favorite', protect, setFavorite);
+router.post('/:id/request-verification', protect, requestVerification);
 router.route('/:id')
   .get(getBusiness)
   .patch(protect, updateBusiness);
