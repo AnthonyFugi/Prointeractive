@@ -172,3 +172,25 @@ export const setSuspended = async (req, res, next) => {
     next(err);
   }
 };
+
+
+// PATCH /api/admin/businesses/:id/closed  { closed: true|false }
+export const setBusinessClosed = async (req, res, next) => {
+  try {
+    const closed = !!req.body.closed;
+    const business = await Business.findByIdAndUpdate(
+      req.params.id,
+      { closed },
+      { new: true }
+    ).populate('owner', 'name email');
+    if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+
+    if (closed) {
+      // Pull the storefront's products from the shop as well
+      await Product.updateMany({ business: business._id }, { isActive: false });
+    }
+    res.json({ success: true, business });
+  } catch (err) {
+    next(err);
+  }
+};

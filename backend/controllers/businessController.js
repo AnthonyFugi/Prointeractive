@@ -45,6 +45,9 @@ export const getBusiness = async (req, res, next) => {
     const business = (
       /^[0-9a-fA-F]{24}$/.test(id) ? await Business.findById(id) : null
     ) || await Business.findOne({ slug: id.toLowerCase() });
+    if (business && business.closed) {
+      return res.status(404).json({ success: false, message: 'This storefront is closed' });
+    }
     if (business) await business.populate('owner', 'name');
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
     res.json({ success: true, business });

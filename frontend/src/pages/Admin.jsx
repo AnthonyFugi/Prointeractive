@@ -60,6 +60,15 @@ export default function Admin() {
     } catch (e) { setError(e.message); }
   };
 
+  const toggleClosed = async (b) => {
+    const closing = !b.closed;
+    if (closing && !window.confirm(`Close ${b.name}? Its storefront will be hidden and all its products removed from the shop.`)) return;
+    try {
+      const d = await api(`/admin/businesses/${b._id}/closed`, { method: 'PATCH', body: { closed: closing } });
+      setBusinesses((prev) => prev.map((x) => (x._id === b._id ? d.business : x)));
+    } catch (e) { setError(e.message); }
+  };
+
   const toggleSuspend = async (u) => {
     try {
       await api(`/admin/users/${u._id}/suspend`, { method: 'PATCH', body: { suspended: !u.suspended } });
@@ -124,6 +133,7 @@ export default function Admin() {
             ['verified', `Verified (${businesses.filter((b) => b.verified).length})`],
             ['unverified', `Unverified (${businesses.filter((b) => !b.verified).length})`],
             ['requested', `⚑ Requested (${businesses.filter((b) => b.verificationRequested && !b.verified).length})`],
+            ['closed', `Closed (${businesses.filter((b) => b.closed).length})`],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -141,6 +151,7 @@ export default function Admin() {
           if (bizFilter === 'verified') return b.verified;
           if (bizFilter === 'unverified') return !b.verified;
           if (bizFilter === 'requested') return b.verificationRequested && !b.verified;
+          if (bizFilter === 'closed') return b.closed;
           return true;
         })
         .sort((a, b) => (b.verificationRequested && !b.verified ? 1 : 0) - (a.verificationRequested && !a.verified ? 1 : 0))
@@ -157,12 +168,21 @@ export default function Admin() {
               {b.category}{b.location && ` · ${b.location}`} · Owner: {b.owner?.name} ({b.owner?.email})
             </p>
           </div>
-          <button
-            className={`btn btn-sm ${b.verified ? 'btn-ghost' : 'btn-navy'}`}
-            onClick={() => toggleVerify(b)}
-          >
-            {b.verified ? 'Remove verification' : 'Verify business'}
-          </button>
+          <div className="row">
+            {b.closed && <span className="badge cancelled">closed</span>}
+            <button
+              className={`btn btn-sm ${b.verified ? 'btn-ghost' : 'btn-navy'}`}
+              onClick={() => toggleVerify(b)}
+            >
+              {b.verified ? 'Remove verification' : 'Verify business'}
+            </button>
+            <button
+              className={`btn btn-sm ${b.closed ? 'btn-navy' : 'btn-danger'}`}
+              onClick={() => toggleClosed(b)}
+            >
+              {b.closed ? 'Reopen' : 'Close'}
+            </button>
+          </div>
         </div>
       ))}
 
