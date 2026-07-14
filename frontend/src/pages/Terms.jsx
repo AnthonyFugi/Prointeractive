@@ -42,11 +42,14 @@ export default function Terms() {
           and we may mediate and, where appropriate, instruct our payment partner to process a refund.
         </p>
 
-        <h3>6. Acceptable use</h3>
+        <h3>6. Acceptable use &amp; product standards</h3>
         <p>
           You may not use Prointeractive to sell illegal, counterfeit, or prohibited items, to mislead other
-          users, or to send abusive communications. We may suspend or remove accounts, listings, or content
-          that violate these terms or applicable law.
+          users, or to send abusive communications. All listings must comply with our{' '}
+          <a href="/product-standards">Product Standards Policy</a>: only new, first-owner, authentic,
+          premium-grade goods may be listed — no pre-owned, second-hand, refurbished, imitation, or
+          lower-tier products. We may suspend or remove accounts, listings, or content that violate
+          these terms, the Product Standards Policy, or applicable law.
         </p>
 
         <h3>7. Liability</h3>

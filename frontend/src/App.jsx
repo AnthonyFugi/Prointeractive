@@ -21,6 +21,8 @@ import ResetPassword from './pages/ResetPassword.jsx';
 import Terms from './pages/Terms.jsx';
 import Privacy from './pages/Privacy.jsx';
 import Sell from './pages/Sell.jsx';
+import AccountDeletion from './pages/AccountDeletion.jsx';
+import ProductStandards from './pages/ProductStandards.jsx';
 
 export default function App() {
   return (
@@ -37,6 +39,8 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/sell" element={<Sell />} />
+          <Route path="/account-deletion" element={<AccountDeletion />} />
+          <Route path="/product-standards" element={<ProductStandards />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/businesses" element={<Businesses />} />
           <Route path="/businesses/:id" element={<BusinessPage />} />
@@ -59,6 +63,7 @@ export default function App() {
           <a href="mailto:hello@fugipay.com">hello@fugipay.com</a>
           <Link to="/terms">Terms</Link>
           <Link to="/privacy">Privacy</Link>
+          <Link to="/product-standards">Standards</Link>
         </div>
       </footer>
     </>

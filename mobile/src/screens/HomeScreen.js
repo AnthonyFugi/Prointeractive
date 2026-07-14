@@ -51,6 +51,10 @@ export default function HomeScreen({ navigation }) {
         <Text style={{ fontSize: 22, fontWeight: '800', color: colors.ink, marginTop: 4 }}>
           Buy from businesses you can actually talk to.
         </Text>
+        <Text style={{ marginTop: spacing.s, fontSize: 12 }}>
+          <Text style={{ color: colors.navy, fontWeight: '800' }}>✓ New &amp; authentic only</Text>
+          <Text style={{ color: colors.muted }}> — every listing is first-owner, first-grade.</Text>
+        </Text>
         <View style={{ flexDirection: 'row', marginTop: spacing.m, gap: 8 }}>
           <TextInput
             value={q}

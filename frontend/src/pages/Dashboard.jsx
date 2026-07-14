@@ -442,7 +442,11 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
-              <div className="row" style={{ marginTop: '1rem' }}>
+              <p className="muted" style={{ fontSize: '0.85rem', marginTop: '0.75rem' }}>
+                By listing, you confirm this product is new, first-owner, and authentic, per our{' '}
+                <a href="/product-standards" target="_blank" rel="noreferrer">Product Standards</a>.
+              </p>
+              <div className="row" style={{ marginTop: '0.5rem' }}>
                 <button className="btn btn-red" disabled={uploading}>{editingId ? 'Save changes' : 'Add product'}</button>
               </div>
             </form>

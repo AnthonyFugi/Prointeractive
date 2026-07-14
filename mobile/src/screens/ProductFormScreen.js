@@ -133,6 +133,10 @@ export default function ProductFormScreen({ route, navigation }) {
       </View>
       <Err k="images" />
 
+      <Text style={{ color: colors.muted, fontSize: 12, marginTop: spacing.l }}>
+        By listing, you confirm this product is new, first-owner, and authentic, per our Product
+        Standards (proint.web.app/product-standards).
+      </Text>
       <Pressable onPress={save} disabled={saving || uploading}
         style={{ backgroundColor: colors.red, opacity: saving || uploading ? 0.6 : 1, borderRadius: 10, padding: 14, marginTop: spacing.xl }}>
         <Text style={{ color: '#fff', fontWeight: '800', textAlign: 'center' }}>

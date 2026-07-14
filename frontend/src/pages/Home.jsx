@@ -53,6 +53,13 @@ export default function Home() {
           />
           <button className="btn btn-navy" type="submit">Search</button>
         </form>
+        <p style={{ marginTop: '0.9rem', fontSize: '0.9rem' }}>
+          <span style={{ color: 'var(--navy)', fontWeight: 700 }}>✓ New &amp; authentic only</span>
+          <span className="muted">
+            {' '}— every listing must be first-owner, first-grade.{' '}
+            <Link to="/product-standards">Our Product Standards</Link>
+          </span>
+        </p>
         {user?.role === 'business' ? (
           <p className="muted" style={{ marginTop: '0.75rem' }}>
             Manage your storefront in the <Link to="/dashboard" style={{ fontWeight: 600 }}>Dashboard →</Link>
