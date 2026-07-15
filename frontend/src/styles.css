@@ -73,7 +73,8 @@ a:hover { text-decoration: underline; }
   position: relative; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden;
   background: var(--navy-soft); border: 1px solid var(--line);
 }
-.carousel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.carousel { background: #fff; }
+.carousel img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .carousel-arrow {
   position: absolute; top: 50%; transform: translateY(-50%);
   background: rgba(0, 0, 0, 0.45); color: #fff; border: none; cursor: pointer;
@@ -189,7 +190,10 @@ textarea { resize: vertical; min-height: 90px; }
   font-family: var(--font-display); font-weight: 600; color: var(--navy);
   font-size: 2rem; overflow: hidden;
 }
-.card-img img { width: 100%; height: 100%; object-fit: cover; }
+.card-img { background: #fff; }
+.card-img img { width: 100%; height: 100%; object-fit: contain; }
+.card-img.logo { background: #fff; padding: 13%; }
+.card-img.logo img { object-fit: contain; }
 .card-body { padding: 0.9rem; display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
 .card-body .name { font-weight: 600; }
 .card-body .biz { font-size: 0.85rem; color: var(--muted); }

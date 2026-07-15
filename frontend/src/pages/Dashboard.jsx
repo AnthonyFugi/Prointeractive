@@ -289,7 +289,7 @@ export default function Dashboard() {
       <div className="row spread" style={{ marginTop: '2rem' }}>
         <div className="row" style={{ alignItems: 'center' }}>
           {business.logoUrl && (
-            <img src={business.logoUrl} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--line)' }} />
+            <img src={business.logoUrl} alt="" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'contain', background: '#fff', padding: 3, border: '1px solid var(--line)' }} />
           )}
           <h1 style={{ margin: 0 }}>{business.name}</h1>
         </div>
@@ -397,7 +397,7 @@ export default function Dashboard() {
           <label htmlFor="slogo">Logo (square works best — JPEG, PNG, or WebP, up to 5 MB)</label>
           <div className="row" style={{ alignItems: 'center' }}>
             {bizForm.logoUrl && (
-              <img src={bizForm.logoUrl} alt="Store logo" style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'cover', border: '1px solid var(--line)' }} />
+              <img src={bizForm.logoUrl} alt="Store logo" style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'contain', background: '#fff', padding: 4, border: '1px solid var(--line)' }} />
             )}
             <input id="slogo" type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading}
               onChange={uploadTo((url) => setBizForm((f) => ({ ...f, logoUrl: url })))} />

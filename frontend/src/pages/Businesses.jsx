@@ -83,7 +83,7 @@ export default function Businesses() {
             {data.businesses.map((b) => (
               <Link key={b._id} to={`/businesses/${b.slug || b._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <article className="card">
-                  <div className="card-img">
+                  <div className={`card-img${b.logoUrl ? ' logo' : ''}`}>
                     {b.logoUrl ? <img src={b.logoUrl} alt={b.name} /> : b.name[0].toUpperCase()}
                   </div>
                   <div className="card-body">
