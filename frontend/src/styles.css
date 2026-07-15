@@ -69,6 +69,35 @@ a:hover { text-decoration: underline; }
 .sell-link {
   color: var(--red) !important; font-weight: 700;
 }
+.carousel {
+  position: relative; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden;
+  background: var(--navy-soft); border: 1px solid var(--line);
+}
+.carousel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.carousel-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.45); color: #fff; border: none; cursor: pointer;
+  width: 36px; height: 36px; border-radius: 50%; font-size: 1.4rem; line-height: 1;
+}
+.carousel-arrow.left { left: 8px; }
+.carousel-arrow.right { right: 8px; }
+.carousel-arrow:hover { background: rgba(0, 0, 0, 0.65); }
+.carousel-dots {
+  position: absolute; bottom: 8px; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 6px;
+}
+.carousel-dots span {
+  width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.55);
+}
+.carousel-dots span.on { background: #fff; }
+.carousel-thumbs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.carousel-thumbs button {
+  padding: 0; border: 2px solid transparent; border-radius: 8px; overflow: hidden;
+  cursor: pointer; background: none; width: 56px; height: 56px;
+}
+.carousel-thumbs button.on { border-color: var(--navy); }
+.carousel-thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 .toast {
   position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
   background: var(--ink); color: #fff; padding: 0.7rem 1.1rem; border-radius: 10px;

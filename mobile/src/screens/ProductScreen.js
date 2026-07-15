@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +14,7 @@ export default function ProductScreen({ route, navigation }) {
   const [reviews, setReviews] = useState([]);
   const [message, setMessage] = useState('');
   const [asking, setAsking] = useState(false);
+  const [imgIdx, setImgIdx] = useState(0);
 
   useEffect(() => {
     api(`/products/${id}`).then((d) => {
@@ -47,11 +48,42 @@ export default function ProductScreen({ route, navigation }) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ padding: spacing.l }}>
-      <View style={{ aspectRatio: 4 / 3, backgroundColor: colors.navySoft, borderRadius: 10, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-        {product.images && product.images[0] ? (
-          <Image source={{ uri: product.images[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+      <View style={{ aspectRatio: 4 / 3, backgroundColor: colors.navySoft, borderRadius: 10, overflow: 'hidden' }}>
+        {product.images && product.images.length > 0 ? (
+          <>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                const w = Dimensions.get('window').width - spacing.l * 2;
+                setImgIdx(Math.round(e.nativeEvent.contentOffset.x / w));
+              }}
+            >
+              {product.images.map((url) => (
+                <Image
+                  key={url}
+                  source={{ uri: url }}
+                  style={{ width: Dimensions.get('window').width - spacing.l * 2, height: '100%' }}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+            {product.images.length > 1 ? (
+              <View style={{ position: 'absolute', bottom: 8, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+                {product.images.map((_, i) => (
+                  <View key={i} style={{
+                    width: 8, height: 8, borderRadius: 4,
+                    backgroundColor: i === imgIdx ? '#fff' : 'rgba(255,255,255,0.55)',
+                  }} />
+                ))}
+              </View>
+            ) : null}
+          </>
         ) : (
-          <Text style={{ fontSize: 40, fontWeight: '800', color: colors.navy }}>{product.name[0]}</Text>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 40, fontWeight: '800', color: colors.navy }}>{product.name[0]}</Text>
+          </View>
         )}
       </View>
       <Text style={{ fontSize: 22, fontWeight: '800', marginTop: spacing.l, color: colors.ink }}>{product.name}</Text>

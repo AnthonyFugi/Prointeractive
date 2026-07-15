@@ -14,7 +14,7 @@ const nextStatusFor = (o) =>
 const nextLabelFor = (o) =>
   o.paymentMethod === 'cash_on_delivery' ? COD_LABEL[o.status] : ONLINE_LABEL[o.status];
 
-const EMPTY_PRODUCT = { name: '', description: '', price: '', category: 'general', stock: '', images: [] };
+const EMPTY_PRODUCT = { name: '', description: '', price: '', category: '', stock: '', images: [] };
 
 export default function Dashboard() {
   const [tab, setTab] = useState('products');
@@ -35,6 +35,27 @@ export default function Dashboard() {
   const [editingId, setEditingId] = useState(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [savingProduct, setSavingProduct] = useState(false);
+
+  const clearFieldError = (field) =>
+    setFieldErrors((fe) => {
+      if (!fe[field]) return fe;
+      const next = { ...fe };
+      delete next[field];
+      return next;
+    });
+
+  const updateProductField = (field, value) => {
+    setProductForm((f) => ({ ...f, [field]: value }));
+    clearFieldError(field);
+  };
+  const [creatingBiz, setCreatingBiz] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const flashToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  };
 
   // Orders
   const [orders, setOrders] = useState([]);
@@ -120,11 +141,14 @@ export default function Dashboard() {
   const createBusiness = async (e) => {
     e.preventDefault();
     setError('');
+    setCreatingBiz(true);
     try {
       const d = await api('/businesses', { method: 'POST', body: bizForm });
       setBusiness(d.business);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setCreatingBiz(false);
     }
   };
 
@@ -154,25 +178,35 @@ export default function Dashboard() {
     setFieldErrors(fe);
     if (Object.keys(fe).length > 0) return;
     const body = { ...productForm, price: Number(productForm.price), stock: Number(productForm.stock) };
+    setSavingProduct(true);
     try {
       if (editingId) {
         await api(`/products/${editingId}`, { method: 'PATCH', body });
       } else {
         await api('/products', { method: 'POST', body });
       }
+      const wasEditing = !!editingId;
       setProductForm(EMPTY_PRODUCT);
       setEditingId(null);
       setShowProductForm(false);
       const d = await api(`/products?business=${business._id}&limit=100`);
       setProducts(d.products);
+      flashToast(wasEditing ? '✓ Product updated' : '✓ Product added — it\u2019s live in the shop');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSavingProduct(false);
     }
   };
 
   const editProduct = (p) => {
     setEditingId(p._id);
-    setProductForm({ name: p.name, description: p.description, price: p.price, category: p.category, stock: p.stock, images: p.images || [] });
+    const categoryStillExists = productCategories.some((c) => c.name === p.category);
+    setProductForm({
+      name: p.name, description: p.description, price: p.price,
+      category: categoryStillExists ? p.category : '',
+      stock: p.stock, images: p.images || [],
+    });
     setShowProductForm(true);
     window.scrollTo({ top: 0 });
   };
@@ -235,7 +269,9 @@ export default function Dashboard() {
           <label htmlFor="bphone">Phone</label>
           <input id="bphone" value={bizForm.phone} onChange={(e) => setBizForm({ ...bizForm, phone: e.target.value })} />
           {error && <p className="error-text">{error}</p>}
-          <button className="btn btn-red" style={{ width: '100%', marginTop: '1rem' }}>Create storefront</button>
+          <button className="btn btn-red" style={{ width: '100%', marginTop: '1rem' }} disabled={creatingBiz}>
+            {creatingBiz ? 'Creating your storefront…' : 'Create storefront'}
+          </button>
         </form>
       </div>
     );
@@ -271,6 +307,7 @@ export default function Dashboard() {
         </div>
       </div>
       {error && <p className="error-text">{error}</p>}
+      {toast && <div className="toast" role="status">{toast}</div>}
 
       {!business.verified && (
         <div className="panel" style={{ borderColor: 'var(--verify-blue, #1D9BF0)' }}>
@@ -395,7 +432,7 @@ export default function Dashboard() {
               </div>
               <label htmlFor="pname">Name</label>
               <input id="pname" required value={productForm.name}
-                onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} />
+                onChange={(e) => updateProductField('name', e.target.value)} />
               {fieldErrors.name && <p className="field-error">{fieldErrors.name}</p>}
               <label htmlFor="pdesc">Description</label>
               <textarea id="pdesc" value={productForm.description}
@@ -404,19 +441,20 @@ export default function Dashboard() {
                 <div style={{ flex: 1 }}>
                   <label htmlFor="pprice">Price (ZMW)</label>
                   <input id="pprice" type="number" min="0" step="0.01" required value={productForm.price}
-                    onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} />
+                    onChange={(e) => updateProductField('price', e.target.value)} />
                   {fieldErrors.price && <p className="field-error">{fieldErrors.price}</p>}
                 </div>
                 <div style={{ flex: 1 }}>
                   <label htmlFor="pstock">Stock</label>
                   <input id="pstock" type="number" min="0" required value={productForm.stock}
-                    onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })} />
+                    onChange={(e) => updateProductField('stock', e.target.value)} />
                   {fieldErrors.stock && <p className="field-error">{fieldErrors.stock}</p>}
                 </div>
                 <div style={{ flex: 1 }}>
                   <label htmlFor="pcat">Category</label>
                   <select id="pcat" required value={productForm.category}
-                    onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}>
+                    onChange={(e) => updateProductField('category', e.target.value)}>
+                    <option value="">Select a category…</option>
                     {productCategories.map((c) => (
                       <option key={c._id} value={c.name}>{c.name}</option>
                     ))}
@@ -426,7 +464,10 @@ export default function Dashboard() {
               </div>
               <label htmlFor="pimg">Photos — at least one required (JPEG, PNG, or WebP, up to 5 MB)</label>
               <input id="pimg" type="file" accept="image/jpeg,image/png,image/webp"
-                onChange={uploadTo((url) => setProductForm((f) => ({ ...f, images: [...(f.images || []), url] })))}
+                onChange={uploadTo((url) => {
+                  setProductForm((f) => ({ ...f, images: [...(f.images || []), url] }));
+                  clearFieldError('images');
+                })}
                 disabled={uploading} />
               {uploading && <p className="muted">Uploading…</p>}
               {fieldErrors.images && <p className="field-error">{fieldErrors.images}</p>}
@@ -447,7 +488,9 @@ export default function Dashboard() {
                 <a href="/product-standards" target="_blank" rel="noreferrer">Product Standards</a>.
               </p>
               <div className="row" style={{ marginTop: '0.5rem' }}>
-                <button className="btn btn-red" disabled={uploading}>{editingId ? 'Save changes' : 'Add product'}</button>
+                <button className="btn btn-red" disabled={uploading || savingProduct}>
+                  {savingProduct ? 'Saving…' : editingId ? 'Save changes' : 'Add product'}
+                </button>
               </div>
             </form>
           )}

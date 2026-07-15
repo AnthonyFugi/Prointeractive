@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import Rating from '../components/Rating.jsx';
 import VerifiedBadge from '../components/VerifiedBadge.jsx';
+import ImageCarousel from '../components/ImageCarousel.jsx';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -83,6 +84,11 @@ export default function ProductDetail() {
       <p style={{ marginTop: '1.25rem' }}><Link to="/">← Back to shop</Link></p>
       <div className="panel">
         <div className="row spread" style={{ alignItems: 'flex-start' }}>
+          {product.images?.length > 0 && (
+            <div style={{ flex: '1 1 300px', maxWidth: 440 }}>
+              <ImageCarousel images={product.images} alt={product.name} />
+            </div>
+          )}
           <div style={{ flex: '1 1 320px' }}>
             <h1>{product.name}</h1>
             <p className="muted">

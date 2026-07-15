@@ -18,6 +18,19 @@ export default function ProductFormScreen({ route, navigation }) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
 
+  const clearError = (field) =>
+    setErrors((e) => {
+      if (!e[field]) return e;
+      const next = { ...e };
+      delete next[field];
+      return next;
+    });
+
+  const setField = (field, value) => {
+    setForm((f) => ({ ...f, [field]: value }));
+    clearError(field);
+  };
+
   useEffect(() => {
     navigation.setOptions({ title: editing ? 'Edit product' : 'Add product' });
     api('/categories').then((d) => {
@@ -46,6 +59,7 @@ export default function ProductFormScreen({ route, navigation }) {
       const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': contentType }, body: blob });
       if (!put.ok) throw new Error('Upload to storage failed');
       setForm((f) => ({ ...f, images: [...f.images, publicUrl] }));
+      clearError('images');
     } catch (e) {
       Alert.alert('Upload failed', e.message);
     } finally {
@@ -84,16 +98,16 @@ export default function ProductFormScreen({ route, navigation }) {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ padding: spacing.l, paddingBottom: 60 }}>
-      <TextInput {...input({ placeholder: 'Product name', value: form.name, onChangeText: (v) => setForm({ ...form, name: v }) })} />
+      <TextInput {...input({ placeholder: 'Product name', value: form.name, onChangeText: (v) => setField('name', v) })} />
       <Err k="name" />
       <TextInput {...input({ placeholder: 'Description', value: form.description, multiline: true, onChangeText: (v) => setForm({ ...form, description: v }) })} style={[input({}).style, { minHeight: 80 }]} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}>
-          <TextInput {...input({ placeholder: 'Price (ZMW)', keyboardType: 'decimal-pad', value: form.price, onChangeText: (v) => setForm({ ...form, price: v }) })} />
+          <TextInput {...input({ placeholder: 'Price (ZMW)', keyboardType: 'decimal-pad', value: form.price, onChangeText: (v) => setField('price', v) })} />
           <Err k="price" />
         </View>
         <View style={{ flex: 1 }}>
-          <TextInput {...input({ placeholder: 'Stock', keyboardType: 'number-pad', value: form.stock, onChangeText: (v) => setForm({ ...form, stock: v }) })} />
+          <TextInput {...input({ placeholder: 'Stock', keyboardType: 'number-pad', value: form.stock, onChangeText: (v) => setField('stock', v) })} />
           <Err k="stock" />
         </View>
       </View>
@@ -102,7 +116,7 @@ export default function ProductFormScreen({ route, navigation }) {
         {categories.map((c) => {
           const on = form.category === c.name;
           return (
-            <Pressable key={c._id} onPress={() => setForm({ ...form, category: c.name })}
+            <Pressable key={c._id} onPress={() => setField('category', c.name)}
               style={{
                 borderRadius: 999, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 6,
                 backgroundColor: on ? colors.navy : colors.surface,
