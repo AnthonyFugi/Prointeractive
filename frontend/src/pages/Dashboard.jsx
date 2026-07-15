@@ -22,7 +22,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   // Store profile
-  const [bizForm, setBizForm] = useState({ name: '', description: '', category: '', location: '', phone: '', logoUrl: '' });
+  const [bizForm, setBizForm] = useState({ name: '', description: '', categories: [], location: '', phone: '', logoUrl: '' });
   const [bizMsg, setBizMsg] = useState('');
   const [requestingVerify, setRequestingVerify] = useState(false);
   const [savingBiz, setSavingBiz] = useState(false);
@@ -43,6 +43,43 @@ export default function Dashboard() {
       delete next[field];
       return next;
     });
+
+  const toggleBizCategory = (name) =>
+    setBizForm((f) => {
+      const on = f.categories.includes(name);
+      if (!on && f.categories.length >= 3) return f; // max 3
+      return { ...f, categories: on ? f.categories.filter((c) => c !== name) : [...f.categories, name] };
+    });
+
+  const CategoryChips = () => (
+    <>
+      <div className="chips" style={{ marginTop: '0.25rem' }}>
+        {productCategories.map((c) => {
+          const on = bizForm.categories.includes(c.name);
+          return (
+            <button
+              type="button"
+              key={c._id}
+              className={`chip-btn ${on ? 'on' : ''}`}
+              onClick={() => toggleBizCategory(c.name)}
+            >
+              {c.name}
+            </button>
+          );
+        })}
+        {bizForm.categories
+          .filter((name) => !productCategories.some((c) => c.name === name))
+          .map((name) => (
+            <button type="button" key={name} className="chip-btn on" onClick={() => toggleBizCategory(name)}>
+              {name} (legacy)
+            </button>
+          ))}
+      </div>
+      <p className="muted" style={{ fontSize: '0.8rem', margin: '0.35rem 0 0' }}>
+        Pick up to 3 — {bizForm.categories.length}/3 selected
+      </p>
+    </>
+  );
 
   const updateProductField = (field, value) => {
     setProductForm((f) => ({ ...f, [field]: value }));
@@ -117,7 +154,8 @@ export default function Dashboard() {
         setBusiness(b);
         if (b) {
           setBizForm({
-            name: b.name || '', description: b.description || '', category: b.category || 'retail',
+            name: b.name || '', description: b.description || '',
+            categories: b.categories?.length ? b.categories : b.category ? [b.category] : [],
             location: b.location || '', phone: b.phone || '', logoUrl: b.logoUrl || '',
           });
         }
@@ -260,11 +298,8 @@ export default function Dashboard() {
           <input id="bname" required value={bizForm.name} onChange={(e) => setBizForm({ ...bizForm, name: e.target.value })} />
           <label htmlFor="bdesc">Description</label>
           <textarea id="bdesc" value={bizForm.description} onChange={(e) => setBizForm({ ...bizForm, description: e.target.value })} />
-          <label htmlFor="bcat">Category</label>
-          <select id="bcat" required value={bizForm.category} onChange={(e) => setBizForm({ ...bizForm, category: e.target.value })}>
-            <option value="">Select a category…</option>
-            {productCategories.map((c) => <option key={c._id} value={c.name}>{c.name}</option>)}
-          </select>
+          <label>Categories</label>
+          <CategoryChips />
           <label htmlFor="bloc">Location</label>
           <input id="bloc" value={bizForm.location} onChange={(e) => setBizForm({ ...bizForm, location: e.target.value })} />
           <label htmlFor="bphone">Phone</label>
@@ -382,14 +417,8 @@ export default function Dashboard() {
             value={bizForm.description} onChange={(e) => setBizForm({ ...bizForm, description: e.target.value })} />
           <div className="row">
             <div style={{ flex: 1 }}>
-              <label htmlFor="scat">Category</label>
-              <select id="scat" required value={bizForm.category} onChange={(e) => setBizForm({ ...bizForm, category: e.target.value })}>
-                <option value="">Select a category…</option>
-                {productCategories.map((c) => <option key={c._id} value={c.name}>{c.name}</option>)}
-                {bizForm.category && !productCategories.some((c) => c.name === bizForm.category) && (
-                  <option value={bizForm.category}>{bizForm.category} (legacy)</option>
-                )}
-              </select>
+              <label>Categories</label>
+              <CategoryChips />
             </div>
             <div style={{ flex: 1 }}>
               <label htmlFor="sloc">Location</label>

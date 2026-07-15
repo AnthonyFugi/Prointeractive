@@ -94,7 +94,7 @@ export default function Businesses() {
                     <span className="name">
                       {b.name}{b.verified && <VerifiedBadge size={15} />}
                     </span>
-                    <span className="biz">{b.category}{b.location && ` · ${b.location}`}</span>
+                    <span className="biz">{(b.categories?.length ? b.categories.join(' · ') : b.category)}{b.location && ` · ${b.location}`}</span>
                     {b.ratingCount > 0 && <Rating value={b.ratingAverage} count={b.ratingCount} />}
                   </div>
                 </article>

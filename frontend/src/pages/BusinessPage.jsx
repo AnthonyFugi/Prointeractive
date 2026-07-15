@@ -50,7 +50,7 @@ export default function BusinessPage() {
         <div className="row spread">
           <div>
             <h1>{business.name}{business.verified && <VerifiedBadge size={22} />}</h1>
-            <p className="muted">{business.category}{business.location && ` · ${business.location}`}{business.phone && ` · ${business.phone}`}</p>
+            <p className="muted">{(business.categories?.length ? business.categories.join(' · ') : business.category)}{business.location && ` · ${business.location}`}{business.phone && ` · ${business.phone}`}</p>
             {business.description && <p>{business.description}</p>}
           </div>
           <div className="row">

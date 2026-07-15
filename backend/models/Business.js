@@ -11,7 +11,8 @@ const businessSchema = new mongoose.Schema(
     name: { type: String, required: [true, 'Business name is required'], trim: true },
     slug: { type: String, unique: true, lowercase: true },
     description: { type: String, default: '' },
-    category: { type: String, required: true, lowercase: true, trim: true },
+    category: { type: String, lowercase: true, trim: true }, // legacy single value (kept in sync = categories[0])
+    categories: { type: [String], default: [] },
     location: { type: String, default: '' },
     phone: { type: String, default: '' },
     logoUrl: { type: String, default: '' },

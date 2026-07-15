@@ -48,7 +48,7 @@ export default function BusinessScreen({ route, navigation }) {
             {business.verified ? <VerifiedBadge size={18} /> : null}
           </View>
           <Text style={{ color: colors.muted, marginTop: 2 }}>
-            {business.category}{business.location ? ` · ${business.location}` : ''}
+            {(business.categories && business.categories.length ? business.categories.join(' · ') : business.category)}{business.location ? ` · ${business.location}` : ''}
           </Text>
           {business.description ? <Text style={{ marginTop: spacing.s }}>{business.description}</Text> : null}
           {user && user.role === 'customer' ? (

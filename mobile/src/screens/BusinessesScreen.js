@@ -49,7 +49,7 @@ export default function BusinessesScreen({ navigation }) {
               {b.verified ? <VerifiedBadge size={15} /> : null}
             </View>
             <Text style={{ color: colors.muted, marginTop: 2 }}>
-              {b.category}{b.location ? ` · ${b.location}` : ''}
+              {(b.categories && b.categories.length ? b.categories.join(' · ') : b.category)}{b.location ? ` · ${b.location}` : ''}
             </Text>
           </Pressable>
         )}

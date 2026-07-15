@@ -165,7 +165,7 @@ export default function Admin() {
                 ? <span className="badge pending">⚑ verification requested</span>
                 : <span className="badge pending">unverified</span>}
             <p className="muted" style={{ margin: 0 }}>
-              {b.category}{b.location && ` · ${b.location}`} · Owner: {b.owner?.name} ({b.owner?.email})
+              {(b.categories?.length ? b.categories.join(', ') : b.category)}{b.location && ` · ${b.location}`} · Owner: {b.owner?.name} ({b.owner?.email})
             </p>
           </div>
           <div className="row">

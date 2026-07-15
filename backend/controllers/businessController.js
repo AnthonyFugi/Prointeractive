@@ -1,5 +1,17 @@
 import Business from '../models/Business.js';
 import Category from '../models/Category.js';
+
+const MAX_BUSINESS_CATEGORIES = 3;
+/** Accepts `categories` array or legacy `category` string; returns clean array or an error string. */
+const normalizeCategories = async (body) => {
+  let list = Array.isArray(body.categories) ? body.categories : body.category ? [body.category] : [];
+  list = [...new Set(list.map((c) => String(c).toLowerCase().trim()).filter(Boolean))];
+  if (list.length === 0) return { error: 'Pick at least one category' };
+  if (list.length > MAX_BUSINESS_CATEGORIES) return { error: `Pick at most ${MAX_BUSINESS_CATEGORIES} categories` };
+  const known = await Category.countDocuments({ name: { $in: list } });
+  if (known !== list.length) return { error: 'Unknown category — pick from the list' };
+  return { list };
+};
 import { sendEmail } from '../utils/email.js';
 import { isConfigured, createSubaccount, updateSubaccount, platformFeeFraction } from '../utils/flutterwave.js';
 
@@ -10,12 +22,12 @@ export const createBusiness = async (req, res, next) => {
     if (existing) {
       return res.status(409).json({ success: false, message: 'You already have a business profile' });
     }
-    const { name, description, category, location, phone, logoUrl } = req.body;
-    if (category && !(await Category.exists({ name: String(category).toLowerCase() }))) {
-      return res.status(400).json({ success: false, message: 'Unknown category — pick one from the list' });
-    }
+    const { name, description, location, phone, logoUrl } = req.body;
+    const { list, error } = await normalizeCategories(req.body);
+    if (error) return res.status(400).json({ success: false, message: error });
     const business = await Business.create({
-      owner: req.user._id, name, description, category, location, phone, logoUrl,
+      owner: req.user._id, name, description, location, phone, logoUrl,
+      categories: list, category: list[0],
     });
     res.status(201).json({ success: true, business });
   } catch (err) {
@@ -28,7 +40,7 @@ export const listBusinesses = async (req, res, next) => {
   try {
     const { category, q, page = 1, limit = 12 } = req.query;
     const filter = { closed: { $ne: true } };
-    if (category) filter.category = category;
+    if (category) filter.$or = [{ categories: category }, { category }];
     if (q) filter.name = { $regex: q, $options: 'i' };
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -68,10 +80,13 @@ export const updateBusiness = async (req, res, next) => {
     if (!business.owner.equals(req.user._id) && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not your business profile' });
     }
-    if (req.body.category && !(await Category.exists({ name: String(req.body.category).toLowerCase() }))) {
-      return res.status(400).json({ success: false, message: 'Unknown category — pick one from the list' });
+    if (req.body.categories || req.body.category) {
+      const { list, error } = await normalizeCategories(req.body);
+      if (error) return res.status(400).json({ success: false, message: error });
+      req.body.categories = list;
+      req.body.category = list[0];
     }
-    const allowed = ['name', 'description', 'category', 'location', 'phone', 'logoUrl'];
+    const allowed = ['name', 'description', 'category', 'categories', 'location', 'phone', 'logoUrl'];
     allowed.forEach((f) => {
       if (req.body[f] !== undefined) business[f] = req.body[f];
     });
@@ -174,7 +189,7 @@ export const setFavorite = async (req, res, next) => {
 // GET /api/businesses/favorites/mine
 export const listMyFavorites = async (req, res, next) => {
   try {
-    const me = await req.user.populate('favoriteBusinesses', 'name category location verified logoUrl');
+    const me = await req.user.populate('favoriteBusinesses', 'name category categories location verified logoUrl');
     res.json({ success: true, businesses: me.favoriteBusinesses || [] });
   } catch (err) {
     next(err);
@@ -202,7 +217,7 @@ export const requestVerification = async (req, res, next) => {
       to: process.env.ADMIN_EMAIL || 'admin@fugipay.com',
       subject: `Verification request: ${business.name}`,
       heading: 'A business wants the blue tick',
-      body: `${business.name} (${business.category}${business.location ? ', ' + business.location : ''}) has requested verification. Review it in the admin panel → Businesses.`,
+      body: `${business.name} (${(business.categories && business.categories.length ? business.categories.join(', ') : business.category) || 'uncategorised'}${business.location ? ', ' + business.location : ''}) has requested verification. Review it in the admin panel → Businesses.`,
     });
 
     res.json({ success: true, business });
