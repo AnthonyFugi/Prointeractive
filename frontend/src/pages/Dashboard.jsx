@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { api, money } from '../api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 
-const CATEGORIES = ['retail', 'food', 'fashion', 'electronics', 'services', 'agriculture', 'health', 'education', 'other'];
 const ONLINE_NEXT = { pending: 'paid', paid: 'shipped', shipped: 'delivered' };
 const ONLINE_LABEL = { pending: 'Mark as paid', paid: 'Mark as shipped', shipped: 'Mark as delivered' };
 const COD_NEXT = { pending: 'shipped', shipped: 'delivered' };
@@ -23,7 +22,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   // Store profile
-  const [bizForm, setBizForm] = useState({ name: '', description: '', category: 'retail', location: '', phone: '', logoUrl: '' });
+  const [bizForm, setBizForm] = useState({ name: '', description: '', category: '', location: '', phone: '', logoUrl: '' });
   const [bizMsg, setBizMsg] = useState('');
   const [requestingVerify, setRequestingVerify] = useState(false);
   const [savingBiz, setSavingBiz] = useState(false);
@@ -112,6 +111,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    api('/categories').then((d) => setProductCategories(d.categories)).catch(() => {});
     findMyBusiness()
       .then((b) => {
         setBusiness(b);
@@ -261,8 +261,9 @@ export default function Dashboard() {
           <label htmlFor="bdesc">Description</label>
           <textarea id="bdesc" value={bizForm.description} onChange={(e) => setBizForm({ ...bizForm, description: e.target.value })} />
           <label htmlFor="bcat">Category</label>
-          <select id="bcat" value={bizForm.category} onChange={(e) => setBizForm({ ...bizForm, category: e.target.value })}>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          <select id="bcat" required value={bizForm.category} onChange={(e) => setBizForm({ ...bizForm, category: e.target.value })}>
+            <option value="">Select a category…</option>
+            {productCategories.map((c) => <option key={c._id} value={c.name}>{c.name}</option>)}
           </select>
           <label htmlFor="bloc">Location</label>
           <input id="bloc" value={bizForm.location} onChange={(e) => setBizForm({ ...bizForm, location: e.target.value })} />
@@ -382,8 +383,12 @@ export default function Dashboard() {
           <div className="row">
             <div style={{ flex: 1 }}>
               <label htmlFor="scat">Category</label>
-              <select id="scat" value={bizForm.category} onChange={(e) => setBizForm({ ...bizForm, category: e.target.value })}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              <select id="scat" required value={bizForm.category} onChange={(e) => setBizForm({ ...bizForm, category: e.target.value })}>
+                <option value="">Select a category…</option>
+                {productCategories.map((c) => <option key={c._id} value={c.name}>{c.name}</option>)}
+                {bizForm.category && !productCategories.some((c) => c.name === bizForm.category) && (
+                  <option value={bizForm.category}>{bizForm.category} (legacy)</option>
+                )}
               </select>
             </div>
             <div style={{ flex: 1 }}>

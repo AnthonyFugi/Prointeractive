@@ -11,14 +11,7 @@ const businessSchema = new mongoose.Schema(
     name: { type: String, required: [true, 'Business name is required'], trim: true },
     slug: { type: String, unique: true, lowercase: true },
     description: { type: String, default: '' },
-    category: {
-      type: String,
-      enum: [
-        'retail', 'food', 'fashion', 'electronics', 'services',
-        'agriculture', 'health', 'education', 'other',
-      ],
-      default: 'other',
-    },
+    category: { type: String, required: true, lowercase: true, trim: true },
     location: { type: String, default: '' },
     phone: { type: String, default: '' },
     logoUrl: { type: String, default: '' },

@@ -5,13 +5,13 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Rating from '../components/Rating.jsx';
 import VerifiedBadge from '../components/VerifiedBadge.jsx';
 
-const CATEGORIES = ['retail', 'food', 'fashion', 'electronics', 'services', 'agriculture', 'health', 'education', 'other'];
 
 export default function Businesses() {
   const { user } = useAuth();
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ businesses: [], total: 0 });
   const [error, setError] = useState('');
@@ -19,6 +19,10 @@ export default function Businesses() {
 
   const LIMIT = 12;
   const pages = Math.max(1, Math.ceil(data.total / LIMIT));
+
+  useEffect(() => {
+    api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -57,7 +61,7 @@ export default function Businesses() {
           <button className="btn btn-navy" type="submit">Search</button>
         </form>
         <div className="chips" role="group" aria-label="Filter by category">
-          {CATEGORIES.map((c) => (
+          {categories.map(({ name: c }) => (
             <button
               key={c}
               className={`chip ${category === c ? 'on' : ''}`}

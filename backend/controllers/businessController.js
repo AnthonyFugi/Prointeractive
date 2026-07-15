@@ -1,4 +1,5 @@
 import Business from '../models/Business.js';
+import Category from '../models/Category.js';
 import { sendEmail } from '../utils/email.js';
 import { isConfigured, createSubaccount, updateSubaccount, platformFeeFraction } from '../utils/flutterwave.js';
 
@@ -10,6 +11,9 @@ export const createBusiness = async (req, res, next) => {
       return res.status(409).json({ success: false, message: 'You already have a business profile' });
     }
     const { name, description, category, location, phone, logoUrl } = req.body;
+    if (category && !(await Category.exists({ name: String(category).toLowerCase() }))) {
+      return res.status(400).json({ success: false, message: 'Unknown category — pick one from the list' });
+    }
     const business = await Business.create({
       owner: req.user._id, name, description, category, location, phone, logoUrl,
     });
@@ -63,6 +67,9 @@ export const updateBusiness = async (req, res, next) => {
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
     if (!business.owner.equals(req.user._id) && req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not your business profile' });
+    }
+    if (req.body.category && !(await Category.exists({ name: String(req.body.category).toLowerCase() }))) {
+      return res.status(400).json({ success: false, message: 'Unknown category — pick one from the list' });
     }
     const allowed = ['name', 'description', 'category', 'location', 'phone', 'logoUrl'];
     allowed.forEach((f) => {
