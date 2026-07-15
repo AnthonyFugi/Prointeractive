@@ -30,7 +30,10 @@ export default function ProductDetail() {
   const [reviewMsg, setReviewMsg] = useState('');
 
   useEffect(() => {
-    api(`/products/${id}`).then((d) => setProduct(d.product)).catch((e) => setError(e.message));
+    api(`/products/${id}`).then((d) => {
+      document.title = `${d.product.name} · Prointeractive`;
+      setProduct(d.product);
+    }).catch((e) => setError(e.message));
     api(`/products/${id}/reviews`).then((d) => setReviews(d.reviews)).catch(() => {});
   }, [id]);
 

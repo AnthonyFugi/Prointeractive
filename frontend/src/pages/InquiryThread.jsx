@@ -23,7 +23,13 @@ export default function InquiryThread() {
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
-  const load = () => api(`/inquiries/${id}`).then((d) => setInquiry(d.inquiry)).catch((e) => setError(e.message));
+  const load = () =>
+    api(`/inquiries/${id}`)
+      .then((d) => {
+        document.title = `${d.inquiry.subject} · Prointeractive`;
+        setInquiry(d.inquiry);
+      })
+      .catch((e) => setError(e.message));
   useEffect(() => { load(); }, [id]);
 
   const send = async (e) => {

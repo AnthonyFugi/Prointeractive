@@ -17,7 +17,10 @@ export default function BusinessPage() {
   const [state, setState] = useState('');
 
   useEffect(() => {
-    api(`/businesses/${id}`).then((d) => setBusiness(d.business)).catch((e) => setError(e.message));
+    api(`/businesses/${id}`).then((d) => {
+      document.title = `${d.business.name} · Prointeractive`;
+      setBusiness(d.business);
+    }).catch((e) => setError(e.message));
   }, [id]);
 
   useEffect(() => {

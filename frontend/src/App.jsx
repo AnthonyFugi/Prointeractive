@@ -1,4 +1,5 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import PendingPaymentBanner from './components/PendingPaymentBanner.jsx';
 import Protected from './components/Protected.jsx';
@@ -24,13 +25,50 @@ import Sell from './pages/Sell.jsx';
 import AccountDeletion from './pages/AccountDeletion.jsx';
 import ProductStandards from './pages/ProductStandards.jsx';
 
+const TITLES = {
+  '/': null, // full brand line below
+  '/businesses': 'Businesses',
+  '/cart': 'Cart',
+  '/checkout': 'Checkout',
+  '/orders': 'My orders',
+  '/inbox': 'Inbox',
+  '/login': 'Sign in',
+  '/register': 'Create account',
+  '/forgot-password': 'Reset password',
+  '/reset-password': 'Reset password',
+  '/dashboard': 'Dashboard',
+  '/admin': 'Admin',
+  '/sell': 'Sell on Prointeractive',
+  '/terms': 'Terms & Conditions',
+  '/privacy': 'Privacy Policy',
+  '/product-standards': 'Product Standards',
+  '/account-deletion': 'Delete account',
+  '/payment/callback': 'Payment',
+};
+
+function PageTitle() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    // Detail pages (/products/:id, /businesses/:slug, /inbox/:id) set their own
+    // title once their data loads — don't fight them here.
+    const dynamic = /^\/(products|businesses|inbox)\/./.test(pathname);
+    if (dynamic) return;
+    const t = TITLES[pathname];
+    document.title = t
+      ? `${t} · Prointeractive`
+      : 'Prointeractive — What you need, from businesses you trust.';
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <>
       <Navbar />
       <PendingPaymentBanner />
       <main>
-        <Routes>
+        <PageTitle />
+      <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

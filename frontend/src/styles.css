@@ -228,7 +228,7 @@ textarea { resize: vertical; min-height: 90px; }
 .spread { justify-content: space-between; }
 .muted { color: var(--muted); font-size: 0.9rem; }
 .error-text { color: var(--danger); font-weight: 500; margin: 0.5rem 0; }
-.success-text { color: var(--navy); font-weight: 500; margin: 0.5rem 0; }
+.success-text { color: #15803d; font-size: 0.9rem; margin: 0.5rem 0 0; font-weight: 600; }
 .divider { border: none; border-top: 1px solid var(--line); margin: 1rem 0; }
 .section-title { margin-top: 2rem; }
 .rating-stars { color: var(--red); letter-spacing: 2px; }
