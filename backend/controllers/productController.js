@@ -34,7 +34,15 @@ export const listProducts = async (req, res, next) => {
     const filter = { isActive: true };
     if (q) filter.$text = { $search: q };
     if (category) filter.category = category.toLowerCase();
-    if (business) filter.business = business;
+    if (business) {
+      if (/^[0-9a-fA-F]{24}$/.test(business)) {
+        filter.business = business;
+      } else {
+        // Accept a business slug too — resolves to its id, or matches nothing
+        const biz = await Business.findOne({ slug: String(business).toLowerCase() }).select('_id');
+        filter.business = biz ? biz._id : null;
+      }
+    }
     if (favorites === 'true') {
       // Signed-in users only; anonymous requests get an empty result, not an error
       const ids = req.user?.favoriteBusinesses || [];

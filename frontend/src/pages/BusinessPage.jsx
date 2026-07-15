@@ -18,8 +18,12 @@ export default function BusinessPage() {
 
   useEffect(() => {
     api(`/businesses/${id}`).then((d) => setBusiness(d.business)).catch((e) => setError(e.message));
-    api(`/products?business=${id}&limit=24`).then((d) => setProducts(d.products)).catch(() => {});
   }, [id]);
+
+  useEffect(() => {
+    if (!business?._id) return;
+    api(`/products?business=${business._id}&limit=24`).then((d) => setProducts(d.products)).catch(() => {});
+  }, [business?._id]);
 
   const send = async (e) => {
     e.preventDefault();
