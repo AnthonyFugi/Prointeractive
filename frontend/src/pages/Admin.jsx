@@ -20,6 +20,18 @@ export default function Admin() {
   const [newCategory, setNewCategory] = useState('');
   const [editingCat, setEditingCat] = useState(null); // { id, name }
 
+  const moveCategory = async (index, dir) => {
+    const next = [...categories];
+    const j = index + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[index], next[j]] = [next[j], next[index]];
+    setCategories(next); // optimistic
+    try {
+      const d = await api('/categories/reorder', { method: 'PUT', body: { ids: next.map((c) => c._id) } });
+      setCategories(d.categories);
+    } catch (err) { setError(err.message); }
+  };
+
   const saveCategoryName = async (e) => {
     e.preventDefault();
     try {
@@ -239,7 +251,7 @@ export default function Admin() {
             <button className="btn btn-navy">Add</button>
           </form>
           <hr className="divider" />
-          {categories.map((c) => (
+          {categories.map((c, i) => (
             <div className="row spread" key={c._id} style={{ padding: '0.35rem 0' }}>
               {editingCat?.id === c._id ? (
                 <form onSubmit={saveCategoryName} className="row" style={{ flex: 1 }}>
@@ -256,6 +268,8 @@ export default function Admin() {
                 <>
                   <span style={{ textTransform: 'capitalize' }}>{c.name}</span>
                   <div className="row">
+                    <button className="btn btn-ghost btn-sm" disabled={i === 0} onClick={() => moveCategory(i, -1)} aria-label="Move up">↑</button>
+                    <button className="btn btn-ghost btn-sm" disabled={i === categories.length - 1} onClick={() => moveCategory(i, 1)} aria-label="Move down">↓</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => setEditingCat({ id: c._id, name: c.name })}>Edit</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => removeCategory(c)}>Remove</button>
                   </div>

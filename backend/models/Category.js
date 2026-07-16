@@ -11,6 +11,7 @@ const categorySchema = new mongoose.Schema(
       minlength: 2,
       maxlength: 40,
     },
+    order: { type: Number, default: 9999 },
   },
   { timestamps: true }
 );

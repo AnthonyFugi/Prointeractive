@@ -15,7 +15,7 @@ const ensureDefaults = async () => {
 export const listCategories = async (req, res, next) => {
   try {
     await ensureDefaults();
-    const categories = await Category.find().sort('name');
+    const categories = await Category.find().sort('order name');
     res.json({ success: true, categories });
   } catch (err) {
     next(err);
@@ -84,6 +84,22 @@ export const renameCategory = async (req, res, next) => {
     console.log(`[category renamed] "${oldName}" -> "${name}" · products: ${prods.modifiedCount}, businesses: ${bizLegacy.modifiedCount}/${bizArrays.modifiedCount}`);
 
     res.json({ success: true, category, cascade: { products: prods.modifiedCount, businesses: bizArrays.modifiedCount } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// PUT /api/categories/reorder  { ids: [categoryId, ...] } — array position becomes display order
+export const reorderCategories = async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'ids array required' });
+    }
+    await Promise.all(ids.map((id, i) => Category.updateOne({ _id: id }, { order: i })));
+    const categories = await Category.find().sort('order name');
+    res.json({ success: true, categories });
   } catch (err) {
     next(err);
   }
