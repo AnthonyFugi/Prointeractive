@@ -1,6 +1,9 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Business from '../models/Business.js';
+import Product from '../models/Product.js';
+import Inquiry from '../models/Inquiry.js';
 import { welcomeEmail, passwordResetEmail } from '../utils/email.js';
 
 const signToken = (id) =>
@@ -161,6 +164,36 @@ export const setBlocked = async (req, res, next) => {
     const op = blocked ? { $addToSet: { blockedUsers: userId } } : { $pull: { blockedUsers: userId } };
     await req.user.updateOne(op);
     res.json({ success: true, blocked: !!blocked });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// DELETE /api/auth/me  { password } — delete account + personal data.
+// Orders are retained (anonymised) as financial records, per the Privacy Policy.
+export const deleteMe = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findById(req.user._id).select('+password');
+    if (!password || !(await user.comparePassword(password))) {
+      return res.status(401).json({ success: false, message: 'Password is incorrect' });
+    }
+
+    // Conversations the user started as a customer
+    await Inquiry.deleteMany({ customer: user._id });
+
+    // Seller cleanup: hide the storefront and its products; keep records for order history
+    const business = await Business.findOne({ owner: user._id });
+    if (business) {
+      await Product.updateMany({ business: business._id, isActive: true }, { isActive: false, deactivatedReason: 'account_deletion' });
+      business.closed = true;
+      await business.save();
+    }
+
+    await user.deleteOne();
+    console.log(`[account deleted] ${user.email}`);
+    res.json({ success: true, message: 'Account and personal data deleted' });
   } catch (err) {
     next(err);
   }

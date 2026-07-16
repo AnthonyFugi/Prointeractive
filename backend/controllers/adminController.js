@@ -186,8 +186,17 @@ export const setBusinessClosed = async (req, res, next) => {
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
 
     if (closed) {
-      // Pull the storefront's products from the shop as well
-      await Product.updateMany({ business: business._id }, { isActive: false });
+      // Pull the storefront's products from the shop, marked so reopening can restore them
+      await Product.updateMany(
+        { business: business._id, isActive: true },
+        { isActive: false, deactivatedReason: 'admin_close' }
+      );
+    } else {
+      // Reopen restores exactly what the close deactivated — seller-hidden products stay hidden
+      await Product.updateMany(
+        { business: business._id, deactivatedReason: 'admin_close' },
+        { isActive: true, deactivatedReason: null }
+      );
     }
     res.json({ success: true, business });
   } catch (err) {

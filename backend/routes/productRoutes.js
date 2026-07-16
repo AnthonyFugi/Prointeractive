@@ -4,6 +4,7 @@ import { createReview, listReviews } from '../controllers/reviewController.js';
 import { protect, restrictTo, maybeAuth } from '../middleware/auth.js';
 
 const router = Router();
+router.get('/trending', trendingProducts);
 router.route('/')
   .get(maybeAuth, listProducts)
   .post(protect, restrictTo('business', 'admin'), createProduct);

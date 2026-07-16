@@ -11,6 +11,7 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [trending, setTrending] = useState([]);
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ products: [], pages: 1, total: 0 });
   const [error, setError] = useState('');
@@ -18,6 +19,7 @@ export default function Home() {
 
   useEffect(() => {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
+    api('/products/trending?limit=8').then((d) => setTrending(d.products)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -83,6 +85,19 @@ export default function Home() {
       </section>
 
       {error && <p className="error-text">{error}</p>}
+      {trending.length > 0 && !query && !category && !favoritesOnly && (
+        <section style={{ marginBottom: '0.5rem' }}>
+          <h2 style={{ margin: '0 0 0.5rem' }}>Trending 🔥</h2>
+          <div className="trending-row">
+            {trending.map((p) => (
+              <div key={p._id} className="trending-item">
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {loading ? (
         <p className="muted">Loading products…</p>
       ) : data.products.length === 0 ? (

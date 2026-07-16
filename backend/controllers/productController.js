@@ -1,5 +1,6 @@
 import Product from '../models/Product.js';
 import Business from '../models/Business.js';
+import Order from '../models/Order.js';
 import Category from '../models/Category.js';
 
 const getOwnedBusiness = async (userId) => Business.findOne({ owner: userId });
@@ -118,6 +119,42 @@ export const deleteProduct = async (req, res, next) => {
     product.isActive = false;
     await product.save();
     res.json({ success: true, message: 'Product deactivated' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// GET /api/products/trending — most-ordered in the last 30 days; padded with
+// newest listings when order history is still thin, so the section never looks empty.
+export const trendingProducts = async (req, res, next) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 8, 20);
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const ranked = await Order.aggregate([
+      { $match: { createdAt: { $gte: since }, status: { $in: ['paid', 'shipped', 'delivered'] } } },
+      { $unwind: '$items' },
+      { $group: { _id: '$items.product', ordered: { $sum: '$items.quantity' } } },
+      { $sort: { ordered: -1 } },
+      { $limit: limit },
+    ]);
+
+    const ids = ranked.map((r) => r._id);
+    const found = await Product.find({ _id: { $in: ids }, isActive: true })
+      .populate('business', 'name verified slug');
+    // preserve rank order
+    const byId = new Map(found.map((p) => [String(p._id), p]));
+    let products = ids.map((id) => byId.get(String(id))).filter(Boolean);
+
+    if (products.length < limit) {
+      const fill = await Product.find({ isActive: true, _id: { $nin: ids } })
+        .sort('-createdAt')
+        .limit(limit - products.length)
+        .populate('business', 'name verified slug');
+      products = [...products, ...fill];
+    }
+    res.json({ success: true, products });
   } catch (err) {
     next(err);
   }

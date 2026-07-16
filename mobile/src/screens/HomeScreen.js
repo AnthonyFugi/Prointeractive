@@ -14,11 +14,13 @@ export default function HomeScreen({ navigation }) {
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [trending, setTrending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
+    api('/products/trending?limit=8').then((d) => setTrending(d.products)).catch(() => {});
   }, []);
 
   const load = useCallback(() => {
@@ -113,6 +115,22 @@ export default function HomeScreen({ navigation }) {
         <ActivityIndicator color={colors.navy} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
+          ListHeaderComponent={trending.length > 0 && !query && !category && !favoritesOnly ? (
+            <View style={{ marginBottom: spacing.s }}>
+              <Text style={{ fontWeight: '800', fontSize: 17, marginLeft: spacing.xs, marginBottom: spacing.s }}>Trending 🔥</Text>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={trending}
+                keyExtractor={(p) => 'tr-' + p._id}
+                renderItem={({ item }) => (
+                  <View style={{ width: 170 }}>
+                    <ProductCard product={item} onPress={() => navigation.navigate('Product', { id: item._id })} />
+                  </View>
+                )}
+              />
+            </View>
+          ) : null}
           data={products}
           numColumns={2}
           keyExtractor={(p) => p._id}

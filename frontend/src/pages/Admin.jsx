@@ -10,6 +10,9 @@ export default function Admin() {
   const [orders, setOrders] = useState([]);
   const [reports, setReports] = useState([]);
   const [bizFilter, setBizFilter] = useState('all');
+  const [bizSearch, setBizSearch] = useState('');
+  const [userSearch, setUserSearch] = useState('');
+  const [userRole, setUserRole] = useState('all');
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [error, setError] = useState('');
@@ -128,6 +131,12 @@ export default function Admin() {
 
       {tab === 'businesses' && (
         <div className="row" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <input
+            placeholder="Search businesses…"
+            value={bizSearch}
+            onChange={(e) => setBizSearch(e.target.value)}
+            style={{ maxWidth: 240 }}
+          />
           {[
             ['all', `All (${businesses.length})`],
             ['verified', `Verified (${businesses.filter((b) => b.verified).length})`],
@@ -153,6 +162,11 @@ export default function Admin() {
           if (bizFilter === 'requested') return b.verificationRequested && !b.verified;
           if (bizFilter === 'closed') return b.closed;
           return true;
+        })
+        .filter((b) => {
+          const q = bizSearch.trim().toLowerCase();
+          if (!q) return true;
+          return b.name?.toLowerCase().includes(q) || b.owner?.email?.toLowerCase().includes(q);
         })
         .sort((a, b) => (b.verificationRequested && !b.verified ? 1 : 0) - (a.verificationRequested && !a.verified ? 1 : 0))
         .map((b) => (
@@ -211,7 +225,38 @@ export default function Admin() {
         </div>
       )}
 
-      {tab === 'users' && users.map((u) => (
+      {tab === 'users' && (
+        <div className="row" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <input
+            placeholder="Search name or email…"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            style={{ maxWidth: 280 }}
+          />
+          {[
+            ['all', `All (${users.length})`],
+            ['customer', `Customers (${users.filter((u) => u.role === 'customer').length})`],
+            ['business', `Businesses (${users.filter((u) => u.role === 'business').length})`],
+            ['admin', `Admins (${users.filter((u) => u.role === 'admin').length})`],
+            ['suspended', `Suspended (${users.filter((u) => u.suspended).length})`],
+          ].map(([key, label]) => (
+            <button key={key} className={`btn btn-sm ${userRole === key ? 'btn-navy' : 'btn-ghost'}`}
+              onClick={() => setUserRole(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === 'users' && users
+        .filter((u) => {
+          if (userRole === 'suspended') return u.suspended;
+          if (userRole !== 'all' && u.role !== userRole) return false;
+          const q = userSearch.trim().toLowerCase();
+          if (!q) return true;
+          return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+        })
+        .map((u) => (
         <div className="panel row spread" key={u._id}>
           <div>
             <strong>{u.name}</strong>

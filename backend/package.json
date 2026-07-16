@@ -9,7 +9,8 @@
     "dev": "nodemon server.js",
     "seed": "node utils/seed.js",
     "create-admin": "node utils/createAdmin.js",
-    "reslug": "node scripts/backfillSlugs.js"
+    "reslug": "node scripts/backfillSlugs.js",
+    "reactivate": "node scripts/reactivateProducts.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
