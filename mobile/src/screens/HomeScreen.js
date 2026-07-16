@@ -116,8 +116,11 @@ export default function HomeScreen({ navigation }) {
       ) : (
         <FlatList
           ListHeaderComponent={trending.length > 0 && !query && !category && !favoritesOnly ? (
-            <View style={{ marginBottom: spacing.s }}>
-              <Text style={{ fontWeight: '800', fontSize: 17, marginLeft: spacing.xs, marginBottom: spacing.s }}>Trending 🔥</Text>
+            <View style={{ backgroundColor: colors.navySoft, borderRadius: 14, borderWidth: 1, borderColor: colors.line, paddingVertical: spacing.m, paddingLeft: spacing.m, marginBottom: spacing.l }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingRight: spacing.m, marginBottom: spacing.s }}>
+                <Text style={{ fontWeight: '800', fontSize: 17 }}>Trending 🔥</Text>
+                <Text style={{ color: colors.muted, fontSize: 12 }}>Most ordered this month</Text>
+              </View>
               <FlatList
                 horizontal
                 showsHorizontalScrollIndicator={false}

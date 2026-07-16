@@ -120,7 +120,7 @@ export default function Admin() {
       {error && <p className="error-text">{error}</p>}
 
       <div className="tabs" role="tablist">
-        {['overview', 'businesses', 'users', 'orders', 'categories'].map((t) => (
+        {['overview', 'businesses', 'products', 'users', 'orders', 'reports', 'categories'].map((t) => (
           <button key={t} className={`tab ${tab === t ? 'on' : ''}`} onClick={() => setTab(t)}>
             {t[0].toUpperCase() + t.slice(1)}
           </button>

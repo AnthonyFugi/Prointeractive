@@ -86,8 +86,11 @@ export default function Home() {
 
       {error && <p className="error-text">{error}</p>}
       {trending.length > 0 && !query && !category && !favoritesOnly && (
-        <section style={{ marginBottom: '0.5rem' }}>
-          <h2 style={{ margin: '0 0 0.5rem' }}>Trending 🔥</h2>
+        <section className="trending-band">
+          <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
+            <h2 style={{ margin: 0 }}>Trending 🔥</h2>
+            <span className="muted" style={{ fontSize: '0.85rem' }}>Most ordered this month</span>
+          </div>
           <div className="trending-row">
             {trending.map((p) => (
               <div key={p._id} className="trending-item">
