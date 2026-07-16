@@ -10,7 +10,11 @@ export const createInquiry = async (req, res, next) => {
     if (!subject || !message) {
       return res.status(400).json({ success: false, message: 'Subject and message required' });
     }
-    const business = await Business.findById(businessId).populate('owner', 'email blockedUsers');
+    const business = await (
+      /^[0-9a-fA-F]{24}$/.test(String(businessId))
+        ? Business.findById(businessId)
+        : Business.findOne({ slug: String(businessId).toLowerCase() })
+    ).populate('owner', 'email blockedUsers');
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
 
     // Block enforcement (both directions)

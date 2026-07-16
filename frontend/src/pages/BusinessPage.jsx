@@ -34,7 +34,7 @@ export default function BusinessPage() {
     try {
       await api('/inquiries', {
         method: 'POST',
-        body: { businessId: id, subject: form.subject, message: form.message },
+        body: { businessId: business._id, subject: form.subject, message: form.message },
       });
       setState('sent');
       setForm({ subject: '', message: '' });
