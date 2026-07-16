@@ -52,7 +52,16 @@ app.set('trust proxy', 1); // behind nginx / a load balancer
 // ---- Security & performance middleware ----
 app.use(helmet({ contentSecurityPolicy: isProd ? undefined : false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(compression());
-app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || true }));
+const corsAllowed = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()) || [];
+app.use(cors({
+  origin: (origin, cb) => {
+    const isLocalhost = origin && /^http:\/\/localhost:\d+$/.test(origin);
+    if (!origin || corsAllowed.length === 0 || corsAllowed.includes(origin) || isLocalhost) {
+      return cb(null, true);
+    }
+    cb(new Error('Not allowed by CORS'));
+  },
+}));
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan(isProd ? 'combined' : 'dev'));
 
