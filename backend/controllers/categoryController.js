@@ -1,5 +1,6 @@
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
+import Business from '../models/Business.js';
 
 const DEFAULTS = ['fashion', 'electronics', 'food', 'agriculture', 'health', 'services', 'general'];
 
