@@ -25,6 +25,8 @@ export default function Admin() {
     api('/admin/businesses').then((d) => setBusinesses(d.businesses)).catch(() => {});
     api('/admin/users').then((d) => setUsers(d.users)).catch(() => {});
     api('/admin/orders').then((d) => setOrders(d.orders)).catch(() => {});
+    api('/admin/reports').then((d) => setReports(d.reports)).catch(() => {});
+    api('/admin/products').then((d) => setAdminProducts(d.products)).catch(() => {});
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
 
