@@ -140,7 +140,20 @@ export default function InquiryThread() {
           </div>
         </form>
       ) : (
-        <p className="muted">This conversation is closed.</p>
+        <div className="row" style={{ alignItems: 'center' }}>
+          <p className="muted" style={{ margin: 0 }}>This conversation is closed.</p>
+          <button
+            className="btn btn-navy btn-sm"
+            onClick={async () => {
+              try {
+                await api(`/inquiries/${id}/reopen`, { method: 'PATCH' });
+                load();
+              } catch (e) { setError(e.message); }
+            }}
+          >
+            Reopen conversation
+          </button>
+        </div>
       )}
     </div>
   );

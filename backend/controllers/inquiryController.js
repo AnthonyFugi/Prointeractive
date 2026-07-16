@@ -144,17 +144,23 @@ export const replyInquiry = async (req, res, next) => {
 };
 
 // PATCH /api/inquiries/:id/close
-export const closeInquiry = async (req, res, next) => {
+const setInquiryStatus = (status) => async (req, res, next) => {
   try {
     const inquiry = await Inquiry.findById(req.params.id);
     if (!inquiry) return res.status(404).json({ success: false, message: 'Inquiry not found' });
     if (!(await canAccess(inquiry, req.user))) {
       return res.status(403).json({ success: false, message: 'Not your conversation' });
     }
-    inquiry.status = 'closed';
+    if (status === 'open' && await participantsBlocked(inquiry, req.user._id)) {
+      return res.status(403).json({ success: false, message: 'Messaging is not available in this conversation' });
+    }
+    inquiry.status = status;
     await inquiry.save();
     res.json({ success: true, inquiry });
   } catch (err) {
     next(err);
   }
 };
+
+export const closeInquiry = setInquiryStatus('closed');
+export const reopenInquiry = setInquiryStatus('open');

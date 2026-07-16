@@ -110,7 +110,18 @@ export default function ThreadScreen({ route }) {
           </Pressable>
         </View>
       ) : (
-        <Text style={{ textAlign: 'center', color: colors.muted, padding: spacing.m }}>This conversation is closed.</Text>
+        <View style={{ alignItems: 'center', padding: spacing.m }}>
+          <Text style={{ color: colors.muted, marginBottom: spacing.s }}>This conversation is closed.</Text>
+          <Pressable
+            onPress={async () => {
+              try { await api(`/inquiries/${id}/reopen`, { method: 'PATCH' }); load(); }
+              catch (e) { Alert.alert('Could not reopen', e.message); }
+            }}
+            style={{ backgroundColor: colors.navy, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Reopen conversation</Text>
+          </Pressable>
+        </View>
       )}
     </KeyboardAvoidingView>
   );

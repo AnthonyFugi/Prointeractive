@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createInquiry, listInquiries, getInquiry, replyInquiry, closeInquiry } from '../controllers/inquiryController.js';
+import { createInquiry, listInquiries, getInquiry, replyInquiry, closeInquiry, reopenInquiry } from '../controllers/inquiryController.js';
 import { protect } from '../middleware/auth.js';
 
 const router = Router();
@@ -9,5 +9,6 @@ router.route('/')
 router.get('/:id', protect, getInquiry);
 router.post('/:id/messages', protect, replyInquiry);
 router.patch('/:id/close', protect, closeInquiry);
+router.patch('/:id/reopen', protect, reopenInquiry);
 
 export default router;
