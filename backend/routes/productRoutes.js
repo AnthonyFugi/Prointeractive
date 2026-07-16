@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createProduct, listProducts, getProduct, updateProduct, deleteProduct } from '../controllers/productController.js';
+import { createProduct, listProducts, getProduct, updateProduct, deleteProduct, trendingProducts } from '../controllers/productController.js';
 import { createReview, listReviews } from '../controllers/reviewController.js';
 import { protect, restrictTo, maybeAuth } from '../middleware/auth.js';
 

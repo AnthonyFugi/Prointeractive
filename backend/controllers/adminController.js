@@ -9,11 +9,12 @@ import Inquiry from '../models/Inquiry.js';
 // GET /api/admin/stats
 export const stats = async (req, res, next) => {
   try {
-    const [users, businesses, unverified, products, orders, openInquiries, revenue, feesDue, verificationRequests] = await Promise.all([
+    const [users, businesses, unverified, products, hiddenProducts, orders, openInquiries, revenue, feesDue, verificationRequests] = await Promise.all([
       User.countDocuments(),
       Business.countDocuments(),
       Business.countDocuments({ verified: false }),
       Product.countDocuments({ isActive: true }),
+      Product.countDocuments({ isActive: false }),
       Order.countDocuments(),
       Inquiry.countDocuments({ status: 'open' }),
       Order.aggregate([
@@ -30,6 +31,7 @@ export const stats = async (req, res, next) => {
       success: true,
       stats: {
         users, businesses, unverified, products, orders, openInquiries,
+        hiddenProducts,
         revenue: revenue[0]?.total || 0,
         feesDue: feesDue[0]?.total || 0,
         verificationRequests,

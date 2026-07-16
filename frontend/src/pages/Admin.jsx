@@ -107,6 +107,7 @@ export default function Admin() {
     ['Awaiting verification', stats.unverified],
     ['Verification requests', stats.verificationRequests],
     ['Active products', stats.products],
+    ['Hidden products', stats.hiddenProducts],
     ['Orders', stats.orders],
     ['Open inquiries', stats.openInquiries],
     ['Revenue (paid+)', money(stats.revenue)],
