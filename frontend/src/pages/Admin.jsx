@@ -13,6 +13,9 @@ export default function Admin() {
   const [bizSearch, setBizSearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [userRole, setUserRole] = useState('all');
+  const [adminProducts, setAdminProducts] = useState([]);
+  const [prodSearch, setProdSearch] = useState('');
+  const [prodFilter, setProdFilter] = useState('all');
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [error, setError] = useState('');
@@ -69,6 +72,13 @@ export default function Admin() {
     try {
       const d = await api(`/admin/businesses/${b._id}/closed`, { method: 'PATCH', body: { closed: closing } });
       setBusinesses((prev) => prev.map((x) => (x._id === b._id ? d.business : x)));
+    } catch (e) { setError(e.message); }
+  };
+
+  const toggleProductActive = async (prod) => {
+    try {
+      await api(`/products/${prod._id}`, { method: 'PATCH', body: { isActive: !prod.isActive } });
+      setAdminProducts((prev) => prev.map((x) => (x._id === prod._id ? { ...x, isActive: !prod.isActive } : x)));
     } catch (e) { setError(e.message); }
   };
 
@@ -225,6 +235,50 @@ export default function Admin() {
         </div>
       )}
 
+      {tab === 'products' && (
+        <div className="row" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <input placeholder="Search products or businesses…" value={prodSearch}
+            onChange={(e) => setProdSearch(e.target.value)} style={{ maxWidth: 280 }} />
+          {[
+            ['all', `All (${adminProducts.length})`],
+            ['active', `Active (${adminProducts.filter((x) => x.isActive).length})`],
+            ['hidden', `Hidden (${adminProducts.filter((x) => !x.isActive).length})`],
+          ].map(([key, label]) => (
+            <button key={key} className={`btn btn-sm ${prodFilter === key ? 'btn-navy' : 'btn-ghost'}`}
+              onClick={() => setProdFilter(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === 'products' && adminProducts
+        .filter((x) => (prodFilter === 'active' ? x.isActive : prodFilter === 'hidden' ? !x.isActive : true))
+        .filter((x) => {
+          const q = prodSearch.trim().toLowerCase();
+          if (!q) return true;
+          return x.name?.toLowerCase().includes(q) || x.business?.name?.toLowerCase().includes(q);
+        })
+        .map((x) => (
+          <div className="panel row spread" key={x._id} style={x.isActive ? undefined : { opacity: 0.65 }}>
+            <div className="row" style={{ alignItems: 'center' }}>
+              {x.images?.[0] && (
+                <img src={x.images[0]} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'contain', background: '#fff', border: '1px solid var(--line)' }} />
+              )}
+              <div>
+                <strong>{x.name}</strong>
+                {!x.isActive && <span className="badge cancelled" style={{ marginLeft: 8 }}>hidden{x.deactivatedReason ? ` · ${x.deactivatedReason.replace('_', ' ')}` : ''}</span>}
+                <p className="muted" style={{ margin: 0 }}>
+                  {x.business?.name || 'Unknown business'} · {money(x.price, x.currency)} · {x.stock} in stock
+                </p>
+              </div>
+            </div>
+            <button className={`btn btn-sm ${x.isActive ? 'btn-danger' : 'btn-navy'}`} onClick={() => toggleProductActive(x)}>
+              {x.isActive ? 'Hide' : 'Activate'}
+            </button>
+          </div>
+        ))}
+
       {tab === 'users' && (
         <div className="row" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
           <input
@@ -260,11 +314,22 @@ export default function Admin() {
         <div className="panel row spread" key={u._id}>
           <div>
             <strong>{u.name}</strong>
+            {u.suspended && <span className="badge cancelled" style={{ marginLeft: 8 }}>suspended</span>}
             <p className="muted" style={{ margin: 0 }}>{u.email}</p>
           </div>
-          <span className={`badge ${u.role === 'admin' ? 'verified' : u.role === 'business' ? 'paid' : 'closed'}`}>
-            {u.role}
-          </span>
+          <div className="row">
+            {u.role !== 'admin' && (
+              <button
+                className={`btn btn-sm ${u.suspended ? 'btn-navy' : 'btn-danger'}`}
+                onClick={() => toggleSuspend(u)}
+              >
+                {u.suspended ? 'Reinstate' : 'Suspend'}
+              </button>
+            )}
+            <span className={`badge ${u.role === 'admin' ? 'verified' : u.role === 'business' ? 'paid' : 'closed'}`}>
+              {u.role}
+            </span>
+          </div>
         </div>
       ))}
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { stats, listUsers, listBusinesses, setVerified, listOrders, setFeeStatus, listReports, setReportStatus, setSuspended, setBusinessClosed } from '../controllers/adminController.js';
+import { stats, listUsers, listBusinesses, setVerified, listOrders, setFeeStatus, listReports, setReportStatus, setSuspended, setBusinessClosed, listAllProducts } from '../controllers/adminController.js';
 import { protect, restrictTo } from '../middleware/auth.js';
 
 const router = Router();
@@ -15,5 +15,6 @@ router.get('/reports', listReports);
 router.patch('/reports/:id', setReportStatus);
 router.patch('/users/:id/suspend', setSuspended);
 router.patch('/businesses/:id/closed', setBusinessClosed);
+router.get('/products', listAllProducts);
 
 export default router;

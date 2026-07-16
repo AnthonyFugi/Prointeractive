@@ -203,3 +203,17 @@ export const setBusinessClosed = async (req, res, next) => {
     next(err);
   }
 };
+
+
+// GET /api/admin/products — every product, active or hidden
+export const listAllProducts = async (req, res, next) => {
+  try {
+    const products = await Product.find({})
+      .populate('business', 'name slug')
+      .sort('-createdAt')
+      .limit(500);
+    res.json({ success: true, products });
+  } catch (err) {
+    next(err);
+  }
+};
