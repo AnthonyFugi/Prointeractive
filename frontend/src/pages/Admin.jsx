@@ -65,7 +65,7 @@ export default function Admin() {
 
   const toggleClosed = async (b) => {
     const closing = !b.closed;
-    if (closing && !window.confirm(`Close ${b.name}? Its storefront will be hidden and all its products removed from the shop.`)) return;
+    if (closing && !window.confirm(`Close ${b.name}? Its storefront will be hidden and its products removed from the shop. Reopening restores them.`)) return;
     try {
       const d = await api(`/admin/businesses/${b._id}/closed`, { method: 'PATCH', body: { closed: closing } });
       setBusinesses((prev) => prev.map((x) => (x._id === b._id ? d.business : x)));

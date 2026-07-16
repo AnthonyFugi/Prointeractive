@@ -44,6 +44,15 @@ export default function Dashboard() {
       return next;
     });
 
+  const reactivate = async (id) => {
+    try {
+      await api(`/products/${id}`, { method: 'PATCH', body: { isActive: true } });
+      const d = await api(`/products?business=${business._id}&limit=100&includeInactive=true`);
+      setProducts(d.products);
+      flashToast('✓ Product is back in the shop');
+    } catch (e) { setError(e.message); }
+  };
+
   const toggleBizCategory = (name) =>
     setBizForm((f) => {
       const on = f.categories.includes(name);
@@ -166,7 +175,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!business) return;
-    api(`/products?business=${business._id}&limit=100`).then((d) => {
+    api(`/products?business=${business._id}&limit=100&includeInactive=true`).then((d) => {
       setProducts(d.products);
       if (d.products.length === 0) setShowProductForm(true); // first product: no extra click
     }).catch(() => {});
@@ -227,7 +236,7 @@ export default function Dashboard() {
       setProductForm(EMPTY_PRODUCT);
       setEditingId(null);
       setShowProductForm(false);
-      const d = await api(`/products?business=${business._id}&limit=100`);
+      const d = await api(`/products?business=${business._id}&limit=100&includeInactive=true`);
       setProducts(d.products);
       flashToast(wasEditing ? '✓ Product updated' : '✓ Product added — it\u2019s live in the shop');
     } catch (err) {
@@ -537,13 +546,14 @@ export default function Dashboard() {
           )}
 
           {products.map((p) => (
-            <div className="panel row spread" key={p._id}>
+            <div className="panel row spread" key={p._id} style={p.isActive ? undefined : { opacity: 0.6 }}>
               <div className="row" style={{ alignItems: 'center' }}>
                 {p.images?.[0] && (
                   <img src={p.images[0]} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--line)' }} />
                 )}
                 <div>
                   <strong>{p.name}</strong>
+                  {!p.isActive && <span className="badge cancelled" style={{ marginLeft: 8 }}>hidden</span>}
                   <p className="muted" style={{ margin: 0 }}>
                     {money(p.price, p.currency)} · {p.stock} in stock · {p.category}
                   </p>
@@ -551,7 +561,11 @@ export default function Dashboard() {
               </div>
               <div className="row">
                 <button className="btn btn-ghost btn-sm" onClick={() => editProduct(p)}>Edit</button>
-                <button className="btn btn-danger btn-sm" onClick={() => deactivate(p._id)}>Deactivate</button>
+                {p.isActive ? (
+                  <button className="btn btn-danger btn-sm" onClick={() => deactivate(p._id)}>Hide</button>
+                ) : (
+                  <button className="btn btn-navy btn-sm" onClick={() => reactivate(p._id)}>Reactivate</button>
+                )}
               </div>
             </div>
           ))}

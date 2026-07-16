@@ -31,8 +31,16 @@ export const createProduct = async (req, res, next) => {
 // GET /api/products  (public: search, filter, paginate, sort)
 export const listProducts = async (req, res, next) => {
   try {
-    const { q, category, business, favorites, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
+    const { q, category, business, favorites, includeInactive, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
     const filter = { isActive: true };
+    if (includeInactive === 'true' && req.user) {
+      // Only the storefront's owner (or an admin) may see hidden products
+      const owned = await Business.findOne({ owner: req.user._id }).select('_id');
+      const requested = business && /^[0-9a-fA-F]{24}$/.test(business) ? business : null;
+      if (req.user.role === 'admin' || (owned && requested && owned._id.equals(requested))) {
+        delete filter.isActive;
+      }
+    }
     if (q) filter.$text = { $search: q };
     if (category) filter.category = category.toLowerCase();
     if (business) {

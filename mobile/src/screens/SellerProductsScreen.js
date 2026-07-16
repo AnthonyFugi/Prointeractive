@@ -19,7 +19,7 @@ export default function SellerProductsScreen({ navigation }) {
       ) || null;
       setBusiness(mine);
       if (mine) {
-        const d = await api(`/products?business=${mine._id}&limit=100`);
+        const d = await api(`/products?business=${mine._id}&limit=100&includeInactive=true`);
         setProducts(d.products);
       }
     } catch (e) {} finally {
@@ -73,7 +73,9 @@ export default function SellerProductsScreen({ navigation }) {
               <View style={{ width: 52, height: 52, borderRadius: 8, marginRight: spacing.m, backgroundColor: colors.navySoft }} />
             )}
             <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: '700' }} numberOfLines={1}>{p.name}</Text>
+              <Text style={{ fontWeight: '700', color: p.isActive ? colors.ink : colors.muted }} numberOfLines={1}>
+                {p.name}{p.isActive ? '' : '  (hidden)'}
+              </Text>
               <Text style={{ color: colors.muted, fontSize: 12 }}>
                 {money(p.price, p.currency)} · {p.stock} in stock
               </Text>
@@ -82,9 +84,23 @@ export default function SellerProductsScreen({ navigation }) {
               style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
               <Text style={{ color: colors.navy, fontWeight: '700' }}>Edit</Text>
             </Pressable>
-            <Pressable onPress={() => deactivate(p)} style={{ paddingHorizontal: 6, paddingVertical: 6 }}>
-              <Text style={{ color: colors.red, fontWeight: '700' }}>✕</Text>
-            </Pressable>
+            {p.isActive ? (
+              <Pressable onPress={() => deactivate(p)} style={{ paddingHorizontal: 6, paddingVertical: 6 }}>
+                <Text style={{ color: colors.red, fontWeight: '700' }}>✕</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={async () => {
+                  try {
+                    await api(`/products/${p._id}`, { method: 'PATCH', body: { isActive: true } });
+                    load();
+                  } catch (e) { Alert.alert('Failed', e.message); }
+                }}
+                style={{ paddingHorizontal: 6, paddingVertical: 6 }}
+              >
+                <Text style={{ color: colors.navy, fontWeight: '700' }}>Restore</Text>
+              </Pressable>
+            )}
           </View>
         )}
       />
