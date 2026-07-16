@@ -21,6 +21,9 @@ import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import mongoose from 'mongoose';
+import * as Sentry from '@sentry/node';
+import { startMaintenance } from './utils/maintenance.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === 'production';
@@ -37,7 +40,13 @@ if (isProd && process.env.JWT_SECRET.length < 32) {
   process.exit(1);
 }
 
+if (process.env.SENTRY_DSN) {
+  Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0.1 });
+  console.log('[sentry] error monitoring active');
+}
+
 const app = express();
+app.set('trust proxy', 1); // behind Render's proxy — real client IPs for rate limiting
 app.set('trust proxy', 1); // behind nginx / a load balancer
 
 // ---- Security & performance middleware ----
@@ -49,6 +58,16 @@ app.use(morgan(isProd ? 'combined' : 'dev'));
 
 // General API limit + stricter limit for credential endpoints
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true, legacyHeaders: false }));
+app.get('/health', (req, res) => {
+  const dbUp = mongoose.connection.readyState === 1;
+  res.status(dbUp ? 200 : 503).json({ ok: dbUp, uptime: Math.round(process.uptime()) });
+});
+
+const resetLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false,
+  message: { success: false, message: 'Too many reset requests — try again later' } });
+app.use('/api/auth/forgot-password', resetLimiter);
+app.use('/api/auth/reset-password', resetLimiter);
+
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { success: false, message: 'Too many attempts. Try again in a few minutes.' } }));
 
 app.get('/api/health', (req, res) =>
@@ -119,11 +138,16 @@ if (isProd) {
 }
 
 app.use(notFound);
+app.use((err, req, res, next) => {
+  if (process.env.SENTRY_DSN) Sentry.captureException(err);
+  next(err);
+});
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
+  startMaintenance();
   const server = app.listen(PORT, () =>
     console.log(`Prointeractive API running on port ${PORT} (${process.env.NODE_ENV || 'development'})`)
   );

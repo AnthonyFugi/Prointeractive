@@ -52,6 +52,19 @@ export default function Terms() {
           these terms, the Product Standards Policy, or applicable law.
         </p>
 
+        <h3>6b. Refunds, returns &amp; disputes</h3>
+        <p>
+          Purchases on Prointeractive are agreements between the buyer and the seller. If an item
+          arrives damaged, incorrect, or not as described, contact the seller first through the
+          conversation on the product — most issues are resolved directly. If you cannot reach a
+          resolution within 7 days, email <a href="mailto:hello@fugipay.com">hello@fugipay.com</a>{' '}
+          with your order number and we will review the case. Where a refund is agreed for an
+          online payment, it is processed back through the original payment method. Cash-on-delivery
+          refunds are settled directly between buyer and seller. Repeated unresolved complaints
+          against a seller may lead to removal of their verification badge, storefront closure, or
+          account suspension under our Product Standards Policy.
+        </p>
+
         <h3>7. Liability</h3>
         <p>
           Prointeractive provides the marketplace "as is". To the maximum extent permitted by law, we are not
