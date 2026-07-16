@@ -5,7 +5,7 @@ Backend runs on your machine against the SAME Atlas database as production
 (backend/.env already points there — local == live data).
 
     # terminal 1
-    cd backend && npm run dev        # API on http://localhost:5000
+    cd backend && npm run dev        # API on http://localhost:5001 (5000 is taken by macOS AirPlay)
 
     # terminal 2
     cd frontend && npm run dev       # app on http://localhost:5173

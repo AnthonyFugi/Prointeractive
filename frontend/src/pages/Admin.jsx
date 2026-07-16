@@ -18,6 +18,16 @@ export default function Admin() {
   const [prodFilter, setProdFilter] = useState('all');
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
+  const [editingCat, setEditingCat] = useState(null); // { id, name }
+
+  const saveCategoryName = async (e) => {
+    e.preventDefault();
+    try {
+      const d = await api(`/categories/${editingCat.id}`, { method: 'PATCH', body: { name: editingCat.name } });
+      setCategories((prev) => prev.map((c) => (c._id === editingCat.id ? d.category : c)));
+      setEditingCat(null);
+    } catch (err) { setError(err.message); }
+  };
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -231,8 +241,26 @@ export default function Admin() {
           <hr className="divider" />
           {categories.map((c) => (
             <div className="row spread" key={c._id} style={{ padding: '0.35rem 0' }}>
-              <span style={{ textTransform: 'capitalize' }}>{c.name}</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => removeCategory(c)}>Remove</button>
+              {editingCat?.id === c._id ? (
+                <form onSubmit={saveCategoryName} className="row" style={{ flex: 1 }}>
+                  <input
+                    autoFocus required minLength={2} maxLength={40}
+                    value={editingCat.name}
+                    onChange={(e) => setEditingCat({ ...editingCat, name: e.target.value })}
+                    style={{ flex: 1 }}
+                  />
+                  <button className="btn btn-navy btn-sm">Save</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditingCat(null)}>Cancel</button>
+                </form>
+              ) : (
+                <>
+                  <span style={{ textTransform: 'capitalize' }}>{c.name}</span>
+                  <div className="row">
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingCat({ id: c._id, name: c.name })}>Edit</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => removeCategory(c)}>Remove</button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
