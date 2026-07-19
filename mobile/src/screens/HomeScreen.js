@@ -9,6 +9,7 @@ import { colors, spacing } from '../theme';
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [q, setQ] = useState('');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -28,10 +29,11 @@ export default function HomeScreen({ navigation }) {
     if (query) params.set('q', query);
     if (category) params.set('category', category);
     if (favoritesOnly) params.set('favorites', 'true');
+    if (savedOnly) params.set('saved', 'true');
     return api(`/products?${params}`)
       .then((d) => setProducts(d.products))
       .catch(() => {});
-  }, [query, category, favoritesOnly]);
+  }, [query, category, favoritesOnly, savedOnly]);
 
   useEffect(() => {
     setLoading(true);
@@ -79,18 +81,34 @@ export default function HomeScreen({ navigation }) {
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          ListHeaderComponent={user && user.role === 'customer' && user.favoriteBusinesses && user.favoriteBusinesses.length > 0 ? (
-            <Pressable
-              onPress={() => setFavoritesOnly(!favoritesOnly)}
-              style={{
-                borderRadius: 999, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 5, marginRight: 8,
-                backgroundColor: favoritesOnly ? colors.red : colors.surface,
-                borderColor: colors.red,
-              }}
-            >
-              <Text style={{ color: favoritesOnly ? '#fff' : colors.red, fontSize: 13, fontWeight: '700' }}>♥ My stores</Text>
-            </Pressable>
-          ) : null}
+          ListHeaderComponent={
+            <View style={{ flexDirection: 'row' }}>
+              {user && user.role === 'customer' && user.favoriteBusinesses && user.favoriteBusinesses.length > 0 ? (
+                <Pressable
+                  onPress={() => setFavoritesOnly(!favoritesOnly)}
+                  style={{
+                    borderRadius: 999, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 5, marginRight: 8,
+                    backgroundColor: favoritesOnly ? colors.red : colors.surface,
+                    borderColor: colors.red,
+                  }}
+                >
+                  <Text style={{ color: favoritesOnly ? '#fff' : colors.red, fontSize: 13, fontWeight: '700' }}>♥ My stores</Text>
+                </Pressable>
+              ) : null}
+              {user && user.role === 'customer' && user.favoriteProducts && user.favoriteProducts.length > 0 ? (
+                <Pressable
+                  onPress={() => setSavedOnly(!savedOnly)}
+                  style={{
+                    borderRadius: 999, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 5, marginRight: 8,
+                    backgroundColor: savedOnly ? colors.red : colors.surface,
+                    borderColor: colors.red,
+                  }}
+                >
+                  <Text style={{ color: savedOnly ? '#fff' : colors.red, fontSize: 13, fontWeight: '700' }}>♥ Saved</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          }
           data={categories}
           keyExtractor={(c) => c._id}
           style={{ marginTop: spacing.m }}
@@ -115,7 +133,7 @@ export default function HomeScreen({ navigation }) {
         <ActivityIndicator color={colors.navy} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
-          ListHeaderComponent={trending.length > 0 && !query && !category && !favoritesOnly ? (
+          ListHeaderComponent={trending.length > 0 && !query && !category && !favoritesOnly && !savedOnly ? (
             <View style={{ backgroundColor: colors.navySoft, borderRadius: 14, borderWidth: 1, borderColor: colors.line, paddingVertical: spacing.m, paddingLeft: spacing.m, marginBottom: spacing.l }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingRight: spacing.m, marginBottom: spacing.s }}>
                 <Text style={{ fontWeight: '800', fontSize: 17 }}>Trending 🔥</Text>

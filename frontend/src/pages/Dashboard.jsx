@@ -69,7 +69,7 @@ export default function Dashboard() {
             <button
               type="button"
               key={c._id}
-              className={`chip-btn ${on ? 'on' : ''}`}
+              className={`chip ${on ? 'on' : ''}`}
               onClick={() => toggleBizCategory(c.name)}
             >
               {c.name}
@@ -79,7 +79,7 @@ export default function Dashboard() {
         {bizForm.categories
           .filter((name) => !productCategories.some((c) => c.name === name))
           .map((name) => (
-            <button type="button" key={name} className="chip-btn on" onClick={() => toggleBizCategory(name)}>
+            <button type="button" key={name} className="chip on" onClick={() => toggleBizCategory(name)}>
               {name} (legacy)
             </button>
           ))}

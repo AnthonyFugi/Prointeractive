@@ -21,6 +21,7 @@ export default function ProductScreen({ route, navigation }) {
   const [myComment, setMyComment] = useState('');
   const [sendingReview, setSendingReview] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
+  const [savedLocal, setSavedLocal] = useState(null);
 
   const submitReview = async () => {
     if (!myRating) return Alert.alert('Pick a rating', 'Tap the stars to rate this product.');
@@ -142,6 +143,29 @@ export default function ProductScreen({ route, navigation }) {
       >
         <Text style={{ color: '#fff', fontWeight: '800', textAlign: 'center' }}>Add to cart</Text>
       </Pressable>
+      {user && user.role === 'customer' ? (() => {
+        const isSaved = savedLocal !== null
+          ? savedLocal
+          : !!(user.favoriteProducts && user.favoriteProducts.some((pid) => String(pid) === String(product._id)));
+        return (
+          <Pressable
+            onPress={async () => {
+              try {
+                await api(`/products/${product._id}/favorite`, { method: 'POST', body: { favorited: !isSaved } });
+                setSavedLocal(!isSaved);
+              } catch (e) { Alert.alert('Failed', e.message); }
+            }}
+            style={{
+              borderWidth: 1.5, borderColor: colors.red, borderRadius: 10, padding: 12, marginTop: spacing.s,
+              backgroundColor: isSaved ? colors.red : 'transparent',
+            }}
+          >
+            <Text style={{ color: isSaved ? '#fff' : colors.red, fontWeight: '700', textAlign: 'center' }}>
+              {isSaved ? '♥ Saved' : '♡ Save for later'}
+            </Text>
+          </Pressable>
+        );
+      })() : null}
       <Pressable
         onPress={() => setAsking(!asking)}
         style={{ borderWidth: 1.5, borderColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.s }}
@@ -206,7 +230,7 @@ export default function ProductScreen({ route, navigation }) {
           <View style={{ flexDirection: 'row', gap: 6, marginTop: spacing.s }}>
             {[1, 2, 3, 4, 5].map((n) => (
               <Text key={n} onPress={() => setMyRating(n)}
-                style={{ fontSize: 28, color: n <= myRating ? colors.red : colors.line }}>
+                style={{ fontSize: 30, color: n <= myRating ? '#f5b301' : colors.line }}>
                 ★
               </Text>
             ))}

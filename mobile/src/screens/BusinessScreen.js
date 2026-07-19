@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useState as useS } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
@@ -57,7 +57,16 @@ export default function BusinessScreen({ route, navigation }) {
       ListHeaderComponent={
         <View style={{ padding: spacing.s, marginBottom: spacing.s }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ fontSize: 22, fontWeight: '800' }}>{business.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {business.logoUrl ? (
+                <Image
+                  source={{ uri: business.logoUrl }}
+                  style={{ width: 52, height: 52, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line, marginRight: spacing.m }}
+                  resizeMode="contain"
+                />
+              ) : null}
+              <Text style={{ fontSize: 22, fontWeight: '800', flexShrink: 1 }}>{business.name}</Text>
+            </View>
             {business.verified ? <VerifiedBadge size={18} /> : null}
           </View>
           <Text style={{ color: colors.muted, marginTop: 2 }}>

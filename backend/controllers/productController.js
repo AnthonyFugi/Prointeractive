@@ -31,7 +31,7 @@ export const createProduct = async (req, res, next) => {
 // GET /api/products  (public: search, filter, paginate, sort)
 export const listProducts = async (req, res, next) => {
   try {
-    const { q, category, business, favorites, includeInactive, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
+    const { q, category, business, favorites, saved, includeInactive, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
     const filter = { isActive: true };
     if (includeInactive === 'true' && req.user) {
       // Only the storefront's owner (or an admin) may see hidden products
@@ -51,6 +51,10 @@ export const listProducts = async (req, res, next) => {
         const biz = await Business.findOne({ slug: String(business).toLowerCase() }).select('_id');
         filter.business = biz ? biz._id : null;
       }
+    }
+    if (saved === 'true') {
+      const ids = req.user?.favoriteProducts || [];
+      filter._id = { $in: ids };
     }
     if (favorites === 'true') {
       // Signed-in users only; anonymous requests get an empty result, not an error
@@ -163,6 +167,23 @@ export const trendingProducts = async (req, res, next) => {
       products = [...products, ...fill];
     }
     res.json({ success: true, products });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// POST /api/products/:id/favorite  { favorited: true|false } — save/unsave (wishlist)
+export const setFavoriteProduct = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    const favorited = !!req.body.favorited;
+    const op = favorited
+      ? { $addToSet: { favoriteProducts: product._id } }
+      : { $pull: { favoriteProducts: product._id } };
+    await req.user.updateOne(op);
+    res.json({ success: true, favorited });
   } catch (err) {
     next(err);
   }

@@ -11,6 +11,7 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [trending, setTrending] = useState([]);
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ products: [], pages: 1, total: 0 });
@@ -27,11 +28,13 @@ export default function Home() {
     const params = new URLSearchParams({ page, limit: 12 });
     if (query) params.set('q', query);
     if (category) params.set('category', category);
+    if (favoritesOnly) params.set('favorites', 'true');
+    if (savedOnly) params.set('saved', 'true');
     api(`/products?${params}`)
       .then(setData)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [query, category, page]);
+  }, [query, category, favoritesOnly, savedOnly, page]);
 
   return (
     <div className="container">
@@ -72,6 +75,22 @@ export default function Home() {
           </p>
         )}
         <div className="chips" role="group" aria-label="Filter by category">
+          {user?.role === 'customer' && user.favoriteBusinesses?.length > 0 && (
+            <button
+              className={`chip ${favoritesOnly ? 'on' : ''}`}
+              onClick={() => { setPage(1); setFavoritesOnly(!favoritesOnly); }}
+            >
+              ♥ My stores
+            </button>
+          )}
+          {user?.role === 'customer' && user.favoriteProducts?.length > 0 && (
+            <button
+              className={`chip ${savedOnly ? 'on' : ''}`}
+              onClick={() => { setPage(1); setSavedOnly(!savedOnly); }}
+            >
+              ♥ Saved items
+            </button>
+          )}
           {categories.map((c) => (
             <button
               key={c._id}
@@ -85,7 +104,7 @@ export default function Home() {
       </section>
 
       {error && <p className="error-text">{error}</p>}
-      {trending.length > 0 && !query && !category && !favoritesOnly && (
+      {trending.length > 0 && !query && !category && !favoritesOnly && !savedOnly && (
         <section className="trending-band">
           <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
             <h2 style={{ margin: 0 }}>Trending 🔥</h2>

@@ -11,7 +11,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { add } = useCart();
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
 
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -26,7 +26,8 @@ export default function ProductDetail() {
   const [askState, setAskState] = useState('');
 
   // Review form
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
+  const [hoverStar, setHoverStar] = useState(0);
   const [reviewMsg, setReviewMsg] = useState('');
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function ProductDetail() {
   const sendInquiry = async (e) => {
     e.preventDefault();
     if (!user) return navigate('/login', { state: { from: `/products/${id}` } });
+    if (!reviewForm.rating) { setReviewMsg('Pick a star rating first.'); return; }
     setAskState('');
     try {
       await api('/inquiries', {
@@ -113,6 +115,24 @@ export default function ProductDetail() {
               disabled={product.stock < 1} onClick={addToCart}>
               {added ? 'Added ✓' : 'Add to cart'}
             </button>
+            {user?.role === 'customer' && (() => {
+              const savedProduct = user.favoriteProducts?.some((pid) => String(pid) === String(product._id));
+              return (
+                <button
+                  type="button"
+                  className={`btn ${savedProduct ? 'btn-red' : 'btn-ghost'}`}
+                  style={{ width: '100%', marginTop: '0.5rem' }}
+                  onClick={async () => {
+                    try {
+                      await api(`/products/${product._id}/favorite`, { method: 'POST', body: { favorited: !savedProduct } });
+                      if (refresh) await refresh();
+                    } catch (e) { alert(e.message); }
+                  }}
+                >
+                  {savedProduct ? '♥ Saved' : '♡ Save for later'}
+                </button>
+              );
+            })()}
             <button className="btn btn-ghost" style={{ width: '100%', marginTop: '0.5rem' }}
               onClick={() => setAsking(!asking)}>
               Ask the seller
@@ -184,11 +204,24 @@ export default function ProductDetail() {
         <h3>Write a review</h3>
         <p className="muted">Available once your order of this product is delivered.</p>
         <form onSubmit={sendReview} style={{ maxWidth: 480 }}>
-          <label htmlFor="rating">Rating</label>
-          <select id="rating" value={reviewForm.rating}
-            onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })}>
-            {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} star{n > 1 ? 's' : ''}</option>)}
-          </select>
+          <label>Rating</label>
+          <div className="star-picker" role="radiogroup" aria-label="Rating" onMouseLeave={() => setHoverStar(0)}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                type="button"
+                key={n}
+                role="radio"
+                aria-checked={reviewForm.rating === n}
+                aria-label={`${n} star${n > 1 ? 's' : ''}`}
+                className={`star ${n <= (hoverStar || reviewForm.rating) ? 'on' : ''}`}
+                onMouseEnter={() => setHoverStar(n)}
+                onClick={() => setReviewForm({ ...reviewForm, rating: n })}
+              >
+                ★
+              </button>
+            ))}
+            {reviewForm.rating > 0 && <span className="muted" style={{ fontSize: '0.85rem', alignSelf: 'center' }}>{reviewForm.rating}/5</span>}
+          </div>
           <label htmlFor="comment">Comment</label>
           <textarea id="comment" value={reviewForm.comment}
             onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })} />

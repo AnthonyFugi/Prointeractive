@@ -52,10 +52,19 @@ export default function BusinessPage() {
       <p style={{ marginTop: '1.25rem' }}><Link to="/businesses">← All businesses</Link></p>
       <div className="panel">
         <div className="row spread">
-          <div>
+          <div className="row" style={{ alignItems: 'center' }}>
+            {business.logoUrl && (
+              <img
+                src={business.logoUrl}
+                alt={`${business.name} logo`}
+                style={{ width: 64, height: 64, borderRadius: 12, objectFit: 'contain', background: '#fff', padding: 5, border: '1px solid var(--line)', flexShrink: 0 }}
+              />
+            )}
+            <div>
             <h1>{business.name}{business.verified && <VerifiedBadge size={22} />}</h1>
             <p className="muted">{(business.categories?.length ? business.categories.join(' · ') : business.category)}{business.location && ` · ${business.location}`}{business.phone && ` · ${business.phone}`}</p>
             {business.description && <p>{business.description}</p>}
+            </div>
           </div>
           <div className="row">
             {user && user.role === 'customer' && (() => {

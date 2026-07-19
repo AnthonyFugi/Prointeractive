@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
     expoPushToken: { type: String, default: '' },
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     favoriteBusinesses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Business' }],
+    favoriteProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     suspended: { type: Boolean, default: false },
     resetPasswordTokenHash: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },

@@ -55,10 +55,10 @@ export const login = async (req, res, next) => {
 
 // GET /api/auth/me
 export const getMe = async (req, res) => {
-  const { _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses = [] } = req.user;
+  const { _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses = [], favoriteProducts = [] } = req.user;
   res.json({
     success: true,
-    user: { id: _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses },
+    user: { id: _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses, favoriteProducts },
   });
 };
 
