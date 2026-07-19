@@ -51,7 +51,7 @@ export default function HomeScreen({ navigation }) {
           MAKING BUSINESS INTERACTION, EASY!
         </Text>
         <Text style={{ fontSize: 22, fontWeight: '800', color: colors.ink, marginTop: 4 }}>
-          Buy from businesses you can actually talk to.
+          What you need, from businesses you trust.
         </Text>
         <Text style={{ marginTop: spacing.s, fontSize: 12 }}>
           <Text style={{ color: colors.navy, fontWeight: '800' }}>✓ New &amp; authentic only</Text>

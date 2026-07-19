@@ -11,6 +11,7 @@ export default function BusinessPage() {
   const { user } = useAuth();
   const [business, setBusiness] = useState(null);
   const [products, setProducts] = useState([]);
+  const [storeQuery, setStoreQuery] = useState('');
   const [error, setError] = useState('');
   const [asking, setAsking] = useState(false);
   const [form, setForm] = useState({ subject: '', message: '' });
@@ -25,7 +26,7 @@ export default function BusinessPage() {
 
   useEffect(() => {
     if (!business?._id) return;
-    api(`/products?business=${business._id}&limit=24`).then((d) => setProducts(d.products)).catch(() => {});
+    api(`/products?business=${business._id}&limit=100`).then((d) => setProducts(d.products)).catch(() => {});
   }, [business?._id]);
 
   const send = async (e) => {
@@ -101,10 +102,27 @@ export default function BusinessPage() {
           </form>
         )}
       </div>
-      <h2 className="section-title">Products</h2>
-      {products.length === 0
-        ? <p className="muted">No products listed yet.</p>
-        : <div className="grid">{products.map((p) => <ProductCard key={p._id} product={p} />)}</div>}
+      <div className="row spread" style={{ alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+        <h2 className="section-title" style={{ margin: 0 }}>Products</h2>
+        {products.length > 3 && (
+          <input
+            placeholder={`Search in ${business.name}…`}
+            value={storeQuery}
+            onChange={(e) => setStoreQuery(e.target.value)}
+            style={{ maxWidth: 260 }}
+          />
+        )}
+      </div>
+      {(() => {
+        const q = storeQuery.trim().toLowerCase();
+        const shown = q
+          ? products.filter((p) => p.name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q))
+          : products;
+        if (shown.length === 0) {
+          return <p className="muted">{q ? `Nothing matching “${storeQuery}” in this store.` : 'No products listed yet.'}</p>;
+        }
+        return <div className="grid">{shown.map((p) => <ProductCard key={p._id} product={p} />)}</div>;
+      })()}
     </div>
   );
 }

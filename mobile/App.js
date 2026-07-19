@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Text } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { CartProvider, useCart } from './src/context/CartContext';
 import { colors } from './src/theme';
@@ -21,6 +21,7 @@ import ThreadScreen from './src/screens/ThreadScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import DeleteAccountScreen from './src/screens/DeleteAccountScreen';
 import SellerOrdersScreen from './src/screens/SellerOrdersScreen';
 import SellerProductsScreen from './src/screens/SellerProductsScreen';
 import ProductFormScreen from './src/screens/ProductFormScreen';
@@ -28,6 +29,13 @@ import ProductFormScreen from './src/screens/ProductFormScreen';
 const Tab = createBottomTabNavigator();
 
 // Consistent, breathable header styling on every stack
+const BrandHeader = () => (
+  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+    <Image source={require('./assets/icon.png')} style={{ width: 26, height: 26, borderRadius: 6 }} />
+    <Text style={{ fontWeight: '800', fontSize: 17, color: colors.ink }}>Pro·interactive</Text>
+  </View>
+);
+
 const stackScreenOptions = {
   headerStyle: { backgroundColor: colors.surface },
   headerTitleStyle: { fontWeight: '800', fontSize: 17, color: colors.ink },
@@ -43,7 +51,7 @@ const ShopStack = makeStack();
 function ShopStackScreen() {
   return (
     <ShopStack.Navigator screenOptions={stackScreenOptions}>
-      <ShopStack.Screen name="ShopHome" component={HomeScreen} options={{ title: 'Pro·interactive' }} />
+      <ShopStack.Screen name="ShopHome" component={HomeScreen} options={{ headerTitle: () => <BrandHeader /> }} />
       <ShopStack.Screen name="Product" component={ProductScreen} options={{ title: '' }} />
       <ShopStack.Screen name="Business" component={BusinessScreen} options={{ title: 'Storefront' }} />
     </ShopStack.Navigator>
@@ -119,6 +127,7 @@ function AccountStackScreen() {
       <AccountStack.Screen name="Login" component={LoginScreen} options={{ title: 'Sign in' }} />
       <AccountStack.Screen name="Register" component={RegisterScreen} options={{ title: 'Create account' }} />
       <AccountStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Reset password' }} />
+      <AccountStack.Screen name="DeleteAccount" component={DeleteAccountScreen} options={{ title: 'Delete account' }} />
     </AccountStack.Navigator>
   );
 }

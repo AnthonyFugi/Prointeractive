@@ -35,6 +35,9 @@ export default function LoginScreen({ navigation }) {
       <Pressable onPress={() => navigation.navigate('Register')} style={{ marginTop: spacing.m }}>
         <Text style={{ color: colors.navy, textAlign: 'center', fontWeight: '600' }}>New here? Create an account</Text>
       </Pressable>
+      <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={{ marginTop: spacing.s }}>
+        <Text style={{ color: colors.muted, textAlign: 'center', fontWeight: '600' }}>Forgot your password?</Text>
+      </Pressable>
     </View>
   );
 }

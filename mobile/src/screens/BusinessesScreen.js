@@ -25,6 +25,10 @@ export default function BusinessesScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.l }}>
+      <Text style={{ fontSize: 20, fontWeight: '800', color: colors.ink }}>Businesses you can talk to</Text>
+      <Text style={{ color: colors.muted, fontSize: 13, marginTop: 2, marginBottom: spacing.m }}>
+        Every storefront is a real Zambian business — browse their products or message them directly.
+      </Text>
       <TextInput
         value={q}
         onChangeText={setQ}

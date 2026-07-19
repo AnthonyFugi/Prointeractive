@@ -76,6 +76,25 @@ export default function ThreadScreen({ route }) {
         {otherPartyId ? (
           <Text style={{ color: colors.red, fontWeight: '700', fontSize: 13 }} onPress={block}>Block</Text>
         ) : null}
+        {inquiry.status !== 'closed' ? (
+          <Text
+            style={{ color: colors.muted, fontWeight: '700', fontSize: 13 }}
+            onPress={() =>
+              Alert.alert('Close this conversation?', 'You can reopen it later.', [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Close', style: 'destructive',
+                  onPress: async () => {
+                    try { await api(`/inquiries/${id}/close`, { method: 'PATCH' }); load(); }
+                    catch (e) { Alert.alert('Failed', e.message); }
+                  },
+                },
+              ])
+            }
+          >
+            Close
+          </Text>
+        ) : null}
       </View>
       <FlatList
         contentContainerStyle={{ padding: spacing.l }}

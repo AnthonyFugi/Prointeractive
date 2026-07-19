@@ -11,9 +11,9 @@ export default function ProductCard({ product, onPress }) {
         borderWidth: 1, borderColor: colors.line, overflow: 'hidden', margin: spacing.xs,
       }}
     >
-      <View style={{ aspectRatio: 4 / 3, backgroundColor: colors.navySoft, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ aspectRatio: 4 / 3, backgroundColor: product.images && product.images[0] ? '#fff' : colors.navySoft, alignItems: 'center', justifyContent: 'center' }}>
         {product.images && product.images[0] ? (
-          <Image source={{ uri: product.images[0] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          <Image source={{ uri: product.images[0] }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
         ) : (
           <Text style={{ fontSize: 28, fontWeight: '700', color: colors.navy }}>
             {(product.name && product.name[0] ? product.name[0] : '?').toUpperCase()}

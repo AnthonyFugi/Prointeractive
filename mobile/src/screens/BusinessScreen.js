@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useState as useS } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
@@ -13,11 +13,18 @@ export default function BusinessScreen({ route, navigation }) {
   const [business, setBusiness] = useState(null);
   const [products, setProducts] = useState([]);
   const [fav, setFav] = useState(null); // null until user known
+  const [storeQuery, setStoreQuery] = useState('');
 
-  useEffect(() => {
-    api(`/businesses/${id}`).then((d) => setBusiness(d.business)).catch(() => {});
-    api(`/products?business=${id}&limit=30`).then((d) => setProducts(d.products)).catch(() => {});
-  }, [id]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = () => Promise.all([
+    api(`/businesses/${id}`).then((d) => setBusiness(d.business)).catch(() => {}),
+    api(`/products?business=${id}&limit=100`).then((d) => setProducts(d.products)).catch(() => {}),
+  ]);
+
+  useEffect(() => { load(); }, [id]);
+
+  const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
 
   if (!business) return <ActivityIndicator color={colors.navy} style={{ marginTop: 60 }} />;
 
@@ -38,7 +45,13 @@ export default function BusinessScreen({ route, navigation }) {
     <FlatList
       style={{ flex: 1, backgroundColor: colors.paper }}
       contentContainerStyle={{ padding: spacing.m, paddingBottom: 40 }}
-      data={products}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      data={storeQuery.trim()
+        ? products.filter((p) => {
+            const q = storeQuery.trim().toLowerCase();
+            return (p.name || '').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q);
+          })
+        : products}
       numColumns={2}
       keyExtractor={(p) => p._id}
       ListHeaderComponent={
@@ -63,6 +76,15 @@ export default function BusinessScreen({ route, navigation }) {
                 {isFav ? '♥ Favorited' : '♡ Add to favorites'}
               </Text>
             </Pressable>
+          ) : null}
+          {products.length > 3 ? (
+            <TextInput
+              placeholder="Search in this store…"
+              placeholderTextColor={colors.muted}
+              value={storeQuery}
+              onChangeText={setStoreQuery}
+              style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 10, marginTop: spacing.m }}
+            />
           ) : null}
         </View>
       }

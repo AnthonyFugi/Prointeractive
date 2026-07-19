@@ -1,4 +1,4 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, Text, View } from 'react-native';
 import { useCart } from '../context/CartContext';
 import { colors, money, spacing } from '../theme';
 
@@ -22,7 +22,31 @@ export default function CartScreen({ navigation }) {
         contentContainerStyle={{ padding: spacing.l }}
         renderItem={({ item }) => (
           <View style={{ backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.line, padding: spacing.l, marginBottom: spacing.s }}>
-            <Text style={{ fontWeight: '700' }}>{item.product.name}</Text>
+            <View style={{ flexDirection: 'row' }}>
+              {item.product.images && item.product.images[0] ? (
+                <Image source={{ uri: item.product.images[0] }}
+                  style={{ width: 56, height: 56, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line, marginRight: spacing.m }}
+                  resizeMode="contain" />
+              ) : (
+                <View style={{ width: 56, height: 56, borderRadius: 8, backgroundColor: colors.navySoft, marginRight: spacing.m }} />
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: '700' }} numberOfLines={1}>{item.product.name}</Text>
+                {item.product.business && item.product.business.name ? (
+                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 1 }} numberOfLines={1}>
+                    from {item.product.business.name}
+                  </Text>
+                ) : null}
+                <Text style={{ color: colors.muted, fontSize: 12, marginTop: 1 }}>
+                  {money(item.product.price, item.product.currency)} each
+                  {typeof item.product.stock === 'number' && item.product.stock <= 5 ? `  ·  only ${item.product.stock} left` : ''}
+                </Text>
+              </View>
+              <Text style={{ color: colors.muted, fontWeight: '700', paddingLeft: 8 }}
+                onPress={() => setQty(item.product._id, 0)}>
+                ✕
+              </Text>
+            </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.s }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <Pressable onPress={() => setQty(item.product._id, item.quantity - 1)}

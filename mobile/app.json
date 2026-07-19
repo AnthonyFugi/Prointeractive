@@ -13,10 +13,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.prointeractive"
+      "bundleIdentifier": "com.proint"
     },
     "android": {
-      "package": "com.prointeractive.app",
+      "package": "com.proint",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -24,12 +24,16 @@
       "versionCode": 1
     },
     "extra": {
-      "apiUrl": "https://prointeractive.onrender.com"
+      "apiUrl": "https://prointeractive.onrender.com",
+      "eas": {
+        "projectId": "139f5e42-7f27-45c4-9dab-262a43cb72fa"
+      }
     },
     "icon": "./assets/icon.png",
     "plugins": [
       "expo-secure-store",
       "expo-web-browser"
-    ]
+    ],
+    "owner": "khahtech"
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
+import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing } from '../theme';
 
 export default function ProductFormScreen({ route, navigation }) {
@@ -43,7 +44,6 @@ export default function ProductFormScreen({ route, navigation }) {
 
   const pickImage = async () => {
     try {
-      const ImagePicker = await import('expo-image-picker');
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) return Alert.alert('Permission needed', 'Allow photo access to add product images.');
       const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });

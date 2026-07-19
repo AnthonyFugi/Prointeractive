@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
@@ -16,13 +16,38 @@ export default function ProductScreen({ route, navigation }) {
   const [asking, setAsking] = useState(false);
   const [imgIdx, setImgIdx] = useState(0);
 
-  useEffect(() => {
+  const [refreshing, setRefreshing] = useState(false);
+  const [myRating, setMyRating] = useState(0);
+  const [myComment, setMyComment] = useState('');
+  const [sendingReview, setSendingReview] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+
+  const submitReview = async () => {
+    if (!myRating) return Alert.alert('Pick a rating', 'Tap the stars to rate this product.');
+    setSendingReview(true);
+    try {
+      await api(`/products/${id}/reviews`, { method: 'POST', body: { rating: myRating, comment: myComment.trim() } });
+      setMyRating(0);
+      setMyComment('');
+      await load();
+    } catch (e) {
+      Alert.alert('Could not post review', e.message);
+    } finally {
+      setSendingReview(false);
+    }
+  };
+
+  const load = () => Promise.all([
     api(`/products/${id}`).then((d) => {
       setProduct(d.product);
       navigation.setOptions({ title: d.product.name });
-    }).catch(() => {});
-    api(`/products/${id}/reviews`).then((d) => setReviews(d.reviews)).catch(() => {});
-  }, [id]);
+    }).catch(() => {}),
+    api(`/products/${id}/reviews`).then((d) => setReviews(d.reviews)).catch(() => {}),
+  ]);
+
+  useEffect(() => { load(); }, [id]);
+
+  const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
 
   if (!product) return <ActivityIndicator color={colors.navy} style={{ marginTop: 60 }} />;
 
@@ -47,8 +72,12 @@ export default function ProductScreen({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ padding: spacing.l }}>
-      <View style={{ aspectRatio: 4 / 3, backgroundColor: colors.navySoft, borderRadius: 10, overflow: 'hidden' }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.paper }}
+      contentContainerStyle={{ padding: spacing.l }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
+      <View style={{ aspectRatio: 4 / 3, backgroundColor: product.images && product.images.length > 0 ? '#fff' : colors.navySoft, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: colors.line }}>
         {product.images && product.images.length > 0 ? (
           <>
             <ScrollView
@@ -65,7 +94,7 @@ export default function ProductScreen({ route, navigation }) {
                   key={url}
                   source={{ uri: url }}
                   style={{ width: Dimensions.get('window').width - spacing.l * 2, height: '100%' }}
-                  resizeMode="cover"
+                  resizeMode="contain"
                 />
               ))}
             </ScrollView>
@@ -104,7 +133,11 @@ export default function ProductScreen({ route, navigation }) {
 
       <Pressable
         disabled={product.stock < 1}
-        onPress={() => { add(product, 1); Alert.alert('Added to cart', product.name); }}
+        onPress={() => {
+          add(product, 1);
+          setJustAdded(true);
+          setTimeout(() => setJustAdded(false), 3000);
+        }}
         style={{ backgroundColor: product.stock < 1 ? colors.line : colors.red, borderRadius: 10, padding: 14, marginTop: spacing.l }}
       >
         <Text style={{ color: '#fff', fontWeight: '800', textAlign: 'center' }}>Add to cart</Text>
@@ -166,6 +199,57 @@ export default function ProductScreen({ route, navigation }) {
           </View>
         ))
       )}
+
+      {user ? (
+        <View style={{ backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.line, padding: spacing.m, marginTop: spacing.m }}>
+          <Text style={{ fontWeight: '700' }}>Write a review</Text>
+          <View style={{ flexDirection: 'row', gap: 6, marginTop: spacing.s }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Text key={n} onPress={() => setMyRating(n)}
+                style={{ fontSize: 28, color: n <= myRating ? colors.red : colors.line }}>
+                ★
+              </Text>
+            ))}
+          </View>
+          <TextInput
+            placeholder="Share your experience (optional)"
+            placeholderTextColor={colors.muted}
+            value={myComment}
+            onChangeText={setMyComment}
+            multiline
+            style={{ backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: 10, marginTop: spacing.s, minHeight: 60 }}
+          />
+          <Pressable onPress={submitReview} disabled={sendingReview}
+            style={{ backgroundColor: colors.navy, opacity: sendingReview ? 0.6 : 1, borderRadius: 8, padding: 12, marginTop: spacing.s }}>
+            <Text style={{ color: '#fff', fontWeight: '700', textAlign: 'center' }}>
+              {sendingReview ? 'Posting…' : 'Post review'}
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Text style={{ color: colors.muted, marginTop: spacing.m, fontSize: 13 }}>Sign in to write a review.</Text>
+      )}
+
+      {justAdded ? (
+        <View style={{
+          position: 'absolute', left: spacing.l, right: spacing.l, bottom: spacing.l,
+          backgroundColor: colors.ink, borderRadius: 12, padding: spacing.m,
+          flexDirection: 'row', alignItems: 'center',
+          shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+        }}>
+          {product.images && product.images[0] ? (
+            <Image source={{ uri: product.images[0] }} style={{ width: 40, height: 40, borderRadius: 6, backgroundColor: '#fff' }} resizeMode="contain" />
+          ) : null}
+          <View style={{ flex: 1, marginLeft: spacing.m }}>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }} numberOfLines={1}>✓ Added to cart</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }} numberOfLines={1}>{product.name}</Text>
+          </View>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}
+            onPress={() => { setJustAdded(false); navigation.navigate('CartTab'); }}>
+            View cart
+          </Text>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }

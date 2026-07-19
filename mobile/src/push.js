@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { api } from './api';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 
 // Registers this device for push notifications and stores the token server-side.
 // Safe to call repeatedly; fails silently (never blocks sign-in).
@@ -8,8 +10,6 @@ import { api } from './api';
 // does not support remote push — test with the preview APK.
 export async function registerForPush() {
   try {
-    const Notifications = await import('expo-notifications');
-    const Device = await import('expo-device');
     if (!Device.isDevice) return;
 
     if (Platform.OS === 'android') {
