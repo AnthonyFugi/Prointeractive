@@ -20,6 +20,7 @@ const businessSchema = new mongoose.Schema(
     verificationRequested: { type: Boolean, default: false },
     verificationRequestedAt: Date,
     closed: { type: Boolean, default: false },
+    closedBy: { type: String, enum: ['admin', 'owner', null], default: null },
     ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0 },
     payout: {

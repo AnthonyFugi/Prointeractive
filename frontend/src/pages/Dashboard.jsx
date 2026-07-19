@@ -44,6 +44,16 @@ export default function Dashboard() {
       return next;
     });
 
+  const toggleStorefrontClosed = async () => {
+    const closing = !business.closed;
+    if (closing && !window.confirm('Close your storefront? It will be hidden from customers and your products removed from the shop until you reopen.')) return;
+    try {
+      const d = await api(`/businesses/${business._id}/closed`, { method: 'PATCH', body: { closed: closing } });
+      setBusiness(d.business);
+      flashToast(closing ? 'Storefront closed — hidden from customers' : '✓ Storefront reopened — products restored');
+    } catch (e) { setError(e.message); }
+  };
+
   const reactivate = async (id) => {
     try {
       await api(`/products/${id}`, { method: 'PATCH', body: { isActive: true } });
@@ -137,9 +147,8 @@ export default function Dashboard() {
   };
 
   const findMyBusiness = async () => {
-    const me = await api('/auth/me');
-    const list = await api('/businesses?limit=100');
-    return list.businesses.find((b) => b.owner === me.user.id || b.owner?._id === me.user.id) || null;
+    const d = await api('/businesses/mine');
+    return d.business;
   };
 
   const loadBanks = () => {
@@ -349,10 +358,33 @@ export default function Dashboard() {
             Copy store link
           </button>
           <Link to={`/businesses/${business.slug || business._id}`} className="btn btn-ghost btn-sm">View public storefront</Link>
+          {!business.closed && (
+            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={toggleStorefrontClosed}>
+              Close storefront temporarily
+            </button>
+          )}
         </div>
       </div>
       {error && <p className="error-text">{error}</p>}
       {toast && <div className="toast" role="status">{toast}</div>}
+
+      {business.closed && (
+        <div className="panel" style={{ borderColor: 'var(--red)', background: 'var(--red-soft, #fdf1f1)' }}>
+          <div className="row spread" style={{ alignItems: 'center' }}>
+            <div>
+              <strong style={{ color: 'var(--red)' }}>Your storefront is closed</strong>
+              <p className="muted" style={{ margin: '0.25rem 0 0' }}>
+                {business.closedBy === 'admin'
+                  ? 'It was closed by Prointeractive. Contact hello@fugipay.com to appeal.'
+                  : 'Customers can\u2019t see your store or products until you reopen.'}
+              </p>
+            </div>
+            {business.closedBy !== 'admin' && (
+              <button className="btn btn-navy btn-sm" onClick={toggleStorefrontClosed}>Reopen storefront</button>
+            )}
+          </div>
+        </div>
+      )}
 
       {!business.verified && (
         <div className="panel" style={{ borderColor: 'var(--verify-blue, #1D9BF0)' }}>

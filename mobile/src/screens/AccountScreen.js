@@ -11,13 +11,8 @@ export default function AccountScreen({ navigation }) {
 
   useEffect(() => {
     if (!user || user.role !== 'business') return;
-    Promise.all([api('/auth/me'), api('/businesses?limit=100')])
-      .then(([me, list]) => {
-        const mine = list.businesses.find(
-          (b) => b.owner === me.user.id || (b.owner && b.owner._id === me.user.id)
-        );
-        setBusiness(mine || null);
-      })
+    api('/businesses/mine')
+      .then((d) => setBusiness(d.business))
       .catch(() => {});
   }, [user]);
 

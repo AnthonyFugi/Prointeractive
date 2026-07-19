@@ -182,7 +182,7 @@ export const setBusinessClosed = async (req, res, next) => {
     const closed = !!req.body.closed;
     const business = await Business.findByIdAndUpdate(
       req.params.id,
-      { closed },
+      { closed, closedBy: closed ? 'admin' : null },
       { new: true }
     ).populate('owner', 'name email');
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
@@ -196,7 +196,7 @@ export const setBusinessClosed = async (req, res, next) => {
     } else {
       // Reopen restores exactly what the close deactivated — seller-hidden products stay hidden
       await Product.updateMany(
-        { business: business._id, deactivatedReason: 'admin_close' },
+        { business: business._id, deactivatedReason: { $in: ['admin_close', 'owner_close'] } },
         { isActive: true, deactivatedReason: null }
       );
     }

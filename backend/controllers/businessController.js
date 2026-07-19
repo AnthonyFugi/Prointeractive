@@ -1,5 +1,6 @@
 import Business from '../models/Business.js';
 import Category from '../models/Category.js';
+import Product from '../models/Product.js';
 
 const MAX_BUSINESS_CATEGORIES = 3;
 /** Accepts `categories` array or legacy `category` string; returns clean array or an error string. */
@@ -220,6 +221,52 @@ export const requestVerification = async (req, res, next) => {
       body: `${business.name} (${(business.categories && business.categories.length ? business.categories.join(', ') : business.category) || 'uncategorised'}${business.location ? ', ' + business.location : ''}) has requested verification. Review it in the admin panel → Businesses.`,
     });
 
+    res.json({ success: true, business });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// GET /api/businesses/mine — the owner's business, closed or not
+export const getMyBusiness = async (req, res, next) => {
+  try {
+    const business = await Business.findOne({ owner: req.user._id });
+    res.json({ success: true, business: business || null });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PATCH /api/businesses/:id/closed  { closed: true|false } — owner self-close/reopen
+export const setOwnClosed = async (req, res, next) => {
+  try {
+    const business = await Business.findById(req.params.id);
+    if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+    if (!business.owner.equals(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'Not your business' });
+    }
+    const closed = !!req.body.closed;
+    if (!closed && business.closed && business.closedBy === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'This storefront was closed by Prointeractive — contact hello@fugipay.com to appeal.',
+      });
+    }
+    business.closed = closed;
+    business.closedBy = closed ? 'owner' : null;
+    await business.save();
+    if (closed) {
+      await Product.updateMany(
+        { business: business._id, isActive: true },
+        { isActive: false, deactivatedReason: 'owner_close' }
+      );
+    } else {
+      await Product.updateMany(
+        { business: business._id, deactivatedReason: { $in: ['owner_close', 'admin_close'] } },
+        { isActive: true, deactivatedReason: null }
+      );
+    }
     res.json({ success: true, business });
   } catch (err) {
     next(err);

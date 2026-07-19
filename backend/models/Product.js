@@ -15,7 +15,7 @@ const productSchema = new mongoose.Schema(
     category: { type: String, default: 'general', lowercase: true },
     stock: { type: Number, default: 0, min: 0 },
     isActive: { type: Boolean, default: true },
-    deactivatedReason: { type: String, enum: ['admin_close', 'account_deletion', null], default: null },
+    deactivatedReason: { type: String, enum: ['admin_close', 'owner_close', 'account_deletion', null], default: null },
     ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0 },
   },

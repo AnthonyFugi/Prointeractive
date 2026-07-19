@@ -12,11 +12,8 @@ export default function SellerProductsScreen({ navigation }) {
 
   const load = useCallback(async () => {
     try {
-      const me = await api('/auth/me');
-      const list = await api('/businesses?limit=100');
-      const mine = list.businesses.find(
-        (b) => b.owner === me.user.id || (b.owner && b.owner._id === me.user.id)
-      ) || null;
+      const d = await api('/businesses/mine');
+      const mine = d.business;
       setBusiness(mine);
       if (mine) {
         const d = await api(`/products?business=${mine._id}&limit=100&includeInactive=true`);
