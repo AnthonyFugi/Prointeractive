@@ -23,7 +23,7 @@ export default function Home() {
   useEffect(() => {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
     api('/products/trending?limit=8').then((d) => setTrending(d.products)).catch(() => {});
-    api('/products?featured=true&limit=8').then((d) => setFeatured(d.products)).catch(() => {});
+    api('/products?featured=true&limit=8').then((d) => setFeatured((d.products || []).filter((p) => p.featured))).catch(() => {});
   }, []);
 
   useEffect(() => {

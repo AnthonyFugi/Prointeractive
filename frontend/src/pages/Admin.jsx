@@ -16,6 +16,12 @@ export default function Admin() {
   const [userRole, setUserRole] = useState('all');
   const [adminProducts, setAdminProducts] = useState([]);
   const [an, setAn] = useState(null);
+  const [prodPage, setProdPage] = useState(1);
+  const [prodPages, setProdPages] = useState(1);
+
+  useEffect(() => {
+    api(`/admin/products?page=${prodPage}&limit=25`).then((d) => { setAdminProducts(d.products); setProdPages(d.pages || 1); }).catch(() => {});
+  }, [prodPage]);
   const [prodSearch, setProdSearch] = useState('');
   const [prodFilter, setProdFilter] = useState('all');
   const [categories, setCategories] = useState([]);
@@ -50,7 +56,7 @@ export default function Admin() {
     api('/admin/users').then((d) => setUsers(d.users)).catch(() => {});
     api('/admin/orders').then((d) => setOrders(d.orders)).catch(() => {});
     api('/admin/reports').then((d) => setReports(d.reports)).catch(() => {});
-    api('/admin/products').then((d) => setAdminProducts(d.products)).catch(() => {});
+    api(`/admin/products?page=${prodPage}&limit=25`).then((d) => { setAdminProducts(d.products); setProdPages(d.pages || 1); }).catch(() => {});
     api('/admin/analytics').then((d) => setAn(d.analytics)).catch(() => {});
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
@@ -369,7 +375,7 @@ export default function Admin() {
                     </div>
                   ))}
               </Section>
-              <Section title="Payment methods">
+              <Section title="Payment methods" aside="completed orders">
                 {an.paymentSplit.map((pm) => (
                   <div className="row spread" key={pm._id} style={{ padding: '0.2rem 0' }}>
                     <span style={{ textTransform: 'capitalize' }}>{(pm._id || '').replace(/_/g, ' ')}</span>
@@ -444,6 +450,14 @@ export default function Admin() {
             </div>
           </div>
         ))}
+
+      {tab === 'products' && prodPages > 1 && (
+        <div className="row" style={{ justifyContent: 'center', marginTop: '1rem' }}>
+          <button className="btn btn-ghost btn-sm" disabled={prodPage <= 1} onClick={() => setProdPage(prodPage - 1)}>← Prev</button>
+          <span className="muted">Page {prodPage} of {prodPages}</span>
+          <button className="btn btn-ghost btn-sm" disabled={prodPage >= prodPages} onClick={() => setProdPage(prodPage + 1)}>Next →</button>
+        </div>
+      )}
 
       {tab === 'users' && (
         <div className="row" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>

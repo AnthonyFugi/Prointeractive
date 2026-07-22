@@ -210,11 +210,17 @@ export const setBusinessClosed = async (req, res, next) => {
 // GET /api/admin/products — every product, active or hidden
 export const listAllProducts = async (req, res, next) => {
   try {
-    const products = await Product.find({})
-      .populate('business', 'name slug')
-      .sort('-createdAt')
-      .limit(500);
-    res.json({ success: true, products });
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 25);
+    const [products, total] = await Promise.all([
+      Product.find({})
+        .populate('business', 'name slug')
+        .sort('-createdAt')
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Product.countDocuments({}),
+    ]);
+    res.json({ success: true, products, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     next(err);
   }
@@ -255,7 +261,10 @@ export const analytics = async (req, res, next) => {
         { $sort: { _id: 1 } },
       ]),
       Order.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
-      Order.aggregate([{ $group: { _id: '$paymentMethod', n: { $sum: 1 }, value: { $sum: '$totalAmount' } } }]),
+      Order.aggregate([
+        { $match: { status: { $in: ['paid', 'shipped', 'delivered'] } } },
+        { $group: { _id: '$paymentMethod', n: { $sum: 1 }, value: { $sum: '$totalAmount' } } },
+      ]),
       Order.aggregate([
         { $match: { createdAt: { $gte: since }, status: { $in: ['paid', 'shipped', 'delivered'] } } },
         { $unwind: '$items' },

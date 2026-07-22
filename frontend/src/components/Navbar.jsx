@@ -45,7 +45,7 @@ export default function Navbar() {
             </NavLink>
           )}
           {user && user.role === 'business' && <NavLink to="/dashboard" onClick={close}>Dashboard</NavLink>}
-          {user && user.role === 'admin' && <NavLink to="/admin" onClick={close}>Admin</NavLink>}
+
           {user ? (
             <>
               <NavLink
