@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import LoadingView from '../components/LoadingView';
 import { ActivityIndicator, Alert, Dimensions, Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -50,7 +51,7 @@ export default function ProductScreen({ route, navigation }) {
 
   const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
 
-  if (!product) return <ActivityIndicator color={colors.navy} style={{ marginTop: 60 }} />;
+  if (!product) return <LoadingView />;
 
   const askSeller = async () => {
     if (!user) return navigation.navigate('AccountTab', { screen: 'Login' });

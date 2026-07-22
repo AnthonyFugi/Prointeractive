@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Loader from '../components/Loader.jsx';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -13,6 +14,7 @@ export default function Home() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [savedOnly, setSavedOnly] = useState(false);
   const [trending, setTrending] = useState([]);
+  const [featured, setFeatured] = useState([]);
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ products: [], pages: 1, total: 0 });
   const [error, setError] = useState('');
@@ -21,6 +23,7 @@ export default function Home() {
   useEffect(() => {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
     api('/products/trending?limit=8').then((d) => setTrending(d.products)).catch(() => {});
+    api('/products?featured=true&limit=8').then((d) => setFeatured(d.products)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -104,6 +107,22 @@ export default function Home() {
       </section>
 
       {error && <p className="error-text">{error}</p>}
+      {featured.length > 0 && !query && !category && !favoritesOnly && !savedOnly && (
+        <section className="featured-band">
+          <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
+            <h2 style={{ margin: 0 }}>Featured</h2>
+            <span className="muted" style={{ fontSize: '0.85rem' }}>Hand-picked on Prointeractive</span>
+          </div>
+          <div className="trending-row">
+            {featured.map((p) => (
+              <div key={'f-' + p._id} className="trending-item">
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {trending.length > 0 && !query && !category && !favoritesOnly && !savedOnly && (
         <section className="trending-band">
           <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
@@ -121,7 +140,7 @@ export default function Home() {
       )}
 
       {loading ? (
-        <p className="muted">Loading products…</p>
+        <Loader label="Loading products…" />
       ) : data.products.length === 0 ? (
         <div className="empty">
           <h3>No products found</h3>

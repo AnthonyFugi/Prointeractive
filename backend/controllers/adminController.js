@@ -219,3 +219,74 @@ export const listAllProducts = async (req, res, next) => {
     next(err);
   }
 };
+
+
+export const setProductFeatured = async (req, res, next) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, { featured: !!req.body.featured }, { new: true });
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    res.json({ success: true, product });
+  } catch (err) { next(err); }
+};
+
+export const setBusinessFeatured = async (req, res, next) => {
+  try {
+    const business = await Business.findByIdAndUpdate(req.params.id, { featured: !!req.body.featured }, { new: true }).populate('owner', 'name email');
+    if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
+    res.json({ success: true, business });
+  } catch (err) { next(err); }
+};
+
+// GET /api/admin/analytics — platform metrics for decision-making
+export const analytics = async (req, res, next) => {
+  try {
+    const days = 30;
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const dayKey = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } };
+    const [ordersDaily, usersDaily, statusSplit, paymentSplit, topProducts, topBusinesses, viewsTotals, categorySplit] = await Promise.all([
+      Order.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: dayKey, orders: { $sum: 1 }, revenue: { $sum: { $cond: [{ $in: ['$status', ['paid', 'shipped', 'delivered']] }, '$totalAmount', 0] } } } },
+        { $sort: { _id: 1 } },
+      ]),
+      User.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: dayKey, users: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      Order.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
+      Order.aggregate([{ $group: { _id: '$paymentMethod', n: { $sum: 1 }, value: { $sum: '$totalAmount' } } }]),
+      Order.aggregate([
+        { $match: { createdAt: { $gte: since }, status: { $in: ['paid', 'shipped', 'delivered'] } } },
+        { $unwind: '$items' },
+        { $group: { _id: '$items.product', units: { $sum: '$items.quantity' }, name: { $first: '$items.name' } } },
+        { $sort: { units: -1 } }, { $limit: 8 },
+      ]),
+      Order.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: '$business', orders: { $sum: 1 }, value: { $sum: '$totalAmount' } } },
+        { $sort: { orders: -1 } }, { $limit: 8 },
+        { $lookup: { from: 'businesses', localField: '_id', foreignField: '_id', as: 'biz' } },
+        { $addFields: { name: { $first: '$biz.name' } } },
+        { $project: { biz: 0 } },
+      ]),
+      Promise.all([
+        Product.aggregate([{ $group: { _id: null, views: { $sum: '$views' } } }]),
+        Business.aggregate([{ $group: { _id: null, views: { $sum: '$views' } } }]),
+      ]),
+      Product.aggregate([
+        { $match: { isActive: true } },
+        { $group: { _id: '$category', n: { $sum: 1 } } },
+        { $sort: { n: -1 } },
+      ]),
+    ]);
+    res.json({
+      success: true,
+      analytics: {
+        days, ordersDaily, usersDaily, statusSplit, paymentSplit, topProducts, topBusinesses,
+        views: { products: viewsTotals[0][0]?.views || 0, businesses: viewsTotals[1][0]?.views || 0 },
+        categorySplit,
+      },
+    });
+  } catch (err) { next(err); }
+};

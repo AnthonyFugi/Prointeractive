@@ -25,10 +25,13 @@ export default function RegisterScreen({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.xl, justifyContent: 'center' }}>
       <Text style={{ fontSize: 26, fontWeight: '800' }}>Create account</Text>
+      <Text style={{ fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.s, color: colors.ink }}>Full name</Text>
       <TextInput placeholder="Name" value={form.name} onChangeText={(v) => setForm({ ...form, name: v })}
         style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.l }} />
+      <Text style={{ fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.s, color: colors.ink }}>Email</Text>
       <TextInput placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={form.email} onChangeText={(v) => setForm({ ...form, email: v })}
         style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
+      <Text style={{ fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.s, color: colors.ink }}>Password</Text>
       <TextInput placeholder="Password (8+ characters)" secureTextEntry value={form.password} onChangeText={(v) => setForm({ ...form, password: v })}
         style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
       <Pressable onPress={() => setAccepted(!accepted)}

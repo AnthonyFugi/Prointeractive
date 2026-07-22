@@ -68,6 +68,23 @@ export const listProducts = async (req, res, next) => {
     }
 
     const skip = (Number(page) - 1) * Number(limit);
+    const followIds = req.user?.favoriteBusinesses || [];
+    const followFirst =
+      followIds.length > 0 && !q && !business && !favorites && !saved && sort === '-createdAt';
+
+    if (followFirst) {
+      const agg = await Product.aggregate([
+        { $match: filter },
+        { $addFields: { followed: { $cond: [{ $in: ['$business', followIds] }, 1, 0] } } },
+        { $sort: { followed: -1, createdAt: -1 } },
+        { $skip: skip },
+        { $limit: Number(limit) },
+      ]);
+      await Product.populate(agg, { path: 'business', select: 'name slug verified' });
+      const total = await Product.countDocuments(filter);
+      return res.json({ success: true, products: agg, total, page: Number(page), pages: Math.ceil(total / limit) });
+    }
+
     const [products, total] = await Promise.all([
       Product.find(filter).populate('business', 'name slug verified').sort(sort).skip(skip).limit(Number(limit)),
       Product.countDocuments(filter),
@@ -82,6 +99,7 @@ export const listProducts = async (req, res, next) => {
 export const getProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id).populate('business', 'name slug verified location');
+    if (product) Product.updateOne({ _id: product._id }, { $inc: { views: 1 } }).catch(() => {});
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, product });
   } catch (err) {

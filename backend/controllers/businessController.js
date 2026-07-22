@@ -46,7 +46,7 @@ export const listBusinesses = async (req, res, next) => {
 
     const skip = (Number(page) - 1) * Number(limit);
     const [businesses, total] = await Promise.all([
-      Business.find(filter).sort('-createdAt').skip(skip).limit(Number(limit)),
+      Business.find(filter).sort('-featured -createdAt').skip(skip).limit(Number(limit)),
       Business.countDocuments(filter),
     ]);
     res.json({ success: true, total, page: Number(page), businesses });
@@ -66,6 +66,7 @@ export const getBusiness = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'This storefront is closed' });
     }
     if (business) await business.populate('owner', 'name');
+    if (business) Business.updateOne({ _id: business._id }, { $inc: { views: 1 } }).catch(() => {});
     if (!business) return res.status(404).json({ success: false, message: 'Business not found' });
     res.json({ success: true, business });
   } catch (err) {

@@ -4,7 +4,7 @@ import { protect } from '../middleware/auth.js';
 
 const router = Router();
 
-// POST /api/reports  — any signed-in user reports content or a user
+// POST /api/reports — any signed-in user reports content or a user
 router.post('/', protect, async (req, res, next) => {
   try {
     const { targetType, targetId, reason, details } = req.body;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Loader from '../components/Loader.jsx';
 import { api, money } from '../api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 
@@ -14,6 +15,7 @@ export default function Admin() {
   const [userSearch, setUserSearch] = useState('');
   const [userRole, setUserRole] = useState('all');
   const [adminProducts, setAdminProducts] = useState([]);
+  const [an, setAn] = useState(null);
   const [prodSearch, setProdSearch] = useState('');
   const [prodFilter, setProdFilter] = useState('all');
   const [categories, setCategories] = useState([]);
@@ -49,6 +51,7 @@ export default function Admin() {
     api('/admin/orders').then((d) => setOrders(d.orders)).catch(() => {});
     api('/admin/reports').then((d) => setReports(d.reports)).catch(() => {});
     api('/admin/products').then((d) => setAdminProducts(d.products)).catch(() => {});
+    api('/admin/analytics').then((d) => setAn(d.analytics)).catch(() => {});
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
 
@@ -99,6 +102,20 @@ export default function Admin() {
     } catch (e) { setError(e.message); }
   };
 
+  const toggleProductFeatured = async (prod) => {
+    try {
+      const d = await api(`/admin/products/${prod._id}/featured`, { method: 'PATCH', body: { featured: !prod.featured } });
+      setAdminProducts((prev) => prev.map((x) => (x._id === prod._id ? d.product : x)));
+    } catch (e) { setError(e.message); }
+  };
+
+  const toggleBusinessFeatured = async (b) => {
+    try {
+      const d = await api(`/admin/businesses/${b._id}/featured`, { method: 'PATCH', body: { featured: !b.featured } });
+      setBusinesses((prev) => prev.map((x) => (x._id === b._id ? d.business : x)));
+    } catch (e) { setError(e.message); }
+  };
+
   const toggleProductActive = async (prod) => {
     try {
       await api(`/products/${prod._id}`, { method: 'PATCH', body: { isActive: !prod.isActive } });
@@ -144,7 +161,7 @@ export default function Admin() {
       {error && <p className="error-text">{error}</p>}
 
       <div className="tabs" role="tablist">
-        {['overview', 'businesses', 'products', 'users', 'orders', 'reports', 'categories'].map((t) => (
+        {['overview', 'analytics', 'businesses', 'products', 'users', 'orders', 'reports', 'categories'].map((t) => (
           <button key={t} className={`tab ${tab === t ? 'on' : ''}`} onClick={() => setTab(t)}>
             {t[0].toUpperCase() + t.slice(1)}
           </button>
@@ -219,6 +236,9 @@ export default function Admin() {
           </div>
           <div className="row">
             {b.closed && <span className="badge cancelled">closed</span>}
+            <button className={`btn btn-sm ${b.featured ? 'btn-red' : 'btn-ghost'}`} onClick={() => toggleBusinessFeatured(b)}>
+              {b.featured ? '★ Featured' : '☆ Feature'}
+            </button>
             <button
               className={`btn btn-sm ${b.verified ? 'btn-ghost' : 'btn-navy'}`}
               onClick={() => toggleVerify(b)}
@@ -280,6 +300,102 @@ export default function Admin() {
         </div>
       )}
 
+      {tab === 'analytics' && !an && <Loader label="Crunching numbers…" />}
+      {tab === 'analytics' && an && (() => {
+        const maxOrders = Math.max(1, ...an.ordersDaily.map((d) => d.orders));
+        const maxRev = Math.max(1, ...an.ordersDaily.map((d) => d.revenue));
+        const maxUsers = Math.max(1, ...an.usersDaily.map((d) => d.users));
+        const Bar = ({ v, max, color }) => (
+          <div title={String(v)} style={{ flex: 1, background: 'var(--line)', borderRadius: 3, height: 64, display: 'flex', alignItems: 'flex-end' }}>
+            <div style={{ width: '100%', borderRadius: 3, background: color, height: `${Math.round((v / max) * 100)}%`, minHeight: v > 0 ? 3 : 0 }} />
+          </div>
+        );
+        const Section = ({ title, aside, children }) => (
+          <div className="panel" style={{ flex: '1 1 280px' }}>
+            <div className="row spread" style={{ alignItems: 'baseline' }}>
+              <strong>{title}</strong>
+              {aside && <span className="muted" style={{ fontSize: '0.8rem' }}>{aside}</span>}
+            </div>
+            {children}
+          </div>
+        );
+        return (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+              {[
+                ['Product views', an.views.products],
+                ['Storefront visits', an.views.businesses],
+                ['Orders (30d)', an.ordersDaily.reduce((t, d) => t + d.orders, 0)],
+                ['Revenue (30d, paid+)', money(an.ordersDaily.reduce((t, d) => t + d.revenue, 0))],
+                ['New users (30d)', an.usersDaily.reduce((t, d) => t + d.users, 0)],
+              ].map(([label, v]) => (
+                <div className="panel" key={label} style={{ margin: 0 }}>
+                  <p className="muted" style={{ margin: 0, fontSize: '0.8rem' }}>{label}</p>
+                  <strong style={{ fontSize: '1.3rem', color: 'var(--red)' }}>{v}</strong>
+                </div>
+              ))}
+            </div>
+
+            <Section title="Orders per day" aside="last 30 days">
+              <div className="row" style={{ gap: 3, marginTop: '0.5rem', alignItems: 'flex-end' }}>
+                {an.ordersDaily.map((d) => <Bar key={d._id} v={d.orders} max={maxOrders} color="var(--navy)" />)}
+              </div>
+            </Section>
+            <Section title="Revenue per day (paid+)" aside="last 30 days">
+              <div className="row" style={{ gap: 3, marginTop: '0.5rem', alignItems: 'flex-end' }}>
+                {an.ordersDaily.map((d) => <Bar key={d._id} v={d.revenue} max={maxRev} color="var(--red)" />)}
+              </div>
+            </Section>
+            <Section title="New users per day" aside="last 30 days">
+              <div className="row" style={{ gap: 3, marginTop: '0.5rem', alignItems: 'flex-end' }}>
+                {an.usersDaily.map((d) => <Bar key={d._id} v={d.users} max={maxUsers} color="#15803d" />)}
+              </div>
+            </Section>
+
+            <div className="row" style={{ gap: '1rem', alignItems: 'stretch', flexWrap: 'wrap' }}>
+              <Section title="Top products" aside="30d, units">
+                {an.topProducts.length === 0 ? <p className="muted">No paid orders yet.</p> :
+                  an.topProducts.map((t) => (
+                    <div className="row spread" key={t._id} style={{ padding: '0.2rem 0' }}>
+                      <span>{t.name}</span><strong>{t.units}</strong>
+                    </div>
+                  ))}
+              </Section>
+              <Section title="Top businesses" aside="30d">
+                {an.topBusinesses.length === 0 ? <p className="muted">No orders yet.</p> :
+                  an.topBusinesses.map((t) => (
+                    <div className="row spread" key={t._id} style={{ padding: '0.2rem 0' }}>
+                      <span>{t.name || 'Unknown'}</span><strong>{t.orders} · {money(t.value)}</strong>
+                    </div>
+                  ))}
+              </Section>
+              <Section title="Payment methods">
+                {an.paymentSplit.map((pm) => (
+                  <div className="row spread" key={pm._id} style={{ padding: '0.2rem 0' }}>
+                    <span style={{ textTransform: 'capitalize' }}>{(pm._id || '').replace(/_/g, ' ')}</span>
+                    <strong>{pm.n} · {money(pm.value)}</strong>
+                  </div>
+                ))}
+              </Section>
+              <Section title="Order status">
+                {an.statusSplit.map((st) => (
+                  <div className="row spread" key={st._id} style={{ padding: '0.2rem 0' }}>
+                    <span style={{ textTransform: 'capitalize' }}>{st._id}</span><strong>{st.n}</strong>
+                  </div>
+                ))}
+              </Section>
+              <Section title="Active products by category">
+                {an.categorySplit.map((c) => (
+                  <div className="row spread" key={c._id} style={{ padding: '0.2rem 0' }}>
+                    <span style={{ textTransform: 'capitalize' }}>{c._id}</span><strong>{c.n}</strong>
+                  </div>
+                ))}
+              </Section>
+            </div>
+          </>
+        );
+      })()}
+
       {tab === 'products' && (
         <div className="row" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
           <input placeholder="Search products or businesses…" value={prodSearch}
@@ -318,9 +434,14 @@ export default function Admin() {
                 </p>
               </div>
             </div>
-            <button className={`btn btn-sm ${x.isActive ? 'btn-danger' : 'btn-navy'}`} onClick={() => toggleProductActive(x)}>
-              {x.isActive ? 'Hide' : 'Activate'}
-            </button>
+            <div className="row">
+              <button className={`btn btn-sm ${x.featured ? 'btn-red' : 'btn-ghost'}`} onClick={() => toggleProductFeatured(x)}>
+                {x.featured ? '★ Featured' : '☆ Feature'}
+              </button>
+              <button className={`btn btn-sm ${x.isActive ? 'btn-danger' : 'btn-navy'}`} onClick={() => toggleProductActive(x)}>
+                {x.isActive ? 'Hide' : 'Activate'}
+              </button>
+            </div>
           </div>
         ))}
 

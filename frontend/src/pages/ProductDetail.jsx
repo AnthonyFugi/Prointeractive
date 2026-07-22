@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Loader from '../components/Loader.jsx';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, money } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
@@ -40,7 +41,7 @@ export default function ProductDetail() {
 
   if (error) return <div className="container"><p className="error-text">{error}</p></div>;
 
-  if (!product) return <div className="container"><p className="muted">Loading…</p></div>;
+  if (!product) return <div className="container"><Loader /></div>;
 
   const addToCart = () => {
     add(product, qty);

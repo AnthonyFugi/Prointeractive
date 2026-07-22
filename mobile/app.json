@@ -12,8 +12,12 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "bundleIdentifier": "com.proint",
       "supportsTablet": false,
-      "bundleIdentifier": "com.proint"
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.proint",
@@ -21,7 +25,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "versionCode": 1
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "extra": {
       "apiUrl": "https://prointeractive.onrender.com",
@@ -31,8 +38,12 @@
     },
     "icon": "./assets/icon.png",
     "plugins": [
-      "expo-secure-store",
-      "expo-web-browser"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Prointeractive to access your photos so you can add product images to your store."
+        }
+      ]
     ],
     "owner": "khahtech"
   }

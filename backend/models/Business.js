@@ -17,6 +17,8 @@ const businessSchema = new mongoose.Schema(
     phone: { type: String, default: '' },
     logoUrl: { type: String, default: '' },
     verified: { type: Boolean, default: false },
+    featured: { type: Boolean, default: false },
+    views: { type: Number, default: 0 },
     verificationRequested: { type: Boolean, default: false },
     verificationRequestedAt: Date,
     closed: { type: Boolean, default: false },

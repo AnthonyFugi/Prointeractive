@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Loader from '../components/Loader.jsx';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -45,7 +46,7 @@ export default function BusinessPage() {
   };
 
   if (error) return <div className="container"><p className="error-text">{error}</p></div>;
-  if (!business) return <div className="container"><p className="muted">Loading…</p></div>;
+  if (!business) return <div className="container"><Loader /></div>;
 
   return (
     <div className="container">
@@ -79,7 +80,7 @@ export default function BusinessPage() {
                     } catch (e) { alert(e.message); }
                   }}
                 >
-                  {fav ? '♥ Favorited' : '♡ Add to favorites'}
+                  {fav ? '✓ Following' : '+ Follow'}
                 </button>
               );
             })()}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import LoadingView from '../components/LoadingView';
 import { useState as useS } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
@@ -26,7 +27,7 @@ export default function BusinessScreen({ route, navigation }) {
 
   const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
 
-  if (!business) return <ActivityIndicator color={colors.navy} style={{ marginTop: 60 }} />;
+  if (!business) return <LoadingView />;
 
   const isFav = fav !== null
     ? fav
@@ -82,7 +83,7 @@ export default function BusinessScreen({ route, navigation }) {
                 borderColor: colors.red,
               }}>
               <Text style={{ color: isFav ? '#fff' : colors.red, fontWeight: '700', fontSize: 13 }}>
-                {isFav ? '♥ Favorited' : '♡ Add to favorites'}
+                {isFav ? '✓ Following' : '+ Follow'}
               </Text>
             </Pressable>
           ) : null}
