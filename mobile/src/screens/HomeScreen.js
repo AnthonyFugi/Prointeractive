@@ -82,6 +82,18 @@ export default function HomeScreen({ navigation }) {
           horizontal
           showsHorizontalScrollIndicator={false}
           ListHeaderComponent={
+            <View>
+              {!user ? (
+                <Pressable
+                  onPress={() => navigation.navigate('AccountTab')}
+                  style={{ backgroundColor: colors.navy, borderRadius: 10, padding: spacing.m, marginBottom: spacing.m }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
+                    Sign in to shop smarter → follow stores, save items, and see your feed first.
+                  </Text>
+                </Pressable>
+              ) : null}
+
             <View style={{ flexDirection: 'row' }}>
               {user && user.role === 'customer' && user.favoriteBusinesses && user.favoriteBusinesses.length > 0 ? (
                 <Pressable
@@ -107,6 +119,7 @@ export default function HomeScreen({ navigation }) {
                   <Text style={{ color: savedOnly ? '#fff' : colors.red, fontSize: 13, fontWeight: '700' }}>♥ Saved</Text>
                 </Pressable>
               ) : null}
+            </View>
             </View>
           }
           data={categories}

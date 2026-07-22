@@ -116,14 +116,15 @@ export default function ProductDetail() {
               disabled={product.stock < 1} onClick={addToCart}>
               {added ? 'Added ✓' : 'Add to cart'}
             </button>
-            {user?.role === 'customer' && (() => {
-              const savedProduct = user.favoriteProducts?.some((pid) => String(pid) === String(product._id));
+            {(!user || user.role === 'customer') && (() => {
+              const savedProduct = user?.favoriteProducts?.some((pid) => String(pid) === String(product._id));
               return (
                 <button
                   type="button"
                   className={`btn ${savedProduct ? 'btn-red' : 'btn-ghost'}`}
                   style={{ width: '100%', marginTop: '0.5rem' }}
                   onClick={async () => {
+                    if (!user) return navigate('/login', { state: { from: `/products/${product._id}` } });
                     try {
                       await api(`/products/${product._id}/favorite`, { method: 'POST', body: { favorited: !savedProduct } });
                       if (refresh) await refresh();

@@ -9,12 +9,27 @@ export default function AccountScreen({ navigation }) {
   const { user, logout } = useAuth();
   const [business, setBusiness] = useState(null);
 
+  const [following, setFollowing] = useState(null);
+
   useEffect(() => {
-    if (!user || user.role !== 'business') return;
-    api('/businesses/mine')
-      .then((d) => setBusiness(d.business))
-      .catch(() => {});
-  }, [user]);
+    if (!user) return;
+    if (user.role === 'business') {
+      api('/businesses/mine')
+        .then((d) => setBusiness(d.business))
+        .catch(() => {});
+    } else if (user.role === 'customer') {
+      api('/businesses/favorites/mine')
+        .then((d) => setFollowing(d.businesses))
+        .catch(() => setFollowing([]));
+    }
+  }, [user, user?.favoriteBusinesses?.length]);
+
+  const unfollow = async (b) => {
+    try {
+      await api(`/businesses/${b._id}/favorite`, { method: 'POST', body: { favorited: false } });
+      setFollowing((prev) => (prev || []).filter((x) => x._id !== b._id));
+    } catch (_e) {}
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.xl }}>
@@ -45,10 +60,34 @@ export default function AccountScreen({ navigation }) {
               </Text>
             </View>
           ) : null}
+          {user.role === 'customer' && following && following.length > 0 ? (
+            <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.l }}>
+              <Text style={{ fontWeight: '800', marginBottom: spacing.s }}>Following ({following.length})</Text>
+              {following.map((b) => (
+                <View key={b._id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
+                  <Pressable style={{ flex: 1 }} onPress={() => navigation.navigate('ShopTab')}>
+                    <Text style={{ fontWeight: '600' }} numberOfLines={1}>{b.name}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
+                      {(b.categories && b.categories.length ? b.categories.join(' · ') : b.category) || ''}
+                    </Text>
+                  </Pressable>
+                  <Text style={{ color: colors.muted, fontWeight: '700', fontSize: 12, paddingLeft: 10 }} onPress={() => unfollow(b)}>
+                    Unfollow
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
           <Pressable onPress={() => navigation.navigate('Inbox')}
             style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.xl }}>
             <Text style={{ fontWeight: '700' }}>Inbox — conversations with businesses</Text>
           </Pressable>
+          <Pressable onPress={() => navigation.navigate('ForgotPassword')}
+            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.s }}>
+            <Text style={{ fontWeight: '700' }}>Change password</Text>
+          </Pressable>
+
           <Pressable onPress={logout}
             style={{ borderWidth: 1.5, borderColor: colors.red, borderRadius: 10, padding: 14, marginTop: spacing.m }}>
             <Text style={{ color: colors.red, fontWeight: '800', textAlign: 'center' }}>Sign out</Text>

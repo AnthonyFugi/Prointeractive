@@ -107,6 +107,21 @@ export default function Home() {
       </section>
 
       {error && <p className="error-text">{error}</p>}
+      {!user && !query && !category && (
+        <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderColor: 'var(--navy)' }}>
+          <p style={{ margin: 0, flex: '1 1 260px' }}>
+            <strong>Shop smarter with a free account</strong>
+            <span className="muted" style={{ display: 'block', fontSize: '0.9rem' }}>
+              Follow your favorite stores, save items for later, and see what you care about first.
+            </span>
+          </p>
+          <div className="row">
+            <Link to="/register" className="btn btn-red btn-sm">Create account</Link>
+            <Link to="/login" className="btn btn-ghost btn-sm">Sign in</Link>
+          </div>
+        </div>
+      )}
+
       {featured.length > 0 && !query && !category && !favoritesOnly && !savedOnly && (
         <section className="featured-band">
           <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>

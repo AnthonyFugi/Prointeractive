@@ -24,6 +24,9 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.xl, justifyContent: 'center' }}>
       <Text style={{ fontSize: 26, fontWeight: '800' }}>Sign in</Text>
+      <Text style={{ color: colors.muted, fontSize: 13, marginTop: 6 }}>
+        Follow stores you love, save items for later, track orders, and message businesses directly.
+      </Text>
       <Text style={{ fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.s, color: colors.ink }}>Email</Text>
       <TextInput placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail}
         style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.l }} />

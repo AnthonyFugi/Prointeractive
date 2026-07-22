@@ -11,6 +11,7 @@ export default function ProductCard({ product }) {
   const toggleSave = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) { window.location.href = '/login'; return; }
     try {
       await api(`/products/${product._id}/favorite`, { method: 'POST', body: { favorited: !saved } });
       if (refresh) await refresh();
@@ -21,7 +22,7 @@ export default function ProductCard({ product }) {
     <Link to={`/products/${product._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
       <article className="card">
         <div className="card-img">
-        {user?.role === 'customer' && (
+        {(!user || user.role === 'customer') && (
           <button
             type="button"
             aria-label={saved ? 'Remove from saved items' : 'Save for later'}

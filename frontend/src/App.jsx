@@ -6,6 +6,7 @@ import Protected from './components/Protected.jsx';
 import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
+import Account from './pages/Account.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import Businesses from './pages/Businesses.jsx';
 import BusinessPage from './pages/BusinessPage.jsx';
@@ -32,6 +33,7 @@ const TITLES = {
   '/checkout': 'Checkout',
   '/orders': 'My orders',
   '/inbox': 'Inbox',
+  '/account': 'My account',
   '/login': 'Sign in',
   '/register': 'Create account',
   '/forgot-password': 'Reset password',
@@ -72,6 +74,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/account" element={<Account />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/terms" element={<Terms />} />

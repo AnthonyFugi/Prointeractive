@@ -48,11 +48,21 @@ export default function Navbar() {
           {user && user.role === 'admin' && <NavLink to="/admin" onClick={close}>Admin</NavLink>}
           {user ? (
             <>
-              <span className="muted">{user.name}</span>
+              <NavLink
+                to={user.role === 'business' ? '/dashboard' : user.role === 'admin' ? '/admin' : '/account'}
+                onClick={close}
+              >
+                {user.name}
+              </NavLink>
               <button className="btn btn-ghost btn-sm" onClick={() => { close(); logout(); }}>Sign out</button>
             </>
           ) : (
-            <NavLink to="/login" onClick={close}>Sign in</NavLink>
+            <>
+              <NavLink to="/login" onClick={close}>Sign in</NavLink>
+              <NavLink to="/register" onClick={close} className="btn btn-red btn-sm" style={{ color: '#fff' }}>
+                Create account
+              </NavLink>
+            </>
           )}
         </nav>
       </div>

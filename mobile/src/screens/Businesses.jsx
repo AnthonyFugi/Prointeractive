@@ -12,7 +12,6 @@ export default function Businesses() {
   const toggleFollow = async (e, b) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) { window.location.href = '/login'; return; }
     try {
       await api(`/businesses/${b._id}/favorite`, { method: 'POST', body: { favorited: !followed(b._id) } });
       if (refresh) await refresh();
@@ -101,7 +100,7 @@ export default function Businesses() {
                     {b.logoUrl ? <img src={b.logoUrl} alt={b.name} /> : b.name[0].toUpperCase()}
                   </div>
                   <div className="card-body">
-                    {(!user || user.role === 'customer') && (
+                    {user?.role === 'customer' && (
                       <button
                         type="button"
                         className={`btn btn-sm ${followed(b._id) ? 'btn-red' : 'btn-ghost'}`}

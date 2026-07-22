@@ -9,7 +9,7 @@ import VerifiedBadge from '../components/VerifiedBadge.jsx';
 export default function BusinessPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [business, setBusiness] = useState(null);
   const [products, setProducts] = useState([]);
   const [storeQuery, setStoreQuery] = useState('');
@@ -68,12 +68,13 @@ export default function BusinessPage() {
             </div>
           </div>
           <div className="row">
-            {user && user.role === 'customer' && (() => {
-              const fav = user.favoriteBusinesses?.some((b) => String(b) === String(business._id));
+            {(!user || user.role === 'customer') && (() => {
+              const fav = user?.favoriteBusinesses?.some((b) => String(b) === String(business._id));
               return (
                 <button
                   className={`btn btn-sm ${fav ? 'btn-red' : 'btn-ghost'}`}
                   onClick={async () => {
+                    if (!user) return navigate('/login', { state: { from: `/businesses/${business.slug || business._id}` } });
                     try {
                       await api(`/businesses/${business._id}/favorite`, { method: 'POST', body: { favorited: !fav } });
                       if (refresh) await refresh();
