@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
-import { colors, spacing } from '../theme';
+import { colors, money, setDisplayCurrency, spacing } from '../theme';
 
 export default function AccountScreen({ navigation }) {
   const { user, logout } = useAuth();
@@ -83,6 +83,33 @@ export default function AccountScreen({ navigation }) {
             style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.xl }}>
             <Text style={{ fontWeight: '700' }}>Inbox — conversations with businesses</Text>
           </Pressable>
+          <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.s }}>
+            <Text style={{ fontWeight: '700', marginBottom: 8 }}>Display currency</Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {[['ZMW', 'Kwacha (K)'], ['USD', 'US Dollar ($)']].map(([cur, label]) => {
+                const on = (user.preferences && user.preferences.currency) === cur || (!user.preferences?.currency && cur === 'ZMW');
+                return (
+                  <Pressable key={cur}
+                    onPress={async () => {
+                      try {
+                        await api('/auth/preferences', { method: 'PATCH', body: { currency: cur } });
+                        setDisplayCurrency(cur);
+                        if (typeof reload === 'function') reload();
+                      } catch (_e) {}
+                    }}
+                    style={{
+                      borderRadius: 999, borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 6,
+                      borderColor: on ? colors.navy : colors.line,
+                      backgroundColor: on ? colors.navy : 'transparent',
+                    }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: on ? '#fff' : colors.ink }}>{label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={{ color: colors.muted, fontSize: 11, marginTop: 8 }}>USD is approximate (1 USD ≈ K18). Payments settle in Kwacha.</Text>
+          </View>
+
           <Pressable onPress={() => navigation.navigate('ForgotPassword')}
             style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.s }}>
             <Text style={{ fontWeight: '700' }}>Change password</Text>

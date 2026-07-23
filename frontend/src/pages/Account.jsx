@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { api } from '../api.js';
+import { api, setDisplayCurrency } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/Loader.jsx';
 import ProductCard from '../components/ProductCard.jsx';
@@ -89,6 +89,47 @@ export default function Account() {
       )}
 
       <div className="panel" style={{ marginTop: '2rem' }}>
+        <strong>Preferences</strong>
+        <div className="row" style={{ marginTop: '0.5rem', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+          <div>
+            <label htmlFor="cur">Display currency</label>
+            <select
+              id="cur"
+              defaultValue={user.preferences?.currency || 'ZMW'}
+              onChange={async (e) => {
+                try {
+                  await api('/auth/preferences', { method: 'PATCH', body: { currency: e.target.value } });
+                  setDisplayCurrency(e.target.value);
+                  if (refresh) await refresh();
+                } catch (err) { alert(err.message); }
+              }}
+            >
+              <option value="ZMW">Zambian Kwacha (K)</option>
+              <option value="USD">US Dollar ($ — approximate)</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="city">My city <span className="muted">(shows nearby stores first)</span></label>
+            <input
+              id="city"
+              placeholder="e.g. Lusaka"
+              defaultValue={user.preferences?.city || ''}
+              onBlur={async (e) => {
+                try {
+                  await api('/auth/preferences', { method: 'PATCH', body: { city: e.target.value } });
+                  if (refresh) await refresh();
+                } catch (err) { alert(err.message); }
+              }}
+              style={{ maxWidth: 220 }}
+            />
+          </div>
+        </div>
+        <p className="muted" style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>
+          USD prices are approximate (1 USD ≈ K18). All payments are processed in Kwacha.
+        </p>
+      </div>
+
+      <div className="panel" style={{ marginTop: '1rem' }}>
         <strong>Account settings</strong>
         <p className="muted" style={{ margin: '0.25rem 0 0.5rem' }}>
           Need to leave? You can permanently delete your account and data.

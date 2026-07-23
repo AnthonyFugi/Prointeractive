@@ -55,10 +55,10 @@ export const login = async (req, res, next) => {
 
 // GET /api/auth/me
 export const getMe = async (req, res) => {
-  const { _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses = [], favoriteProducts = [] } = req.user;
+  const { _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses = [], favoriteProducts = [], preferences } = req.user;
   res.json({
     success: true,
-    user: { id: _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses, favoriteProducts },
+    user: { id: _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses, favoriteProducts, preferences: preferences || { currency: 'ZMW', city: '' } },
   });
 };
 
@@ -197,4 +197,23 @@ export const deleteMe = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+
+// PATCH /api/auth/preferences  { currency?, city? }
+export const updatePreferences = async (req, res, next) => {
+  try {
+    const { currency, city } = req.body;
+    if (currency !== undefined) {
+      if (!['ZMW', 'USD'].includes(currency)) return res.status(400).json({ success: false, message: 'Invalid currency' });
+      req.user.preferences = req.user.preferences || {};
+      req.user.preferences.currency = currency;
+    }
+    if (city !== undefined) {
+      req.user.preferences = req.user.preferences || {};
+      req.user.preferences.city = String(city).trim().slice(0, 60);
+    }
+    await req.user.save();
+    res.json({ success: true, preferences: req.user.preferences });
+  } catch (err) { next(err); }
 };

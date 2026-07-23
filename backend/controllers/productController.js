@@ -70,7 +70,7 @@ export const listProducts = async (req, res, next) => {
     const skip = (Number(page) - 1) * Number(limit);
     const followIds = req.user?.favoriteBusinesses || [];
     const followFirst =
-      followIds.length > 0 && !q && !business && !favorites && !saved && sort === '-createdAt';
+      followIds.length > 0 && !q && !business && !favorites && !saved && featured !== 'true' && sort === '-createdAt';
 
     if (followFirst) {
       const agg = await Product.aggregate([

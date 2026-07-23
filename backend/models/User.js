@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema(
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     favoriteBusinesses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Business' }],
     favoriteProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    preferences: {
+      currency: { type: String, enum: ['ZMW', 'USD'], default: 'ZMW' },
+      city: { type: String, trim: true, maxlength: 60, default: '' },
+    },
     suspended: { type: Boolean, default: false },
     resetPasswordTokenHash: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },

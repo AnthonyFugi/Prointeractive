@@ -21,6 +21,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import corporateRoutes from './routes/corporateRoutes.js';
 import mongoose from 'mongoose';
 import * as Sentry from '@sentry/node';
 import { startMaintenance } from './utils/maintenance.js';
@@ -93,6 +94,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/corporate', corporateRoutes);
 
 // ---- Serve the built frontend in production ----
 if (isProd) {
@@ -153,7 +155,7 @@ app.use((err, req, res, next) => {
 });
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
   startMaintenance();

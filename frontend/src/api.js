@@ -18,5 +18,16 @@ export async function api(path, { method = 'GET', body } = {}) {
   return data;
 }
 
-export const money = (amount, currency = 'ZMW') =>
-  `${currency} ${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+let displayCurrency = 'ZMW';
+const USD_RATE = Number(import.meta.env.VITE_USD_ZMW_RATE) || 18; // 1 USD ≈ 18 ZMW
+
+export const setDisplayCurrency = (cur) => {
+  displayCurrency = cur === 'USD' ? 'USD' : 'ZMW';
+};
+
+export const money = (amount, currency = 'ZMW') => {
+  if (displayCurrency === 'USD' && currency === 'ZMW') {
+    return `$${(Number(amount || 0) / USD_RATE).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `K${Number(amount || 0).toLocaleString()}`;
+};

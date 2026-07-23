@@ -7,6 +7,7 @@ import Home from './pages/Home.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Account from './pages/Account.jsx';
+import Corporate from './pages/Corporate.jsx';
 import ProductDetail from './pages/ProductDetail.jsx';
 import Businesses from './pages/Businesses.jsx';
 import BusinessPage from './pages/BusinessPage.jsx';
@@ -34,6 +35,7 @@ const TITLES = {
   '/orders': 'My orders',
   '/inbox': 'Inbox',
   '/account': 'My account',
+  '/corporate': 'Corporate procurement',
   '/login': 'Sign in',
   '/register': 'Create account',
   '/forgot-password': 'Reset password',
@@ -75,6 +77,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/corporate" element={<Corporate />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/terms" element={<Terms />} />
@@ -105,6 +108,7 @@ export default function App() {
           <Link to="/terms">Terms</Link>
           <Link to="/privacy">Privacy</Link>
           <Link to="/product-standards">Standards</Link>
+          <Link to="/corporate">Corporate</Link>
           <Link to="/account-deletion">Delete account</Link>
         </div>
       </footer>

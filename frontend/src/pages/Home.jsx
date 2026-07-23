@@ -15,6 +15,7 @@ export default function Home() {
   const [savedOnly, setSavedOnly] = useState(false);
   const [trending, setTrending] = useState([]);
   const [featured, setFeatured] = useState([]);
+  const [featuredBiz, setFeaturedBiz] = useState([]);
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ products: [], pages: 1, total: 0 });
   const [error, setError] = useState('');
@@ -24,6 +25,7 @@ export default function Home() {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
     api('/products/trending?limit=8').then((d) => setTrending(d.products)).catch(() => {});
     api('/products?featured=true&limit=8').then((d) => setFeatured((d.products || []).filter((p) => p.featured))).catch(() => {});
+    api('/businesses?featured=true&limit=6').then((d) => setFeaturedBiz((d.businesses || []).filter((b) => b.featured))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -122,19 +124,31 @@ export default function Home() {
         </div>
       )}
 
-      {featured.length > 0 && !query && !category && !favoritesOnly && !savedOnly && (
+      {(featured.length > 0 || featuredBiz.length > 0) && !query && !category && !favoritesOnly && !savedOnly && (
         <section className="featured-band">
           <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
             <h2 style={{ margin: 0 }}>Featured</h2>
             <span className="muted" style={{ fontSize: '0.85rem' }}>Hand-picked on Prointeractive</span>
           </div>
-          <div className="trending-row">
-            {featured.map((p) => (
-              <div key={'f-' + p._id} className="trending-item">
-                <ProductCard product={p} />
-              </div>
-            ))}
-          </div>
+          {featuredBiz.length > 0 && (
+            <div className="row" style={{ flexWrap: 'wrap', gap: '0.5rem', marginBottom: featured.length > 0 ? '0.75rem' : 0 }}>
+              {featuredBiz.map((b) => (
+                <Link key={b._id} to={`/businesses/${b.slug || b._id}`} className="chip" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {b.logoUrl && <img src={b.logoUrl} alt="" style={{ width: 18, height: 18, borderRadius: 4, objectFit: 'contain', background: '#fff' }} />}
+                  {b.name}
+                </Link>
+              ))}
+            </div>
+          )}
+          {featured.length > 0 && (
+            <div className="trending-row">
+              {featured.map((p) => (
+                <div key={'f-' + p._id} className="trending-item">
+                  <ProductCard product={p} />
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

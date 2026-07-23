@@ -39,12 +39,28 @@ export const createBusiness = async (req, res, next) => {
 // GET /api/businesses  (public, with filters)
 export const listBusinesses = async (req, res, next) => {
   try {
-    const { category, q, page = 1, limit = 12 } = req.query;
+    const { category, q, page = 1, limit = 12, featured } = req.query;
     const filter = { closed: { $ne: true } };
+    if (featured === 'true') filter.featured = true;
     if (category) filter.$or = [{ categories: category }, { category }];
     if (q) filter.name = { $regex: q, $options: 'i' };
 
     const skip = (Number(page) - 1) * Number(limit);
+    const city = req.user?.preferences?.city?.trim();
+    if (city) {
+      const skip = (Number(page) - 1) * Number(limit);
+      const cityRe = new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const agg = await Business.aggregate([
+        { $match: filter },
+        { $addFields: { near: { $cond: [{ $regexMatch: { input: { $ifNull: ['$location', ''] }, regex: cityRe } }, 1, 0] } } },
+        { $sort: { near: -1, featured: -1, verified: -1, createdAt: -1 } },
+        { $skip: skip },
+        { $limit: Number(limit) },
+      ]);
+      const total = await Business.countDocuments(filter);
+      return res.json({ success: true, businesses: agg, total, page: Number(page), pages: Math.ceil(total / limit) });
+    }
+
     const [businesses, total] = await Promise.all([
       Business.find(filter).sort('-featured -createdAt').skip(skip).limit(Number(limit)),
       Business.countDocuments(filter),

@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { createBusiness, listBusinesses, getBusiness, updateBusiness, setPayoutAccount, getPayoutAccount, setFavorite, listMyFavorites, requestVerification, getMyBusiness, setOwnClosed } from '../controllers/businessController.js';
-import { protect, restrictTo } from '../middleware/auth.js';
+import { maybeAuth, protect, restrictTo } from '../middleware/auth.js';
 
 const router = Router();
 router.route('/')
-  .get(listBusinesses)
+  .get(maybeAuth, listBusinesses)
   .post(protect, restrictTo('business', 'admin'), createBusiness);
 router.route('/payout')
   .get(protect, restrictTo('business', 'admin'), getPayoutAccount)

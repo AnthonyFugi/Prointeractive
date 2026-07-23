@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     api('/auth/me')
-      .then((d) => setUser(d.user))
+      .then((d) => (setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW'), setUser(d.user)))
       .catch(() => {})
       .finally(() => setReady(true));
   }, []);
@@ -23,13 +23,13 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const d = await api('/auth/login', { method: 'POST', body: { email, password } });
     await setToken(d.token);
-    setUser(d.user);
+    (setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW'), setUser(d.user));
   };
 
   const register = async (form) => {
     const d = await api('/auth/register', { method: 'POST', body: form });
     await setToken(d.token);
-    setUser(d.user);
+    (setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW'), setUser(d.user));
   };
 
   const logout = async () => {

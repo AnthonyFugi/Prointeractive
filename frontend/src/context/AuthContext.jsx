@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { api } from '../api.js';
+import { setDisplayCurrency, api } from '../api.js';
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('pi_token');
     if (!token) return setReady(true);
     api('/auth/me')
-      .then((d) => setUser(d.user))
+      .then((d) => (setDisplayCurrency(d.user?.preferences?.currency), setUser(d.user)))
       .catch(() => localStorage.removeItem('pi_token'))
       .finally(() => setReady(true));
   }, []);
@@ -35,7 +35,7 @@ export function AuthProvider({ children }) {
 
   const refresh = async () => {
     const d = await api('/auth/me');
-    setUser(d.user);
+    (setDisplayCurrency(d.user?.preferences?.currency), setUser(d.user));
     return d.user;
   };
 

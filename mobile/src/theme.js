@@ -13,5 +13,16 @@ export const colors = {
 
 export const spacing = { xs: 4, s: 8, m: 12, l: 16, xl: 24 };
 
-export const money = (amount, currency = 'ZMW') =>
-  `${currency} ${Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+let displayCurrency = 'ZMW';
+const USD_RATE = 18; // 1 USD ≈ 18 ZMW (display approximation only)
+
+export const setDisplayCurrency = (cur) => {
+  displayCurrency = cur === 'USD' ? 'USD' : 'ZMW';
+};
+
+export const money = (amount, currency = 'ZMW') => {
+  if (displayCurrency === 'USD' && currency === 'ZMW') {
+    return '$' + (Number(amount || 0) / USD_RATE).toFixed(2);
+  }
+  return 'K' + Number(amount || 0).toLocaleString();
+};
