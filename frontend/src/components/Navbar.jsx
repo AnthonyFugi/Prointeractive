@@ -51,7 +51,10 @@ export default function Navbar() {
               <NavLink
                 to={user.role === 'business' ? '/dashboard' : user.role === 'admin' ? '/admin' : '/account'}
                 onClick={close}
+                className="nav-user"
+                title={user.role === 'business' ? 'Your dashboard' : user.role === 'admin' ? 'Admin console' : 'My account'}
               >
+                <span className="nav-user-avatar" aria-hidden="true">{user.name?.[0]?.toUpperCase() || '?'}</span>
                 {user.name}
               </NavLink>
               <button className="btn btn-ghost btn-sm" onClick={() => { close(); logout(); }}>Sign out</button>

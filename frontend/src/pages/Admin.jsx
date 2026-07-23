@@ -410,6 +410,7 @@ export default function Admin() {
             ['all', `All (${adminProducts.length})`],
             ['active', `Active (${adminProducts.filter((x) => x.isActive).length})`],
             ['hidden', `Hidden (${adminProducts.filter((x) => !x.isActive).length})`],
+            ['featured', `★ Featured (${adminProducts.filter((x) => x.featured).length})`],
           ].map(([key, label]) => (
             <button key={key} className={`btn btn-sm ${prodFilter === key ? 'btn-navy' : 'btn-ghost'}`}
               onClick={() => setProdFilter(key)}>
@@ -420,7 +421,7 @@ export default function Admin() {
       )}
 
       {tab === 'products' && adminProducts
-        .filter((x) => (prodFilter === 'active' ? x.isActive : prodFilter === 'hidden' ? !x.isActive : true))
+        .filter((x) => (prodFilter === 'active' ? x.isActive : prodFilter === 'hidden' ? !x.isActive : prodFilter === 'featured' ? x.featured : true))
         .filter((x) => {
           const q = prodSearch.trim().toLowerCase();
           if (!q) return true;

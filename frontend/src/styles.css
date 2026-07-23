@@ -362,3 +362,20 @@ main { min-height: 70vh; padding-bottom: 2rem; }
   background: #fff; border: 1.5px solid var(--navy); border-radius: 14px;
   padding: 1rem 1rem 0.5rem; margin-bottom: 1.5rem;
 }
+
+
+/* Signed-in identity in the navbar */
+.nav-user {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-weight: 700; color: var(--navy) !important;
+  background: var(--navy-soft, #eef1f8);
+  padding: 0.3rem 0.75rem 0.3rem 0.35rem; border-radius: 999px;
+}
+.nav-user-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--navy); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 800;
+}
+.nav-user:hover { background: var(--navy); color: #fff !important; }
+.nav-user:hover .nav-user-avatar { background: #fff; color: var(--navy); }
