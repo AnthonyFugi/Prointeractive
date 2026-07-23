@@ -31,7 +31,7 @@ export const createProduct = async (req, res, next) => {
 // GET /api/products  (public: search, filter, paginate, sort)
 export const listProducts = async (req, res, next) => {
   try {
-    const { q, category, business, favorites, saved, includeInactive, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
+    const { q, category, business, favorites, saved, featured, includeInactive, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
     const filter = { isActive: true };
     if (includeInactive === 'true' && req.user) {
       // Only the storefront's owner (or an admin) may see hidden products
@@ -56,6 +56,7 @@ export const listProducts = async (req, res, next) => {
       const ids = req.user?.favoriteProducts || [];
       filter._id = { $in: ids };
     }
+    if (featured === 'true') filter.featured = true;
     if (favorites === 'true') {
       // Signed-in users only; anonymous requests get an empty result, not an error
       const ids = req.user?.favoriteBusinesses || [];
