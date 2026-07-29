@@ -53,8 +53,16 @@ export default function SocialAuth({ onGoogle, onApple, label = 'or' }) {
 
   useEffect(() => {
     // Loud on the console, quiet in the UI: makes a missing config obvious in dev
+    // The client ID is public (it ships in the bundle) — printing it aids setup.
+    // The client SECRET must never appear here; it lives only on the server.
     console.info('[SocialAuth] config →', {
-      google: GOOGLE_ID ? 'client ID set' : 'MISSING VITE_GOOGLE_CLIENT_ID',
+      google: GOOGLE_ID
+        ? `client ID = ${GOOGLE_ID}` + (
+            /\.apps\.googleusercontent\.com$/.test(GOOGLE_ID)
+              ? ''
+              : '  ⚠️ THIS DOES NOT LOOK LIKE A CLIENT ID (should end in .apps.googleusercontent.com)'
+          )
+        : 'MISSING VITE_GOOGLE_CLIENT_ID',
       apple: APPLE_ID
         ? (APPLE_REDIRECT ? 'client ID + redirect set' : 'MISSING VITE_APPLE_REDIRECT_URI')
         : 'MISSING VITE_APPLE_CLIENT_ID (Apple does not support localhost)',
