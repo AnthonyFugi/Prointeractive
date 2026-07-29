@@ -295,7 +295,7 @@ export const googleAuth = async (req, res, next) => {
     //            exchanged here for an ID token
     let idToken = credential;
     if (!idToken) {
-      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
       if (!clientSecret) {
         return res.status(500).json({
           success: false,
@@ -304,13 +304,15 @@ export const googleAuth = async (req, res, next) => {
       }
       try {
         const exchanger = new OAuth2Client({
-          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientId: process.env.GOOGLE_CLIENT_ID?.trim(),
           clientSecret,
           redirectUri: 'postmessage',
         });
         const { tokens } = await exchanger.getToken(code);
         idToken = tokens.id_token;
-      } catch (_err) {
+      } catch (err) {
+        console.error('[google-auth] code exchange failed:',
+          err?.response?.data || err?.message || err);
         return res.status(401).json({ success: false, message: 'Google sign-in could not be completed' });
       }
       if (!idToken) {
@@ -322,7 +324,7 @@ export const googleAuth = async (req, res, next) => {
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_ID_IOS,
       process.env.GOOGLE_CLIENT_ID_ANDROID,
-    ].filter(Boolean);
+    ].map((v) => v && v.trim()).filter(Boolean);
     if (audience.length === 0) {
       return res.status(500).json({ success: false, message: 'Google sign-in is not configured' });
     }
@@ -331,7 +333,19 @@ export const googleAuth = async (req, res, next) => {
     try {
       const ticket = await googleClient.verifyIdToken({ idToken, audience });
       payload = ticket.getPayload();
-    } catch (_err) {
+    } catch (err) {
+      // Decode (without verifying) purely to report the mismatch
+      let tokenAud = 'unreadable';
+      try {
+        tokenAud = JSON.parse(
+          Buffer.from(String(idToken).split('.')[1], 'base64').toString()
+        ).aud;
+      } catch (_e) { /* leave as unreadable */ }
+      console.error(
+        '[google-auth] ID token verification failed:', err?.message || err,
+        '\n  token audience   :', tokenAud,
+        '\n  accepted audience:', audience.join(', ') || '(none)',
+      );
       return res.status(401).json({ success: false, message: 'Google sign-in could not be verified' });
     }
 
@@ -365,7 +379,7 @@ export const appleAuth = async (req, res, next) => {
     const audience = [
       process.env.APPLE_CLIENT_ID,   // Services ID (web)
       process.env.APPLE_BUNDLE_ID,   // app bundle identifier (iOS)
-    ].filter(Boolean);
+    ].map((v) => v && v.trim()).filter(Boolean);
     if (audience.length === 0) {
       return res.status(500).json({ success: false, message: 'Apple sign-in is not configured' });
     }
