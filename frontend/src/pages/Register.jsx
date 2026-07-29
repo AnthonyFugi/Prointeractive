@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import GoogleButton from '../components/GoogleButton.jsx';
 
 export default function Register() {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [form, setForm] = useState({
@@ -13,6 +14,16 @@ export default function Register() {
   const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const google = async (credential) => {
+    setError('');
+    try {
+      await loginWithGoogle(credential);
+      navigate('/');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -33,6 +44,15 @@ export default function Register() {
     <div className="container" style={{ maxWidth: 440 }}>
       <div className="panel" style={{ marginTop: '3rem' }}>
         <h1>{form.role === 'business' ? 'Create your business account' : 'Create account'}</h1>
+        {form.role !== 'business' && (
+          <>
+            <GoogleButton onCredential={google} text="signup_with" />
+            <p className="muted" style={{ fontSize: '0.8rem', marginTop: '-0.5rem' }}>
+              By continuing with Google you agree to our <Link to="/terms">Terms</Link> and{' '}
+              <Link to="/privacy">Privacy Policy</Link>.
+            </p>
+          </>
+        )}
         <form onSubmit={submit}>
           <label htmlFor="name">Name</label>
           <input id="name" required value={form.name} onChange={set('name')} />

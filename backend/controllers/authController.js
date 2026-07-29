@@ -1,10 +1,13 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
 import Business from '../models/Business.js';
 import Product from '../models/Product.js';
 import Inquiry from '../models/Inquiry.js';
 import { welcomeEmail, passwordResetEmail } from '../utils/email.js';
+
+const googleClient = new OAuth2Client();
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
@@ -44,6 +47,12 @@ export const login = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password required' });
     }
     const user = await User.findOne({ email }).select('+password');
+    if (user && !user.password) {
+      return res.status(400).json({
+        success: false,
+        message: 'This account uses Google sign-in. Tap “Continue with Google” instead.',
+      });
+    }
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
@@ -176,8 +185,13 @@ export const deleteMe = async (req, res, next) => {
   try {
     const { password } = req.body;
     const user = await User.findById(req.user._id).select('+password');
-    if (!password || !(await user.comparePassword(password))) {
-      return res.status(401).json({ success: false, message: 'Password is incorrect' });
+    if (user.password) {
+      if (!password || !(await user.matchPassword(password))) {
+        return res.status(401).json({ success: false, message: 'Password is incorrect' });
+      }
+    } else if (req.body.confirm !== 'DELETE') {
+      // Google-only accounts have no password: require a typed confirmation instead
+      return res.status(400).json({ success: false, message: 'Type DELETE to confirm' });
     }
 
     // Conversations the user started as a customer
@@ -216,4 +230,65 @@ export const updatePreferences = async (req, res, next) => {
     await req.user.save();
     res.json({ success: true, preferences: req.user.preferences });
   } catch (err) { next(err); }
+};
+
+
+// POST /api/auth/google  { credential } — Google Identity Services ID token
+export const googleAuth = async (req, res, next) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) {
+      return res.status(400).json({ success: false, message: 'Missing Google credential' });
+    }
+
+    const audience = [
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_ID_IOS,
+      process.env.GOOGLE_CLIENT_ID_ANDROID,
+    ].filter(Boolean);
+    if (audience.length === 0) {
+      return res.status(500).json({ success: false, message: 'Google sign-in is not configured' });
+    }
+
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({ idToken: credential, audience });
+      payload = ticket.getPayload();
+    } catch (_err) {
+      return res.status(401).json({ success: false, message: 'Google sign-in could not be verified' });
+    }
+
+    if (!payload?.email_verified) {
+      return res.status(401).json({ success: false, message: 'Your Google email is not verified' });
+    }
+
+    const email = payload.email.toLowerCase();
+    let user = await User.findOne({ $or: [{ googleId: payload.sub }, { email }] });
+
+    if (user) {
+      // Link Google to an existing account (email already verified by Google above)
+      let changed = false;
+      if (!user.googleId) { user.googleId = payload.sub; changed = true; }
+      if (!user.avatarUrl && payload.picture) { user.avatarUrl = payload.picture; changed = true; }
+      if (changed) await user.save({ validateBeforeSave: false });
+    } else {
+      user = await User.create({
+        name: payload.name || email.split('@')[0],
+        email,
+        googleId: payload.sub,
+        avatarUrl: payload.picture || '',
+        role: 'customer',
+        termsAcceptedAt: new Date(),
+      });
+      welcomeEmail(user);
+    }
+
+    if (user.suspended) {
+      return res.status(403).json({ success: false, message: 'This account is suspended.' });
+    }
+
+    sendAuth(res, user, 200);
+  } catch (err) {
+    next(err);
+  }
 };

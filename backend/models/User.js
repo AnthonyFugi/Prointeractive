@@ -14,10 +14,14 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: [
+        function () { return !this.googleId; },
+        'Password is required',
+      ],
       minlength: [8, 'Password must be at least 8 characters'],
       select: false,
     },
+    googleId: { type: String, default: null, index: true, sparse: true },
     role: {
       type: String,
       enum: ['customer', 'business', 'admin'],

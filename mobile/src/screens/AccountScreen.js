@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { colors, money, setDisplayCurrency, spacing } from '../theme';
 
 export default function AccountScreen({ navigation }) {
-  const { user, logout } = useAuth();
+  const { user, logout, refresh } = useAuth();
   const [business, setBusiness] = useState(null);
 
   const [following, setFollowing] = useState(null);
@@ -94,7 +94,7 @@ export default function AccountScreen({ navigation }) {
                       try {
                         await api('/auth/preferences', { method: 'PATCH', body: { currency: cur } });
                         setDisplayCurrency(cur);
-                        if (typeof reload === 'function') reload();
+                        if (refresh) await refresh();
                       } catch (_e) {}
                     }}
                     style={{

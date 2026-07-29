@@ -379,3 +379,12 @@ main { min-height: 70vh; padding-bottom: 2rem; }
 }
 .nav-user:hover { background: var(--navy); color: #fff !important; }
 .nav-user:hover .nav-user-avatar { background: #fff; color: var(--navy); }
+
+/* "or" divider under social sign-in buttons */
+.or-divider {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin: 1rem 0 0.25rem; color: var(--muted); font-size: 0.8rem;
+}
+.or-divider::before, .or-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--line);
+}

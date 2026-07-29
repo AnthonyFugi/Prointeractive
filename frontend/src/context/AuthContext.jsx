@@ -28,6 +28,9 @@ export function AuthProvider({ children }) {
   const register = async (form) =>
     save(await api('/auth/register', { method: 'POST', body: form }));
 
+  const loginWithGoogle = async (credential) =>
+    save(await api('/auth/google', { method: 'POST', body: { credential } }));
+
   const logout = () => {
     localStorage.removeItem('pi_token');
     setUser(null);
@@ -40,7 +43,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthCtx.Provider value={{ user, ready, login, register, logout, refresh }}>
+    <AuthCtx.Provider value={{ user, ready, login, register, logout, refresh, loginWithGoogle }}>
       {children}
     </AuthCtx.Provider>
   );

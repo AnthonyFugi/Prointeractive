@@ -1,14 +1,27 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import GoogleButton from '../components/GoogleButton.jsx';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const google = async (credential) => {
+    setBusy(true); setError('');
+    try {
+      await loginWithGoogle(credential);
+      navigate(location.state?.from || '/');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -27,6 +40,7 @@ export default function Login() {
     <div className="container" style={{ maxWidth: 440 }}>
       <div className="panel" style={{ marginTop: '3rem' }}>
         <h1>Sign in</h1>
+        <GoogleButton onCredential={google} text="signin_with" />
         <form onSubmit={submit}>
           <label htmlFor="email">Email</label>
           <input id="email" type="email" required value={form.email}

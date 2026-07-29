@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { api, setToken, clearToken } from '../api';
 import { registerForPush } from '../push';
+import { setDisplayCurrency } from '../theme';
 
 const Ctx = createContext(null);
 export const useAuth = () => useContext(Ctx);
@@ -32,10 +33,18 @@ export function AuthProvider({ children }) {
     (setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW'), setUser(d.user));
   };
 
+  const refresh = async () => {
+    try {
+      const d = await api('/auth/me');
+      setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW');
+      setUser(d.user);
+    } catch (_e) {}
+  };
+
   const logout = async () => {
     await clearToken();
     setUser(null);
   };
 
-  return <Ctx.Provider value={{ user, ready, login, register, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, ready, login, register, logout, refresh }}>{children}</Ctx.Provider>;
 }

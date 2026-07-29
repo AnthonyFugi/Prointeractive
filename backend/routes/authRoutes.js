@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { register, login, getMe, forgotPassword, resetPassword, becomeBusiness, savePushToken, setBlocked, deleteMe, updatePreferences } from '../controllers/authController.js';
+import { register, login, getMe, forgotPassword, resetPassword, becomeBusiness, savePushToken, setBlocked, deleteMe, updatePreferences, googleAuth } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 
 const router = Router();
 router.post('/register', register);
+router.post('/google', googleAuth);
 router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);

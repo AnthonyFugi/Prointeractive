@@ -30,6 +30,10 @@ export const createBusiness = async (req, res, next) => {
       owner: req.user._id, name, description, location, phone, logoUrl,
       categories: list, category: list[0],
     });
+    if (req.user.role === 'customer') {
+      req.user.role = 'business';
+      await req.user.save({ validateBeforeSave: false });
+    }
     res.status(201).json({ success: true, business });
   } catch (err) {
     next(err);
