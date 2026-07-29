@@ -284,8 +284,11 @@ const socialSignIn = async ({ res, provider, providerId, email, name, picture })
 // POST /api/auth/google  { credential }
 export const googleAuth = async (req, res, next) => {
   try {
-    const { credential, code } = req.body;
+    const credential = req.body.credential;
+    // Google's popup can label the auth code differently across library versions
+    const code = req.body.code || req.body.authCode || req.body.auth_code;
     if (!credential && !code) {
+      console.error('[google-auth] no credential/code in body; keys =', Object.keys(req.body || {}));
       return res.status(400).json({ success: false, message: 'Missing Google credential' });
     }
 
@@ -316,7 +319,7 @@ export const googleAuth = async (req, res, next) => {
       }
       try {
         const exchanger = new OAuth2Client(clientId, clientSecret, 'postmessage');
-        const { tokens } = await exchanger.getToken({ code, redirect_uri: 'postmessage' });
+        const { tokens } = await exchanger.getToken(code);
         idToken = tokens?.id_token || null;
       } catch (err) {
         console.error('[google-auth] code exchange failed:',
