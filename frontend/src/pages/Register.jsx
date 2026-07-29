@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import GoogleButton from '../components/GoogleButton.jsx';
+import SocialAuth from '../components/SocialAuth.jsx';
 
 export default function Register() {
-  const { register, loginWithGoogle } = useAuth();
+  const { register, loginWithGoogle, loginWithApple } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [form, setForm] = useState({
@@ -15,11 +15,12 @@ export default function Register() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const google = async (credential) => {
+  // Social sign-up creates a customer account; sellers continue to the store form
+  const social = (fn) => async (...args) => {
     setError('');
     try {
-      await loginWithGoogle(credential);
-      navigate('/');
+      await fn(...args);
+      navigate(form.role === 'business' ? '/sell' : '/');
     } catch (err) {
       setError(err.message);
     }
@@ -44,15 +45,6 @@ export default function Register() {
     <div className="container" style={{ maxWidth: 440 }}>
       <div className="panel" style={{ marginTop: '3rem' }}>
         <h1>{form.role === 'business' ? 'Create your business account' : 'Create account'}</h1>
-        {form.role !== 'business' && (
-          <>
-            <GoogleButton onCredential={google} text="signup_with" />
-            <p className="muted" style={{ fontSize: '0.8rem', marginTop: '-0.5rem' }}>
-              By continuing with Google you agree to our <Link to="/terms">Terms</Link> and{' '}
-              <Link to="/privacy">Privacy Policy</Link>.
-            </p>
-          </>
-        )}
         <form onSubmit={submit}>
           <label htmlFor="name">Name</label>
           <input id="name" required value={form.name} onChange={set('name')} />
@@ -83,6 +75,15 @@ export default function Register() {
             {busy ? 'Creating…' : 'Create account'}
           </button>
         </form>
+        <SocialAuth
+          onGoogle={social(loginWithGoogle)}
+          onApple={social(loginWithApple)}
+          label="or sign up with"
+        />
+        <p className="muted" style={{ fontSize: '0.78rem', textAlign: 'center', marginTop: '0.5rem' }}>
+          Continuing with Google or Apple means you agree to our{' '}
+          <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.
+        </p>
         <hr className="divider" />
         <p className="muted">Already registered? <Link to="/login">Sign in</Link></p>
       </div>

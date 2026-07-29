@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import User from '../models/User.js';
 import Business from '../models/Business.js';
 import Product from '../models/Product.js';
@@ -8,6 +9,9 @@ import Inquiry from '../models/Inquiry.js';
 import { welcomeEmail, passwordResetEmail } from '../utils/email.js';
 
 const googleClient = new OAuth2Client();
+
+// Apple's public keys, fetched and cached by jose
+const APPLE_KEYS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
@@ -48,9 +52,10 @@ export const login = async (req, res, next) => {
     }
     const user = await User.findOne({ email }).select('+password');
     if (user && !user.password) {
+      const provider = user.appleId ? 'Apple' : 'Google';
       return res.status(400).json({
         success: false,
-        message: 'This account uses Google sign-in. Tap “Continue with Google” instead.',
+        message: `This account uses ${provider} sign-in. Use the ${provider} button instead.`,
       });
     }
     if (!user || !(await user.matchPassword(password))) {
@@ -233,7 +238,50 @@ export const updatePreferences = async (req, res, next) => {
 };
 
 
-// POST /api/auth/google  { credential } — Google Identity Services ID token
+// ---------------------------------------------------------------------------
+// Social sign-in (additive — the email/password flow above is unchanged)
+// ---------------------------------------------------------------------------
+
+// Links a verified social identity to an existing account, or creates a new one.
+// Linking by email is only safe because the provider vouches that the email is verified.
+const socialSignIn = async ({ res, provider, providerId, email, name, picture }) => {
+  const idField = provider === 'apple' ? 'appleId' : 'googleId';
+  const lookup = [{ [idField]: providerId }];
+  if (email) lookup.push({ email });
+
+  let user = await User.findOne({ $or: lookup });
+
+  if (user) {
+    let changed = false;
+    if (!user[idField]) { user[idField] = providerId; changed = true; }
+    if (!user.avatarUrl && picture) { user.avatarUrl = picture; changed = true; }
+    if (changed) await user.save({ validateBeforeSave: false });
+  } else {
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'No email was shared by the provider. Please create an account with your email instead.',
+      });
+    }
+    user = await User.create({
+      name: name || email.split('@')[0],
+      email,
+      [idField]: providerId,
+      avatarUrl: picture || '',
+      role: 'customer',
+      termsAcceptedAt: new Date(),
+    });
+    welcomeEmail(user);
+  }
+
+  if (user.suspended) {
+    return res.status(403).json({ success: false, message: 'This account is suspended.' });
+  }
+
+  return sendAuth(res, user, 200);
+};
+
+// POST /api/auth/google  { credential }
 export const googleAuth = async (req, res, next) => {
   try {
     const { credential } = req.body;
@@ -262,32 +310,66 @@ export const googleAuth = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Your Google email is not verified' });
     }
 
-    const email = payload.email.toLowerCase();
-    let user = await User.findOne({ $or: [{ googleId: payload.sub }, { email }] });
+    return socialSignIn({
+      res,
+      provider: 'google',
+      providerId: payload.sub,
+      email: payload.email.toLowerCase(),
+      name: payload.name,
+      picture: payload.picture,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
-    if (user) {
-      // Link Google to an existing account (email already verified by Google above)
-      let changed = false;
-      if (!user.googleId) { user.googleId = payload.sub; changed = true; }
-      if (!user.avatarUrl && payload.picture) { user.avatarUrl = payload.picture; changed = true; }
-      if (changed) await user.save({ validateBeforeSave: false });
-    } else {
-      user = await User.create({
-        name: payload.name || email.split('@')[0],
-        email,
-        googleId: payload.sub,
-        avatarUrl: payload.picture || '',
-        role: 'customer',
-        termsAcceptedAt: new Date(),
+// POST /api/auth/apple  { identityToken, name }
+// Apple only sends the user's name on the FIRST authorisation, and only via the client,
+// so `name` is optional and is used only when creating a new account.
+export const appleAuth = async (req, res, next) => {
+  try {
+    const { identityToken, name } = req.body;
+    if (!identityToken) {
+      return res.status(400).json({ success: false, message: 'Missing Apple identity token' });
+    }
+
+    const audience = [
+      process.env.APPLE_CLIENT_ID,   // Services ID (web)
+      process.env.APPLE_BUNDLE_ID,   // app bundle identifier (iOS)
+    ].filter(Boolean);
+    if (audience.length === 0) {
+      return res.status(500).json({ success: false, message: 'Apple sign-in is not configured' });
+    }
+
+    let payload;
+    try {
+      const { payload: verified } = await jwtVerify(identityToken, APPLE_KEYS, {
+        issuer: 'https://appleid.apple.com',
+        audience,
       });
-      welcomeEmail(user);
+      payload = verified;
+    } catch (_err) {
+      return res.status(401).json({ success: false, message: 'Apple sign-in could not be verified' });
     }
 
-    if (user.suspended) {
-      return res.status(403).json({ success: false, message: 'This account is suspended.' });
+    // Apple sends email_verified as a boolean or the string "true"
+    const emailVerified = payload.email_verified === true || payload.email_verified === 'true';
+    const email = payload.email ? String(payload.email).toLowerCase() : null;
+    if (email && !emailVerified) {
+      return res.status(401).json({ success: false, message: 'Your Apple email is not verified' });
     }
 
-    sendAuth(res, user, 200);
+    const fullName = name && typeof name === 'object'
+      ? [name.firstName, name.lastName].filter(Boolean).join(' ').trim()
+      : (typeof name === 'string' ? name.trim() : '');
+
+    return socialSignIn({
+      res,
+      provider: 'apple',
+      providerId: payload.sub,
+      email,
+      name: fullName || undefined,
+    });
   } catch (err) {
     next(err);
   }

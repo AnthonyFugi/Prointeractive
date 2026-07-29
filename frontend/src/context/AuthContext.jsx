@@ -31,6 +31,9 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = async (credential) =>
     save(await api('/auth/google', { method: 'POST', body: { credential } }));
 
+  const loginWithApple = async (identityToken, name) =>
+    save(await api('/auth/apple', { method: 'POST', body: { identityToken, name } }));
+
   const logout = () => {
     localStorage.removeItem('pi_token');
     setUser(null);
@@ -43,7 +46,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthCtx.Provider value={{ user, ready, login, register, logout, refresh, loginWithGoogle }}>
+    <AuthCtx.Provider value={{ user, ready, login, register, logout, refresh, loginWithGoogle, loginWithApple }}>
       {children}
     </AuthCtx.Provider>
   );

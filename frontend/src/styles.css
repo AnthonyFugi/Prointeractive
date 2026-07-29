@@ -388,3 +388,15 @@ main { min-height: 70vh; padding-bottom: 2rem; }
 .or-divider::before, .or-divider::after {
   content: ''; flex: 1; height: 1px; background: var(--line);
 }
+
+/* Social sign-in row (optional providers, shown beneath the email form) */
+.social-row {
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+}
+.btn-apple {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  width: 300px; max-width: 100%; height: 40px;
+  background: #000; color: #fff; border: none; border-radius: 999px;
+  font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+}
+.btn-apple:hover { background: #1a1a1a; }
