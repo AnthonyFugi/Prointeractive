@@ -18,15 +18,21 @@ Email/password sign-in is unchanged and always works. Each social provider appea
      - `https://proint.web.app`
      - `http://localhost:5173`
    - Create → copy the **Client ID** (looks like `1234-abc.apps.googleusercontent.com`)
+   - Also copy the **Client secret** shown next to it
 
 ### Wire it up
 | Where | Variable | Value |
 |---|---|---|
 | Render (backend) | `GOOGLE_CLIENT_ID` | the client ID |
+| Render (backend) | `GOOGLE_CLIENT_SECRET` | the client secret |
 | `frontend/.env.production` | `VITE_GOOGLE_CLIENT_ID` | the same client ID |
 | `frontend/.env.development` | `VITE_GOOGLE_CLIENT_ID` | the same client ID |
 
 Rebuild the frontend and redeploy the backend. The Google button appears under both forms.
+
+> The client secret is needed because we use Google's popup **code flow**, which lets us
+> draw our own button so Google and Apple match. The browser only ever receives a
+> short-lived auth code; the secret stays on the server.
 
 ### Later, for the Android app
 Create a second OAuth client (type **Android**), package `com.proint`, with the SHA-1

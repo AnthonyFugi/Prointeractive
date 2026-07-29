@@ -284,9 +284,38 @@ const socialSignIn = async ({ res, provider, providerId, email, name, picture })
 // POST /api/auth/google  { credential }
 export const googleAuth = async (req, res, next) => {
   try {
-    const { credential } = req.body;
-    if (!credential) {
+    const { credential, code } = req.body;
+    if (!credential && !code) {
       return res.status(400).json({ success: false, message: 'Missing Google credential' });
+    }
+
+    // Two supported flows:
+    //  - `credential`: an ID token straight from Google Identity Services
+    //  - `code`: an auth code from the popup code flow (lets us use our own button),
+    //            exchanged here for an ID token
+    let idToken = credential;
+    if (!idToken) {
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      if (!clientSecret) {
+        return res.status(500).json({
+          success: false,
+          message: 'Google sign-in is not fully configured (missing client secret)',
+        });
+      }
+      try {
+        const exchanger = new OAuth2Client({
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret,
+          redirectUri: 'postmessage',
+        });
+        const { tokens } = await exchanger.getToken(code);
+        idToken = tokens.id_token;
+      } catch (_err) {
+        return res.status(401).json({ success: false, message: 'Google sign-in could not be completed' });
+      }
+      if (!idToken) {
+        return res.status(401).json({ success: false, message: 'Google did not return an identity token' });
+      }
     }
 
     const audience = [
@@ -300,7 +329,7 @@ export const googleAuth = async (req, res, next) => {
 
     let payload;
     try {
-      const ticket = await googleClient.verifyIdToken({ idToken: credential, audience });
+      const ticket = await googleClient.verifyIdToken({ idToken, audience });
       payload = ticket.getPayload();
     } catch (_err) {
       return res.status(401).json({ success: false, message: 'Google sign-in could not be verified' });
