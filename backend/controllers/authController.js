@@ -304,20 +304,19 @@ export const googleAuth = async (req, res, next) => {
     let idToken = typeof credential === 'string' ? credential : null;
 
     if (!idToken) {
+      const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
       const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
-      if (!clientSecret) {
+      if (!clientId || !clientSecret) {
+        console.error('[google-auth] missing config for code exchange →',
+          { clientId: clientId ? 'set' : 'MISSING', clientSecret: clientSecret ? 'set' : 'MISSING' });
         return res.status(500).json({
           success: false,
-          message: 'Google sign-in is not fully configured (missing client secret)',
+          message: 'Google sign-in is not fully configured on the server',
         });
       }
       try {
-        const exchanger = new OAuth2Client({
-          clientId: audience[0],
-          clientSecret,
-          redirectUri: 'postmessage',
-        });
-        const { tokens } = await exchanger.getToken(code);
+        const exchanger = new OAuth2Client(clientId, clientSecret, 'postmessage');
+        const { tokens } = await exchanger.getToken({ code, redirect_uri: 'postmessage' });
         idToken = tokens?.id_token || null;
       } catch (err) {
         console.error('[google-auth] code exchange failed:',
