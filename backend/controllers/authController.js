@@ -289,11 +289,20 @@ export const googleAuth = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing Google credential' });
     }
 
-    // Two supported flows:
-    //  - `credential`: an ID token straight from Google Identity Services
-    //  - `code`: an auth code from the popup code flow (lets us use our own button),
-    //            exchanged here for an ID token
-    let idToken = credential;
+    const audience = [
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_ID_IOS,
+      process.env.GOOGLE_CLIENT_ID_ANDROID,
+    ].map((v) => v && v.trim()).filter(Boolean);
+    if (audience.length === 0) {
+      return res.status(500).json({ success: false, message: 'Google sign-in is not configured' });
+    }
+
+    // Resolve an ID token string from whichever flow was used.
+    //  - credential flow: the client already sends the ID token string
+    //  - code flow: exchange the one-time code, then read tokens.id_token (a string)
+    let idToken = typeof credential === 'string' ? credential : null;
+
     if (!idToken) {
       const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
       if (!clientSecret) {
@@ -304,29 +313,22 @@ export const googleAuth = async (req, res, next) => {
       }
       try {
         const exchanger = new OAuth2Client({
-          clientId: process.env.GOOGLE_CLIENT_ID?.trim(),
+          clientId: audience[0],
           clientSecret,
           redirectUri: 'postmessage',
         });
         const { tokens } = await exchanger.getToken(code);
-        idToken = tokens.id_token;
+        idToken = tokens?.id_token || null;
       } catch (err) {
         console.error('[google-auth] code exchange failed:',
           err?.response?.data || err?.message || err);
         return res.status(401).json({ success: false, message: 'Google sign-in could not be completed' });
       }
-      if (!idToken) {
-        return res.status(401).json({ success: false, message: 'Google did not return an identity token' });
-      }
     }
 
-    const audience = [
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_ID_IOS,
-      process.env.GOOGLE_CLIENT_ID_ANDROID,
-    ].map((v) => v && v.trim()).filter(Boolean);
-    if (audience.length === 0) {
-      return res.status(500).json({ success: false, message: 'Google sign-in is not configured' });
+    if (typeof idToken !== 'string' || !idToken.includes('.')) {
+      console.error('[google-auth] no usable ID token; got type:', typeof idToken);
+      return res.status(401).json({ success: false, message: 'Google did not return a usable identity token' });
     }
 
     let payload;
@@ -334,11 +336,10 @@ export const googleAuth = async (req, res, next) => {
       const ticket = await googleClient.verifyIdToken({ idToken, audience });
       payload = ticket.getPayload();
     } catch (err) {
-      // Decode (without verifying) purely to report the mismatch
       let tokenAud = 'unreadable';
       try {
         tokenAud = JSON.parse(
-          Buffer.from(String(idToken).split('.')[1], 'base64').toString()
+          Buffer.from(idToken.split('.')[1], 'base64').toString()
         ).aud;
       } catch (_e) { /* leave as unreadable */ }
       console.error(
