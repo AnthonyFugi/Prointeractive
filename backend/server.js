@@ -1,4 +1,11 @@
 import 'dotenv/config';
+// Temporary boot diagnostic — confirms what the RUNNING process actually loaded
+console.log('[boot] google config →', {
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID
+    ? process.env.GOOGLE_CLIENT_ID.slice(0, 16) + '…(' + process.env.GOOGLE_CLIENT_ID.length + ' chars)'
+    : 'MISSING',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? 'set' : 'MISSING',
+});
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -51,7 +58,12 @@ app.set('trust proxy', 1); // behind Render's proxy — real client IPs for rate
 app.set('trust proxy', 1); // behind nginx / a load balancer
 
 // ---- Security & performance middleware ----
-app.use(helmet({ contentSecurityPolicy: isProd ? undefined : false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(helmet({
+  contentSecurityPolicy: isProd ? undefined : false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  // Allow OAuth popups (Google/Apple) to communicate back to the opener window
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+}));
 app.use(compression());
 const corsAllowed = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()) || [];
 app.use(cors({

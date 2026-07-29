@@ -284,13 +284,12 @@ const socialSignIn = async ({ res, provider, providerId, email, name, picture })
 // POST /api/auth/google  { credential }
 export const googleAuth = async (req, res, next) => {
   try {
-    const credential = req.body.credential;
-    // Google's popup can label the auth code differently across library versions
-    const code = req.body.code || req.body.authCode || req.body.auth_code;
-    if (!credential && !code) {
-      console.error('[google-auth] no credential/code in body; keys =', Object.keys(req.body || {}));
+    const { credential } = req.body;
+    if (typeof credential !== 'string' || !credential.includes('.')) {
+      console.error('[google-auth] no usable credential in body; keys =', Object.keys(req.body || {}));
       return res.status(400).json({ success: false, message: 'Missing Google credential' });
     }
+    const idToken = credential;
 
     const audience = [
       process.env.GOOGLE_CLIENT_ID,
@@ -299,33 +298,6 @@ export const googleAuth = async (req, res, next) => {
     ].map((v) => v && v.trim()).filter(Boolean);
     if (audience.length === 0) {
       return res.status(500).json({ success: false, message: 'Google sign-in is not configured' });
-    }
-
-    // Resolve an ID token string from whichever flow was used.
-    //  - credential flow: the client already sends the ID token string
-    //  - code flow: exchange the one-time code, then read tokens.id_token (a string)
-    let idToken = typeof credential === 'string' ? credential : null;
-
-    if (!idToken) {
-      const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
-      const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
-      if (!clientId || !clientSecret) {
-        console.error('[google-auth] missing config for code exchange →',
-          { clientId: clientId ? 'set' : 'MISSING', clientSecret: clientSecret ? 'set' : 'MISSING' });
-        return res.status(500).json({
-          success: false,
-          message: 'Google sign-in is not fully configured on the server',
-        });
-      }
-      try {
-        const exchanger = new OAuth2Client(clientId, clientSecret, 'postmessage');
-        const { tokens } = await exchanger.getToken(code);
-        idToken = tokens?.id_token || null;
-      } catch (err) {
-        console.error('[google-auth] code exchange failed:',
-          err?.response?.data || err?.message || err);
-        return res.status(401).json({ success: false, message: 'Google sign-in could not be completed' });
-      }
     }
 
     if (typeof idToken !== 'string' || !idToken.includes('.')) {
