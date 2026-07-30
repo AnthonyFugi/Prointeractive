@@ -41,7 +41,21 @@ export const listProducts = async (req, res, next) => {
         delete filter.isActive;
       }
     }
-    if (q) filter.$text = { $search: q };
+    const escapeRe = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Hoisted to function scope: both the candidate filter below and the
+    // relevance ranking further down need the same word list.
+    const words = q ? String(q).trim().split(/\s+/).filter(Boolean).map(escapeRe) : [];
+    if (q) {
+      // Substring matching, not MongoDB's $text: $text only matches whole
+      // words, so a search for "Mac" would never find "MacBook" — different
+      // tokens entirely, no prefix relationship. This candidate set is
+      // deliberately wide (any word, anywhere in name or description);
+      // the relevance ranking further down decides the actual order.
+      filter.$or = words.flatMap((w) => [
+        { name: new RegExp(w, 'i') },
+        { description: new RegExp(w, 'i') },
+      ]);
+    }
     if (category) filter.category = category.toLowerCase();
     if (business) {
       if (/^[0-9a-fA-F]{24}$/.test(business)) {
@@ -86,20 +100,41 @@ export const listProducts = async (req, res, next) => {
       return res.json({ success: true, products: agg, total, page: Number(page), pages: Math.ceil(total / limit) });
     }
 
-    // A search term gets its own ranking: MongoDB's $text OR-matches individual
-    // words ("iPhone 17 Pro Max" -> iphone OR 17 OR pro OR max), so a Surface
-    // Pro or iPad Pro can match on "pro" alone. Relevance ranking fixes what
-    // matching alone can't: score by MongoDB's own textScore, boosted heavily
-    // when the full search phrase appears in the product name — the strongest
-    // signal that OR-of-words inherently misses.
+    // A search term gets its own ranking, computed here rather than left to
+    // MongoDB's $text scoring (which we no longer use — see the filter above).
+    // Signals, each a substring/regex test against the actual product name:
+    //   - exact phrase found in the name           (strongest — "iphone 17 pro max")
+    //   - name starts with the query                (very strong — "MacBook..." for "Mac")
+    //   - how many of the individual query words appear in the name
+    //   - how many appear in the description        (weakest — matches almost anything)
+    // Name-based signals dominate on purpose, same principle as the index
+    // weighting: a word buried in a description shouldn't outrank a real
+    // match in the title.
     if (q) {
-      const escaped = String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const phraseRe = new RegExp(escaped, 'i');
+      const phraseRe = new RegExp(words.join('\\s*'), 'i');
+      const startsWithRe = new RegExp('^\\s*' + words.join('\\s*'), 'i');
+      const nameWordConds = words.map((w) => ({ $cond: [{ $regexMatch: { input: '$name', regex: new RegExp(w, 'i') } }, 1, 0] } ));
+      const descWordConds = words.map((w) => ({ $cond: [{ $regexMatch: { input: '$description', regex: new RegExp(w, 'i') } }, 1, 0] } ));
+
       const agg = await Product.aggregate([
         { $match: filter },
-        { $addFields: { textScore: { $meta: 'textScore' } } },
-        { $addFields: { phraseBonus: { $cond: [{ $regexMatch: { input: '$name', regex: phraseRe } }, 1, 0] } } },
-        { $sort: { phraseBonus: -1, textScore: -1, createdAt: -1 } },
+        { $addFields: {
+          phraseBonus: { $cond: [{ $regexMatch: { input: '$name', regex: phraseRe } }, 1, 0] },
+          startsWithBonus: { $cond: [{ $regexMatch: { input: '$name', regex: startsWithRe } }, 1, 0] },
+          nameWordMatches: { $add: nameWordConds },
+          descWordMatches: { $add: descWordConds },
+        } },
+        { $addFields: {
+          relevance: {
+            $add: [
+              { $multiply: ['$phraseBonus', 100] },
+              { $multiply: ['$startsWithBonus', 40] },
+              { $multiply: ['$nameWordMatches', 10] },
+              { $multiply: ['$descWordMatches', 1] },
+            ],
+          },
+        } },
+        { $sort: { relevance: -1, createdAt: -1 } },
         { $skip: skip },
         { $limit: Number(limit) },
       ]);
