@@ -13,7 +13,7 @@ const BENEFITS = [
   ['Your own storefront', 'A page for your business with all your products, reachable by every Prointeractive customer.'],
   ['Talk to your customers', 'Built-in chat on every product. Answer questions, negotiate bulk orders, build trust before the sale.'],
   ['Get paid, automatically', 'Mobile money and card payments settle to your bank account. Cash on delivery supported too.'],
-  ['Simple pricing', 'No listing fees, no monthly fees. Just 5% on completed sales — you earn, we earn.'],
+  ['Simple pricing', 'No listing fees, no monthly fees. Just 5% on completed sales, capped at K250 per order — so your big-ticket items keep more.'],
   ['Premium goods only', 'Prointeractive is a new-items marketplace: authentic, first-owner, first-grade products. That standard is why buyers trust every storefront here — including yours.'],
 ];
 
