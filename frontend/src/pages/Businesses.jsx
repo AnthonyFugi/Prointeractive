@@ -101,19 +101,21 @@ export default function Businesses() {
                     {b.logoUrl ? <img src={b.logoUrl} alt={b.name} /> : b.name[0].toUpperCase()}
                   </div>
                   <div className="card-body">
-                    {(!user || user.role === 'customer') && (
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${followed(b._id) ? 'btn-red' : 'btn-ghost'}`}
-                        style={{ float: 'right', marginLeft: '0.5rem' }}
-                        onClick={(e) => toggleFollow(e, b)}
-                      >
-                        {followed(b._id) ? '✓ Following' : '+ Follow'}
-                      </button>
-                    )}
-                    <span className="name">
-                      {b.name}{b.verified && <VerifiedBadge size={15} />}
-                    </span>
+                    <div className="row spread" style={{ gap: '0.5rem', flexWrap: 'nowrap' }}>
+                      <span className="name" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {b.name}{b.verified && <VerifiedBadge size={15} />}
+                      </span>
+                      {(!user || user.role === 'customer') && (
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${followed(b._id) ? 'btn-red' : 'btn-ghost'}`}
+                          style={{ flexShrink: 0 }}
+                          onClick={(e) => toggleFollow(e, b)}
+                        >
+                          {followed(b._id) ? '✓ Following' : '+ Follow'}
+                        </button>
+                      )}
+                    </div>
                     <span className="biz">{(b.categories?.length ? b.categories.join(' · ') : b.category)}{b.location && ` · ${b.location}`}</span>
                     {b.ratingCount > 0 && <Rating value={b.ratingAverage} count={b.ratingCount} />}
                   </div>

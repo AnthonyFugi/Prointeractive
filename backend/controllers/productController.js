@@ -86,6 +86,28 @@ export const listProducts = async (req, res, next) => {
       return res.json({ success: true, products: agg, total, page: Number(page), pages: Math.ceil(total / limit) });
     }
 
+    // A search term gets its own ranking: MongoDB's $text OR-matches individual
+    // words ("iPhone 17 Pro Max" -> iphone OR 17 OR pro OR max), so a Surface
+    // Pro or iPad Pro can match on "pro" alone. Relevance ranking fixes what
+    // matching alone can't: score by MongoDB's own textScore, boosted heavily
+    // when the full search phrase appears in the product name — the strongest
+    // signal that OR-of-words inherently misses.
+    if (q) {
+      const escaped = String(q).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const phraseRe = new RegExp(escaped, 'i');
+      const agg = await Product.aggregate([
+        { $match: filter },
+        { $addFields: { textScore: { $meta: 'textScore' } } },
+        { $addFields: { phraseBonus: { $cond: [{ $regexMatch: { input: '$name', regex: phraseRe } }, 1, 0] } } },
+        { $sort: { phraseBonus: -1, textScore: -1, createdAt: -1 } },
+        { $skip: skip },
+        { $limit: Number(limit) },
+      ]);
+      await Product.populate(agg, { path: 'business', select: 'name slug verified' });
+      const total = await Product.countDocuments(filter);
+      return res.json({ success: true, products: agg, total, page: Number(page), pages: Math.ceil(total / limit) });
+    }
+
     const [products, total] = await Promise.all([
       Product.find(filter).populate('business', 'name slug verified').sort(sort).skip(skip).limit(Number(limit)),
       Product.countDocuments(filter),

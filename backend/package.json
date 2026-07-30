@@ -11,6 +11,7 @@
     "create-admin": "node utils/createAdmin.js",
     "reslug": "node scripts/backfillSlugs.js",
     "reactivate": "node scripts/reactivateProducts.js",
+    "reindex-search": "node scripts/reindexSearch.js",
     "backup": "node scripts/backupToS3.js"
   },
   "dependencies": {
