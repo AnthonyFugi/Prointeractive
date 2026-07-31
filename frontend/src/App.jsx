@@ -109,7 +109,6 @@ export default function App() {
           <Link to="/privacy">Privacy</Link>
           <Link to="/product-standards">Standards</Link>
           <Link to="/corporate">Corporate</Link>
-          <Link to="/account-deletion">Delete account</Link>
         </div>
       </footer>
     </>
