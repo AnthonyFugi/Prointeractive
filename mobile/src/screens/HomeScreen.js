@@ -64,18 +64,19 @@ export default function HomeScreen({ navigation }) {
             value={q}
             onChangeText={setQ}
             onSubmitEditing={() => setQuery(q)}
-            placeholder="Search products…"
+            placeholder="What are you looking for today?"
+            placeholderTextColor={colors.muted}
             returnKeyType="search"
             style={{
-              flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,
-              borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
+              flex: 1, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.line,
+              borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: colors.ink,
             }}
           />
           <Pressable
             onPress={() => setQuery(q)}
-            style={{ backgroundColor: colors.navy, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' }}
+            style={{ backgroundColor: colors.navy, borderRadius: 10, paddingHorizontal: 22, justifyContent: 'center' }}
           >
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Go</Text>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Go</Text>
           </Pressable>
         </View>
         <FlatList

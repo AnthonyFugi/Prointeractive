@@ -200,7 +200,21 @@ textarea { resize: vertical; min-height: 90px; }
   text-transform: uppercase; color: var(--red); margin-bottom: 0.6rem;
 }
 .hero p.lede { color: var(--muted); max-width: 34rem; font-size: 1.05rem; }
-.searchbar { display: flex; gap: 0.5rem; max-width: 34rem; margin-top: 1.25rem; }
+.searchbar { display: flex; gap: 0.6rem; max-width: 44rem; margin-top: 1.25rem; }
+.searchbar input {
+  flex: 1;
+  padding: 0.85rem 1.25rem;
+  font-size: 1.1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+}
+.searchbar input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(0, 35, 102, 0.1); }
+.searchbar .btn {
+  padding: 0.85rem 2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  min-width: 8rem;
+}
 .chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0 0; }
 .chip {
   border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
@@ -389,14 +403,18 @@ main { min-height: 70vh; padding-bottom: 2rem; }
   content: ''; flex: 1; height: 1px; background: var(--line);
 }
 
-/* Social sign-in row (optional providers, shown beneath the email form) */
-.social-row {
-  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+
+/* --- Social sign-in: a matched pair beneath the email form --- */
+.social-auth { margin-top: 1.25rem; }
+.social-row { display: flex; flex-direction: column; gap: 0.6rem; }
+.btn-social {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  width: 100%; min-height: 44px; padding: 0.6rem 1rem;
+  background: #fff; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 8px;
+  font-family: inherit; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: background 0.12s, border-color 0.12s;
 }
-.btn-apple {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-  width: 300px; max-width: 100%; height: 40px;
-  background: #000; color: #fff; border: none; border-radius: 999px;
-  font-family: inherit; font-size: 0.95rem; font-weight: 600; cursor: pointer;
-}
-.btn-apple:hover { background: #1a1a1a; }
+.btn-social:hover { background: #f6f7f9; border-color: #c3cad6; }
+.btn-social:active { background: #eef0f4; }
+.btn-social svg { flex-shrink: 0; }

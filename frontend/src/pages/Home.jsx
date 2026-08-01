@@ -58,7 +58,7 @@ export default function Home() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search products…"
+            placeholder="What are you looking for today?"
             aria-label="Search products"
           />
           <button className="btn btn-navy" type="submit">Search</button>
