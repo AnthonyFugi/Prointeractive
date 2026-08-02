@@ -29,6 +29,7 @@ export default function Dashboard() {
 
   // Products
   const [products, setProducts] = useState([]);
+  const [productSearch, setProductSearch] = useState('');
   const [productCategories, setProductCategories] = useState([]);
   const [productForm, setProductForm] = useState(EMPTY_PRODUCT);
   const [editingId, setEditingId] = useState(null);
@@ -611,7 +612,22 @@ export default function Dashboard() {
             </div>
           )}
 
-          {products.map((p) => (
+          {products.length > 5 && (
+            <input
+              placeholder={`Search your ${products.length} products…`}
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              style={{ maxWidth: 320, marginBottom: '0.75rem' }}
+            />
+          )}
+
+          {(() => {
+            const q = productSearch.trim().toLowerCase();
+            const visible = q ? products.filter((p) => p.name?.toLowerCase().includes(q)) : products;
+            if (products.length > 0 && visible.length === 0) {
+              return <p className="muted">Nothing matching "{productSearch}".</p>;
+            }
+            return visible.map((p) => (
             <div className="panel row spread" key={p._id} style={p.isActive ? undefined : { opacity: 0.6 }}>
               <div className="row" style={{ alignItems: 'center' }}>
                 {p.images?.[0] && (
@@ -634,7 +650,8 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-          ))}
+          ));
+          })()}
         </>
       )}
 
