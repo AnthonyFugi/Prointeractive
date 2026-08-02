@@ -272,10 +272,12 @@ export default function Dashboard() {
 
   const editProduct = (p) => {
     setEditingId(p._id);
-    const categoryStillExists = productCategories.some((c) => c.name === p.category);
+    // Never blank a category the product already has — even if it's since
+    // been renamed or removed from the live list, forcing a reselect just
+    // to save an unrelated change (like a price update) is the wrong trade.
     setProductForm({
       name: p.name, description: p.description, price: p.price,
-      category: categoryStillExists ? p.category : '',
+      category: p.category || '',
       stock: p.stock, images: p.images || [],
       salePrice: p.salePrice ?? '',
       saleEndsAt: p.saleEndsAt ? p.saleEndsAt.slice(0, 10) : '',
@@ -559,6 +561,9 @@ export default function Dashboard() {
                   <select id="pcat" required value={productForm.category}
                     onChange={(e) => updateProductField('category', e.target.value)}>
                     <option value="">Select a category…</option>
+                    {productForm.category && !productCategories.some((c) => c.name === productForm.category) && (
+                      <option value={productForm.category}>{productForm.category} (no longer listed)</option>
+                    )}
                     {productCategories.map((c) => (
                       <option key={c._id} value={c.name}>{c.name}</option>
                     ))}
