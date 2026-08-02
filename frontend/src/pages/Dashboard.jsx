@@ -510,10 +510,20 @@ export default function Dashboard() {
       {tab === 'products' && (
         <>
           {!showProductForm && (
-            <button className="btn btn-red" style={{ marginBottom: '1rem' }}
-              onClick={() => { setEditingId(null); setProductForm(EMPTY_PRODUCT); setShowProductForm(true); }}>
-              + Add product
-            </button>
+            <div className="row spread" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <button className="btn btn-red"
+                onClick={() => { setEditingId(null); setProductForm(EMPTY_PRODUCT); setShowProductForm(true); }}>
+                + Add product
+              </button>
+              {products.length > 5 && (
+                <input
+                  placeholder={`Search your ${products.length} products…`}
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  style={{ maxWidth: 280 }}
+                />
+              )}
+            </div>
           )}
 
           {showProductForm && (
@@ -610,15 +620,6 @@ export default function Dashboard() {
               <h3>No products yet</h3>
               <p>Add your first product — it appears in the shop the moment you save it.</p>
             </div>
-          )}
-
-          {products.length > 5 && (
-            <input
-              placeholder={`Search your ${products.length} products…`}
-              value={productSearch}
-              onChange={(e) => setProductSearch(e.target.value)}
-              style={{ maxWidth: 320, margin: '1rem 0 0.75rem' }}
-            />
           )}
 
           {(() => {
