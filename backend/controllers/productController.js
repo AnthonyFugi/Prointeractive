@@ -12,7 +12,7 @@ export const createProduct = async (req, res, next) => {
     if (!business) {
       return res.status(400).json({ success: false, message: 'Create a business profile first' });
     }
-    const { name, description, price, currency, images, category, stock } = req.body;
+    const { name, description, price, currency, images, category, stock, salePrice, saleEndsAt } = req.body;
     if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ success: false, message: 'Add at least one product photo' });
     }
@@ -21,6 +21,7 @@ export const createProduct = async (req, res, next) => {
     }
     const product = await Product.create({
       business: business._id, name, description, price, currency, images, category, stock,
+      salePrice: salePrice ?? null, saleEndsAt: saleEndsAt ?? null,
     });
     res.status(201).json({ success: true, product });
   } catch (err) {
@@ -31,7 +32,7 @@ export const createProduct = async (req, res, next) => {
 // GET /api/products  (public: search, filter, paginate, sort)
 export const listProducts = async (req, res, next) => {
   try {
-    const { q, category, business, favorites, saved, featured, includeInactive, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
+    const { q, category, business, favorites, saved, featured, onSale, includeInactive, minPrice, maxPrice, sort = '-createdAt', page = 1, limit = 12 } = req.query;
     const filter = { isActive: true };
     if (includeInactive === 'true' && req.user) {
       // Only the storefront's owner (or an admin) may see hidden products
@@ -71,6 +72,10 @@ export const listProducts = async (req, res, next) => {
       filter._id = { $in: ids };
     }
     if (featured === 'true') filter.featured = true;
+    if (onSale === 'true') {
+      filter.salePrice = { $ne: null };
+      filter.saleEndsAt = { $gt: new Date() };
+    }
     if (favorites === 'true') {
       // Signed-in users only; anonymous requests get an empty result, not an error
       const ids = req.user?.favoriteBusinesses || [];
@@ -85,11 +90,17 @@ export const listProducts = async (req, res, next) => {
     const skip = (Number(page) - 1) * Number(limit);
     const followIds = req.user?.favoriteBusinesses || [];
     const followFirst =
-      followIds.length > 0 && !q && !business && !favorites && !saved && featured !== 'true' && sort === '-createdAt';
+      followIds.length > 0 && !q && !business && !favorites && !saved && featured !== 'true' && onSale !== 'true' && sort === '-createdAt';
 
     if (followFirst) {
       const agg = await Product.aggregate([
         { $match: filter },
+        { $addFields: {
+          onSale: { $and: [{ $ne: ['$salePrice', null] }, { $gt: ['$saleEndsAt', '$$NOW'] }] },
+        } },
+        { $addFields: {
+          effectivePrice: { $cond: ['$onSale', '$salePrice', '$price'] },
+        } },
         { $addFields: { followed: { $cond: [{ $in: ['$business', followIds] }, 1, 0] } } },
         { $sort: { followed: -1, createdAt: -1 } },
         { $skip: skip },
@@ -118,6 +129,12 @@ export const listProducts = async (req, res, next) => {
 
       const agg = await Product.aggregate([
         { $match: filter },
+        { $addFields: {
+          onSale: { $and: [{ $ne: ['$salePrice', null] }, { $gt: ['$saleEndsAt', '$$NOW'] }] },
+        } },
+        { $addFields: {
+          effectivePrice: { $cond: ['$onSale', '$salePrice', '$price'] },
+        } },
         { $addFields: {
           phraseBonus: { $cond: [{ $regexMatch: { input: '$name', regex: phraseRe } }, 1, 0] },
           startsWithBonus: { $cond: [{ $regexMatch: { input: '$name', regex: startsWithRe } }, 1, 0] },
@@ -182,7 +199,7 @@ export const updateProduct = async (req, res, next) => {
     if (req.body.category && !(await Category.exists({ name: String(req.body.category).toLowerCase() }))) {
       return res.status(400).json({ success: false, message: 'Choose a category from the list' });
     }
-    const allowed = ['name', 'description', 'price', 'currency', 'images', 'category', 'stock', 'isActive'];
+    const allowed = ['name', 'description', 'price', 'currency', 'images', 'category', 'stock', 'isActive', 'salePrice', 'saleEndsAt'];
     allowed.forEach((f) => {
       if (req.body[f] !== undefined) product[f] = req.body[f];
     });

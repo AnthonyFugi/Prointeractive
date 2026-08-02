@@ -38,7 +38,7 @@ export function CartProvider({ children }) {
   const clear = () => setItems([]);
 
   const count = items.reduce((n, i) => n + i.quantity, 0);
-  const total = items.reduce((s, i) => s + i.product.price * i.quantity, 0);
+  const total = items.reduce((s, i) => s + (i.product.onSale ? i.product.effectivePrice : i.product.price) * i.quantity, 0);
 
   // Orders are per-business on the backend, so group here
   const groups = items.reduce((acc, i) => {

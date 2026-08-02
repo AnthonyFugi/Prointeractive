@@ -15,9 +15,13 @@ export default function HomeScreen({ navigation }) {
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [trending, setTrending] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [featuredBiz, setFeaturedBiz] = useState([]);
+  const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -26,18 +30,46 @@ export default function HomeScreen({ navigation }) {
     api('/products/trending?limit=8').then((d) => setTrending(d.products)).catch(() => {});
     api('/products?featured=true&limit=8').then((d) => setFeatured((d.products || []).filter((p) => p.featured))).catch(() => {});
     api('/businesses?featured=true&limit=6').then((d) => setFeaturedBiz((d.businesses || []).filter((b) => b.featured))).catch(() => {});
+    api('/products?onSale=true&limit=8').then((d) => setDeals((d.products || []).filter((p) => p.onSale))).catch(() => {});
   }, []);
 
+  // Always fetches page 1 and REPLACES the list — used on mount, whenever
+  // filters change, and on pull-to-refresh.
   const load = useCallback(() => {
-    const params = new URLSearchParams({ limit: 20 });
+    const params = new URLSearchParams({ limit: 20, page: 1 });
     if (query) params.set('q', query);
     if (category) params.set('category', category);
     if (favoritesOnly) params.set('favorites', 'true');
     if (savedOnly) params.set('saved', 'true');
     return api(`/products?${params}`)
-      .then((d) => setProducts(d.products))
+      .then((d) => {
+        setProducts(d.products || []);
+        setPage(1);
+        setPages(d.pages || 1);
+      })
       .catch(() => {});
   }, [query, category, favoritesOnly, savedOnly]);
+
+  // Fetches the NEXT page and APPENDS — this is what powers infinite scroll.
+  // Previously the screen had no pagination at all: a hard limit of 20
+  // products and no way to reach anything past them.
+  const loadMore = useCallback(() => {
+    if (loading || loadingMore || page >= pages) return;
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    const params = new URLSearchParams({ limit: 20, page: nextPage });
+    if (query) params.set('q', query);
+    if (category) params.set('category', category);
+    if (favoritesOnly) params.set('favorites', 'true');
+    if (savedOnly) params.set('saved', 'true');
+    api(`/products?${params}`)
+      .then((d) => {
+        setProducts((prev) => [...prev, ...(d.products || [])]);
+        setPage(nextPage);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  }, [loading, loadingMore, page, pages, query, category, favoritesOnly, savedOnly]);
 
   useEffect(() => {
     setLoading(true);
@@ -59,6 +91,11 @@ export default function HomeScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ paddingBottom: 40 }}
         columnWrapperStyle={{ paddingHorizontal: spacing.m }}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? <ActivityIndicator color={colors.navy} style={{ marginVertical: spacing.l }} /> : null
+        }
         ListHeaderComponent={
           <View>
             <View style={{ padding: spacing.l }}>
@@ -197,6 +234,25 @@ export default function HomeScreen({ navigation }) {
                       )}
                     />
                   ) : null}
+                </View>
+              ) : null}
+              {deals.length > 0 && !query && !category && !favoritesOnly && !savedOnly ? (
+                <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: colors.red, paddingVertical: spacing.m, paddingLeft: spacing.m, marginBottom: spacing.l }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingRight: spacing.m, marginBottom: spacing.s }}>
+                    <Text style={{ fontWeight: '800', fontSize: 17 }}>Deals 🏷️</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12 }}>While they last</Text>
+                  </View>
+                  <FlatList
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    data={deals}
+                    keyExtractor={(p) => 'dl-' + p._id}
+                    renderItem={({ item }) => (
+                      <View style={{ width: 170 }}>
+                        <ProductCard product={item} onPress={() => navigation.navigate('Product', { id: item._id })} />
+                      </View>
+                    )}
+                  />
                 </View>
               ) : null}
               {trending.length > 0 && !query && !category && !favoritesOnly && !savedOnly ? (

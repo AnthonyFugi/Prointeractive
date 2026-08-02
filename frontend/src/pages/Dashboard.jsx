@@ -13,7 +13,7 @@ const nextStatusFor = (o) =>
 const nextLabelFor = (o) =>
   o.paymentMethod === 'cash_on_delivery' ? COD_LABEL[o.status] : ONLINE_LABEL[o.status];
 
-const EMPTY_PRODUCT = { name: '', description: '', price: '', category: '', stock: '', images: [] };
+const EMPTY_PRODUCT = { name: '', description: '', price: '', category: '', stock: '', images: [], salePrice: '', saleEndsAt: '' };
 
 export default function Dashboard() {
   const [tab, setTab] = useState('products');
@@ -231,9 +231,24 @@ export default function Dashboard() {
     if (productForm.stock === '' || Number(productForm.stock) < 0) fe.stock = 'Enter how many are in stock (0 or more).';
     if (!productForm.category) fe.category = 'Pick a category.';
     if (!productForm.images || productForm.images.length === 0) fe.images = 'Add at least one product photo.';
+    if (productForm.salePrice !== '' && !productForm.saleEndsAt) {
+      fe.saleEndsAt = 'Set an end date for the sale, or clear the sale price.';
+    }
+    if (productForm.saleEndsAt && productForm.salePrice === '') {
+      fe.salePrice = 'Set a sale price, or clear the end date.';
+    }
+    if (productForm.salePrice !== '' && Number(productForm.salePrice) >= Number(productForm.price)) {
+      fe.salePrice = 'Sale price must be lower than the regular price.';
+    }
     setFieldErrors(fe);
     if (Object.keys(fe).length > 0) return;
-    const body = { ...productForm, price: Number(productForm.price), stock: Number(productForm.stock) };
+    const body = {
+      ...productForm,
+      price: Number(productForm.price),
+      stock: Number(productForm.stock),
+      salePrice: productForm.salePrice === '' ? null : Number(productForm.salePrice),
+      saleEndsAt: productForm.saleEndsAt === '' ? null : productForm.saleEndsAt,
+    };
     setSavingProduct(true);
     try {
       if (editingId) {
@@ -262,6 +277,8 @@ export default function Dashboard() {
       name: p.name, description: p.description, price: p.price,
       category: categoryStillExists ? p.category : '',
       stock: p.stock, images: p.images || [],
+      salePrice: p.salePrice ?? '',
+      saleEndsAt: p.saleEndsAt ? p.saleEndsAt.slice(0, 10) : '',
     });
     setShowProductForm(true);
     window.scrollTo({ top: 0 });
@@ -524,6 +541,18 @@ export default function Dashboard() {
                   <input id="pstock" type="number" min="0" required value={productForm.stock}
                     onChange={(e) => updateProductField('stock', e.target.value)} />
                   {fieldErrors.stock && <p className="field-error">{fieldErrors.stock}</p>}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="psale">Sale price <span className="muted">(optional)</span></label>
+                  <input id="psale" type="number" min="0" step="0.01" value={productForm.salePrice}
+                    onChange={(e) => updateProductField('salePrice', e.target.value)} />
+                  {fieldErrors.salePrice && <p className="field-error">{fieldErrors.salePrice}</p>}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="psaleend">Sale ends</label>
+                  <input id="psaleend" type="date" value={productForm.saleEndsAt}
+                    onChange={(e) => updateProductField('saleEndsAt', e.target.value)} />
+                  {fieldErrors.saleEndsAt && <p className="field-error">{fieldErrors.saleEndsAt}</p>}
                 </div>
                 <div style={{ flex: 1 }}>
                   <label htmlFor="pcat">Category</label>

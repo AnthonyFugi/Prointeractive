@@ -38,7 +38,20 @@ export default function CartScreen({ navigation }) {
                   </Text>
                 ) : null}
                 <Text style={{ color: colors.muted, fontSize: 12, marginTop: 1 }}>
-                  {money(item.product.price, item.product.currency)} each
+                  {item.product.onSale ? (
+                    <>
+                      <Text style={{ textDecorationLine: 'line-through' }}>
+                        {money(item.product.price, item.product.currency)}
+                      </Text>
+                      {' '}
+                      <Text style={{ color: colors.red, fontWeight: '700' }}>
+                        {money(item.product.effectivePrice, item.product.currency)}
+                      </Text>
+                      {' each'}
+                    </>
+                  ) : (
+                    `${money(item.product.price, item.product.currency)} each`
+                  )}
                   {typeof item.product.stock === 'number' && item.product.stock <= 5 ? `  ·  only ${item.product.stock} left` : ''}
                 </Text>
               </View>
@@ -60,7 +73,7 @@ export default function CartScreen({ navigation }) {
                 </Pressable>
               </View>
               <Text style={{ color: colors.red, fontWeight: '800' }}>
-                {money(item.product.price * item.quantity, item.product.currency)}
+                {money((item.product.onSale ? item.product.effectivePrice : item.product.price) * item.quantity, item.product.currency)}
               </Text>
             </View>
           </View>

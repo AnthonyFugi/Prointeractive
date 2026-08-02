@@ -125,9 +125,30 @@ export default function ProductScreen({ route, navigation }) {
         <Text style={{ color: colors.navy, fontWeight: '600' }}>{product.business.name}</Text>
         {product.business.verified ? <VerifiedBadge size={15} /> : null}
       </Pressable>
-      <Text style={{ color: colors.red, fontWeight: '900', fontSize: 24, marginTop: spacing.s }}>
-        {money(product.price, product.currency)}
-      </Text>
+      {product.onSale ? (
+        <View style={{ marginTop: spacing.s }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 15, textDecorationLine: 'line-through' }}>
+              {money(product.price, product.currency)}
+            </Text>
+            <View style={{ backgroundColor: colors.red, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.3 }}>SALE</Text>
+            </View>
+          </View>
+          <Text style={{ color: colors.red, fontWeight: '900', fontSize: 24 }}>
+            {money(product.effectivePrice, product.currency)}
+          </Text>
+          {product.saleEndsAt ? (
+            <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
+              Ends {new Date(product.saleEndsAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+            </Text>
+          ) : null}
+        </View>
+      ) : (
+        <Text style={{ color: colors.red, fontWeight: '900', fontSize: 24, marginTop: spacing.s }}>
+          {money(product.price, product.currency)}
+        </Text>
+      )}
       <Text style={{ color: colors.muted, marginTop: 2 }}>
         {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
       </Text>

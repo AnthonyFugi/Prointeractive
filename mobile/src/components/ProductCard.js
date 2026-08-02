@@ -19,6 +19,11 @@ export default function ProductCard({ product, onPress }) {
             {(product.name && product.name[0] ? product.name[0] : '?').toUpperCase()}
           </Text>
         )}
+        {product.onSale ? (
+          <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: colors.red, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.3 }}>SALE</Text>
+          </View>
+        ) : null}
       </View>
       <View style={{ padding: spacing.m }}>
         <Text numberOfLines={1} style={{ fontWeight: '600', color: colors.ink }}>{product.name}</Text>
@@ -30,9 +35,20 @@ export default function ProductCard({ product, onPress }) {
             {product.business.verified ? <VerifiedBadge size={13} /> : null}
           </View>
         ) : null}
-        <Text style={{ color: colors.red, fontWeight: '800', marginTop: 2 }}>
-          {money(product.price, product.currency)}
-        </Text>
+        {product.onSale ? (
+          <View>
+            <Text style={{ color: colors.muted, fontSize: 12, textDecorationLine: 'line-through' }}>
+              {money(product.price, product.currency)}
+            </Text>
+            <Text style={{ color: colors.red, fontWeight: '800' }}>
+              {money(product.effectivePrice, product.currency)}
+            </Text>
+          </View>
+        ) : (
+          <Text style={{ color: colors.red, fontWeight: '800', marginTop: 2 }}>
+            {money(product.price, product.currency)}
+          </Text>
+        )}
       </View>
     </Pressable>
   );

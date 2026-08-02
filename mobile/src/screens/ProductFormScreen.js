@@ -13,6 +13,8 @@ export default function ProductFormScreen({ route, navigation }) {
     stock: editing ? String(editing.stock) : '',
     category: editing?.category || '',
     images: editing?.images || [],
+    salePrice: editing?.salePrice != null ? String(editing.salePrice) : '',
+    saleEndsAt: editing?.saleEndsAt ? editing.saleEndsAt.slice(0, 10) : '',
   });
   const [categories, setCategories] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -74,11 +76,29 @@ export default function ProductFormScreen({ route, navigation }) {
     if (form.stock === '' || Number(form.stock) < 0) fe.stock = 'Enter stock (0 or more).';
     if (!form.category) fe.category = 'Pick a category.';
     if (form.images.length === 0) fe.images = 'Add at least one photo.';
+    if (form.salePrice !== '' && !form.saleEndsAt) {
+      fe.saleEndsAt = 'Set an end date, or clear the sale price.';
+    }
+    if (form.saleEndsAt && form.salePrice === '') {
+      fe.salePrice = 'Set a sale price, or clear the end date.';
+    }
+    if (form.saleEndsAt && !/^\d{4}-\d{2}-\d{2}$/.test(form.saleEndsAt)) {
+      fe.saleEndsAt = 'Use the format YYYY-MM-DD.';
+    }
+    if (form.salePrice !== '' && Number(form.salePrice) >= Number(form.price)) {
+      fe.salePrice = 'Sale price must be lower than the regular price.';
+    }
     setErrors(fe);
     if (Object.keys(fe).length) return;
     setSaving(true);
     try {
-      const body = { ...form, price: Number(form.price), stock: Number(form.stock) };
+      const body = {
+        ...form,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        salePrice: form.salePrice === '' ? null : Number(form.salePrice),
+        saleEndsAt: form.saleEndsAt === '' ? null : form.saleEndsAt,
+      };
       if (editing) await api(`/products/${editing._id}`, { method: 'PATCH', body });
       else await api('/products', { method: 'POST', body });
       navigation.goBack();
@@ -109,6 +129,18 @@ export default function ProductFormScreen({ route, navigation }) {
         <View style={{ flex: 1 }}>
           <TextInput {...input({ placeholder: 'Stock', keyboardType: 'number-pad', value: form.stock, onChangeText: (v) => setField('stock', v) })} />
           <Err k="stock" />
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Sale price <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
+          <TextInput {...input({ placeholder: 'e.g. 350', keyboardType: 'decimal-pad', value: form.salePrice, onChangeText: (v) => setField('salePrice', v) })} />
+          <Err k="salePrice" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Sale ends</Text>
+          <TextInput {...input({ placeholder: 'YYYY-MM-DD', value: form.saleEndsAt, onChangeText: (v) => setField('saleEndsAt', v) })} />
+          <Err k="saleEndsAt" />
         </View>
       </View>
       <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Category</Text>

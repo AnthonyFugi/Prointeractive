@@ -37,7 +37,14 @@ export default function Cart() {
                   aria-label={`Quantity of ${product.name}`}
                   onChange={(e) => setQty(product._id, Number(e.target.value))}
                 />
-                <span className="price">{money(product.price * quantity, product.currency)}</span>
+                <span className="price">
+                  {product.onSale && (
+                    <span style={{ textDecoration: 'line-through', color: 'var(--muted)', fontWeight: 400, fontSize: '0.8em', marginRight: 6 }}>
+                      {money(product.price * quantity, product.currency)}
+                    </span>
+                  )}
+                  {money((product.onSale ? product.effectivePrice : product.price) * quantity, product.currency)}
+                </span>
                 <button className="btn btn-ghost btn-sm" onClick={() => remove(product._id)}>Remove</button>
               </div>
             </div>

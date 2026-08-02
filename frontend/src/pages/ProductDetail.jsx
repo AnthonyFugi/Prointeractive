@@ -108,7 +108,29 @@ export default function ProductDetail() {
             <p className="muted">{product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}</p>
           </div>
           <div style={{ flex: '0 0 220px' }}>
-            <p className="price" style={{ fontSize: '1.6rem' }}>{money(product.price, product.currency)}</p>
+            {product.onSale ? (
+              <div>
+                <span style={{ textDecoration: 'line-through', color: 'var(--muted)', fontSize: '1.1rem' }}>
+                  {money(product.price, product.currency)}
+                </span>
+                <p className="price" style={{ fontSize: '1.6rem', margin: '0.15rem 0 0' }}>
+                  {money(product.effectivePrice, product.currency)}
+                  <span style={{
+                    marginLeft: 10, background: 'var(--red)', color: '#fff', fontSize: '0.7rem',
+                    fontWeight: 800, padding: '2px 8px', borderRadius: 999, verticalAlign: 'middle',
+                  }}>
+                    SALE
+                  </span>
+                </p>
+                {product.saleEndsAt && (
+                  <p className="muted" style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                    Ends {new Date(product.saleEndsAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="price" style={{ fontSize: '1.6rem' }}>{money(product.price, product.currency)}</p>
+            )}
             <label htmlFor="qty">Quantity</label>
             <input id="qty" type="number" min={1} max={product.stock} value={qty}
               onChange={(e) => setQty(Math.max(1, Number(e.target.value)))} />

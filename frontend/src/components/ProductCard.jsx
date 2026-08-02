@@ -38,6 +38,15 @@ export default function ProductCard({ product }) {
           </button>
         )}
           {product.images?.[0] ? <img src={product.images[0]} alt={product.name} /> : initial}
+          {product.onSale && (
+            <span style={{
+              position: 'absolute', top: 8, left: 8, zIndex: 2,
+              background: 'var(--red)', color: '#fff', fontSize: '0.7rem', fontWeight: 800,
+              padding: '2px 8px', borderRadius: 999, letterSpacing: 0.3,
+            }}>
+              SALE
+            </span>
+          )}
         </div>
         <div className="card-body">
           <span className="name">{product.name}</span>
@@ -47,7 +56,16 @@ export default function ProductCard({ product }) {
               {product.business.verified && <VerifiedBadge size={13} />}
             </span>
           )}
-          <span className="price">{money(product.price, product.currency)}</span>
+          {product.onSale ? (
+            <span className="price">
+              <span style={{ textDecoration: 'line-through', color: 'var(--muted)', fontWeight: 400, fontSize: '0.85em', marginRight: 6 }}>
+                {money(product.price, product.currency)}
+              </span>
+              {money(product.effectivePrice, product.currency)}
+            </span>
+          ) : (
+            <span className="price">{money(product.price, product.currency)}</span>
+          )}
           {product.ratingCount > 0 && (
             <Rating value={product.ratingAverage} count={product.ratingCount} />
           )}

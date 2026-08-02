@@ -16,6 +16,7 @@ export default function Home() {
   const [trending, setTrending] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [featuredBiz, setFeaturedBiz] = useState([]);
+  const [deals, setDeals] = useState([]);
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ products: [], pages: 1, total: 0 });
   const [error, setError] = useState('');
@@ -26,6 +27,7 @@ export default function Home() {
     api('/products/trending?limit=8').then((d) => setTrending(d.products)).catch(() => {});
     api('/products?featured=true&limit=8').then((d) => setFeatured((d.products || []).filter((p) => p.featured))).catch(() => {});
     api('/businesses?featured=true&limit=6').then((d) => setFeaturedBiz((d.businesses || []).filter((b) => b.featured))).catch(() => {});
+    api('/products?onSale=true&limit=8').then((d) => setDeals((d.products || []).filter((p) => p.onSale))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -149,6 +151,22 @@ export default function Home() {
               ))}
             </div>
           )}
+        </section>
+      )}
+
+      {deals.length > 0 && !query && !category && !favoritesOnly && !savedOnly && (
+        <section className="trending-band" style={{ borderColor: 'var(--red)' }}>
+          <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
+            <h2 style={{ margin: 0 }}>Deals 🏷️</h2>
+            <span className="muted" style={{ fontSize: '0.85rem' }}>Special-occasion discounts, while they last</span>
+          </div>
+          <div className="trending-row">
+            {deals.map((p) => (
+              <div key={p._id} className="trending-item">
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

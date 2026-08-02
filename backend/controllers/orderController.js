@@ -4,7 +4,7 @@ import Product from '../models/Product.js';
 import Business from '../models/Business.js';
 import { orderPlacedEmails, orderStatusEmail } from '../utils/email.js';
 import { sendPush } from '../utils/push.js';
-import { platformFeeFraction } from '../utils/flutterwave.js';
+import { computeCommission } from '../utils/flutterwave.js';
 
 /**
  * POST /api/orders  (customer)
@@ -36,8 +36,12 @@ export const createOrder = async (req, res, next) => {
       if (p.stock < qty) {
         throw Object.assign(new Error(`Insufficient stock for "${p.name}"`), { statusCode: 400 });
       }
-      total += p.price * qty;
-      return { product: p._id, name: p.name, price: p.price, quantity: qty };
+      // effectivePrice honours an active sale; falls back to the regular
+      // price automatically once the sale's end date passes. This is the
+      // moment the discount actually becomes real money, not just display.
+      const unitPrice = p.effectivePrice;
+      total += unitPrice * qty;
+      return { product: p._id, name: p.name, price: unitPrice, quantity: qty };
     });
 
     // Decrement stock
@@ -48,7 +52,7 @@ export const createOrder = async (req, res, next) => {
     );
 
     const totalAmount = Math.round(total * 100) / 100;
-    const feePercent = platformFeeFraction() * 100;
+    const commission = computeCommission(totalAmount);
     const order = await Order.create({
       customer: req.user._id,
       business: [...businessIds][0],
@@ -58,8 +62,9 @@ export const createOrder = async (req, res, next) => {
       shippingAddress,
       paymentMethod,
       platformFee: {
-        percent: feePercent,
-        amount: Math.round(totalAmount * (feePercent / 100) * 100) / 100,
+        percent: commission.percent,
+        amount: commission.amount,
+        capped: commission.capped,
         status: 'pending',
       },
     });

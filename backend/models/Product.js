@@ -11,6 +11,21 @@ const productSchema = new mongoose.Schema(
     description: { type: String, default: '' },
     price: { type: Number, required: [true, 'Price is required'], min: 0 },
     currency: { type: String, default: 'ZMW' },
+    // Special-occasion discounts, seller-controlled. A sale is active exactly
+    // while both fields are set AND saleEndsAt is in the future — no cron job
+    // needed, it just quietly stops applying once the date passes.
+    salePrice: {
+      type: Number,
+      default: null,
+      min: 0,
+      validate: {
+        validator: function (v) {
+          return v == null || v < this.price;
+        },
+        message: 'Sale price must be lower than the regular price.',
+      },
+    },
+    saleEndsAt: { type: Date, default: null },
     images: [{ type: String }],
     category: { type: String, default: 'general', lowercase: true },
     stock: { type: Number, default: 0, min: 0 },
@@ -21,8 +36,21 @@ const productSchema = new mongoose.Schema(
     ratingAverage: { type: Number, default: 0, min: 0, max: 5 },
     ratingCount: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+// Whether a sale is currently in effect — computed at read time, never stored,
+// so it's always correct without any scheduled job to "turn it off".
+productSchema.virtual('onSale').get(function () {
+  return !!(this.salePrice != null && this.saleEndsAt && this.saleEndsAt > new Date());
+});
+
+// The price that should actually be charged right now. Every place that
+// shows a price to a buyer or computes a cart/order total should read THIS,
+// not `price` directly, or a sale won't be honoured at checkout.
+productSchema.virtual('effectivePrice').get(function () {
+  return this.onSale ? this.salePrice : this.price;
+});
 
 productSchema.index({ name: 'text', description: 'text' }, { weights: { name: 10, description: 1 } });
 productSchema.index({ business: 1, isActive: 1 });
