@@ -617,7 +617,7 @@ export default function Dashboard() {
               placeholder={`Search your ${products.length} products…`}
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
-              style={{ maxWidth: 320, marginBottom: '0.75rem' }}
+              style={{ maxWidth: 320, margin: '1rem 0 0.75rem' }}
             />
           )}
 
