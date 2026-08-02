@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -63,6 +63,17 @@ export default function BusinessesScreen({ navigation }) {
             style={{ backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.line, padding: spacing.l, marginBottom: spacing.s }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {b.logoUrl ? (
+                <Image
+                  source={{ uri: b.logoUrl }}
+                  style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line, marginRight: spacing.m }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: colors.navySoft, marginRight: spacing.m, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: colors.navy, fontWeight: '800', fontSize: 16 }}>{b.name?.[0]?.toUpperCase() || '?'}</Text>
+                </View>
+              )}
               <Text style={{ fontWeight: '700', fontSize: 16, flexShrink: 1 }}>{b.name}</Text>
               {b.verified ? <VerifiedBadge size={15} /> : null}
               <View style={{ flex: 1 }} />
@@ -85,6 +96,14 @@ export default function BusinessesScreen({ navigation }) {
             <Text style={{ color: colors.muted, marginTop: 2 }}>
               {(b.categories && b.categories.length ? b.categories.join(' · ') : b.category)}{b.location ? ` · ${b.location}` : ''}
             </Text>
+            {b.ratingCount > 0 ? (
+              <Text style={{ color: colors.muted, marginTop: 2, fontSize: 13 }}>
+                <Text style={{ color: '#f5b301' }}>
+                  {'★'.repeat(Math.round(b.ratingAverage))}{'☆'.repeat(5 - Math.round(b.ratingAverage))}
+                </Text>
+                {' '}({b.ratingCount})
+              </Text>
+            ) : null}
           </Pressable>
         )}
       />

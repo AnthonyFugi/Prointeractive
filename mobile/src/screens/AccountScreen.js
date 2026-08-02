@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
@@ -108,6 +108,24 @@ export default function AccountScreen({ navigation }) {
               })}
             </View>
             <Text style={{ color: colors.muted, fontSize: 11, marginTop: 8 }}>USD is approximate (1 USD ≈ K18). Payments settle in Kwacha.</Text>
+
+            <Text style={{ fontWeight: '700', marginBottom: 8, marginTop: 16 }}>My city</Text>
+            <TextInput
+              placeholder="e.g. Lusaka"
+              placeholderTextColor={colors.muted}
+              defaultValue={(user.preferences && user.preferences.city) || ''}
+              onBlur={async (e) => {
+                try {
+                  await api('/auth/preferences', { method: 'PATCH', body: { city: e.nativeEvent.text } });
+                  if (refresh) await refresh();
+                } catch (_e) {}
+              }}
+              style={{
+                backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 8,
+                paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.ink,
+              }}
+            />
+            <Text style={{ color: colors.muted, fontSize: 11, marginTop: 6 }}>Shows nearby stores first in the Businesses directory.</Text>
           </View>
 
           <Pressable onPress={() => navigation.navigate('ForgotPassword')}
