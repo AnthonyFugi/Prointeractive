@@ -249,7 +249,7 @@ export const analytics = async (req, res, next) => {
     const days = 30;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const dayKey = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } };
-    const [ordersDaily, usersDaily, statusSplit, paymentSplit, topProducts, topBusinesses, viewsTotals, categorySplit] = await Promise.all([
+    const [ordersDaily, usersDaily, statusSplit, paymentSplit, topProducts, topBusinesses, viewsTotals, categorySplit, totalProducts, activeProducts, totalBusinesses, verifiedBusinesses] = await Promise.all([
       Order.aggregate([
         { $match: { createdAt: { $gte: since } } },
         { $group: { _id: dayKey, orders: { $sum: 1 }, revenue: { $sum: { $cond: [{ $in: ['$status', ['paid', 'shipped', 'delivered']] }, '$totalAmount', 0] } } } },
@@ -288,6 +288,10 @@ export const analytics = async (req, res, next) => {
         { $group: { _id: '$category', n: { $sum: 1 } } },
         { $sort: { n: -1 } },
       ]),
+      Product.countDocuments({}),
+      Product.countDocuments({ isActive: true }),
+      Business.countDocuments({}),
+      Business.countDocuments({ verified: true }),
     ]);
     res.json({
       success: true,
@@ -295,6 +299,7 @@ export const analytics = async (req, res, next) => {
         days, ordersDaily, usersDaily, statusSplit, paymentSplit, topProducts, topBusinesses,
         views: { products: viewsTotals[0][0]?.views || 0, businesses: viewsTotals[1][0]?.views || 0 },
         categorySplit,
+        totals: { products: totalProducts, activeProducts, businesses: totalBusinesses, verifiedBusinesses },
       },
     });
   } catch (err) { next(err); }

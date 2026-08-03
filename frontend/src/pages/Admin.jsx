@@ -329,15 +329,18 @@ export default function Admin() {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
               {[
+                ['Total products', an.totals.products, `${an.totals.activeProducts} active`],
+                ['Total businesses', an.totals.businesses, `${an.totals.verifiedBusinesses} verified`],
                 ['Product views', an.views.products],
                 ['Storefront visits', an.views.businesses],
                 ['Orders (30d)', an.ordersDaily.reduce((t, d) => t + d.orders, 0)],
                 ['Revenue (30d, paid+)', money(an.ordersDaily.reduce((t, d) => t + d.revenue, 0))],
                 ['New users (30d)', an.usersDaily.reduce((t, d) => t + d.users, 0)],
-              ].map(([label, v]) => (
+              ].map(([label, v, sub]) => (
                 <div className="panel" key={label} style={{ margin: 0 }}>
                   <p className="muted" style={{ margin: 0, fontSize: '0.8rem' }}>{label}</p>
                   <strong style={{ fontSize: '1.3rem', color: 'var(--red)' }}>{v}</strong>
+                  {sub && <p className="muted" style={{ margin: 0, fontSize: '0.75rem' }}>{sub}</p>}
                 </div>
               ))}
             </div>
