@@ -57,32 +57,17 @@ export const platformFeeFraction = () => {
  * flat-percentage fee turning into an amount sellers reconsider listing over.
  * Tune via PLATFORM_FEE_CAP on Render — no redeploy needed.
  */
-export const platformFeeCap = () => {
-  const cap = Number(process.env.PLATFORM_FEE_CAP);
-  return Number.isFinite(cap) && cap > 0 ? cap : 250;
-};
-
 /**
- * The commission actually owed on one order: the standard percentage,
- * unless that would exceed the ceiling — then the ceiling wins.
+ * The commission owed on one order: a flat percentage, no ceiling.
+ * (A per-order cap was tried and reverted — flat 5% is the standing model.)
  * This is the single source of truth: order creation, the seller's COD
  * "amount due", and the online Flutterwave split all read from here,
  * so the number a seller is quoted is always the number collected.
  */
 export const computeCommission = (totalAmount) => {
   const fraction = platformFeeFraction();
-  const cap = platformFeeCap();
-  const raw = Math.round(totalAmount * fraction * 100) / 100;
-  if (raw <= cap) {
-    return { percent: fraction * 100, amount: raw, capped: false };
-  }
-  return {
-    // Effective percent, for anything that displays "X%" — kept honest
-    // even though the ceiling, not the rate, is what actually applied.
-    percent: Math.round((cap / totalAmount) * 10000) / 100,
-    amount: cap,
-    capped: true,
-  };
+  const amount = Math.round(totalAmount * fraction * 100) / 100;
+  return { percent: fraction * 100, amount, capped: false };
 };
 
 /**

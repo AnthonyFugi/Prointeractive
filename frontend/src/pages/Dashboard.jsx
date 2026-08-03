@@ -720,7 +720,7 @@ export default function Dashboard() {
               <div>
                 <strong>Platform fees due: {money(feesDue)}</strong>
                 <p className="muted" style={{ margin: 0 }}>
-                  5% commission on cash-on-delivery and off-platform sales, capped at K250 per order. Settled directly with Prointeractive.
+                  5% commission on cash-on-delivery and off-platform sales. Settled directly with Prointeractive.
                 </p>
               </div>
             </div>

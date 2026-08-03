@@ -49,7 +49,7 @@ export default function SellerOrdersScreen() {
         <View style={{ backgroundColor: colors.redSoft, borderRadius: 10, padding: spacing.l, marginBottom: spacing.m }}>
           <Text style={{ fontWeight: '800', color: colors.red }}>Platform fees due: {money(feesDue)}</Text>
           <Text style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>
-            5% commission on cash-on-delivery and off-platform sales, capped at K250 per order.
+            5% commission on cash-on-delivery and off-platform sales.
           </Text>
         </View>
       ) : null}
