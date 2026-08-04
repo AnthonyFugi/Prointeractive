@@ -7,6 +7,12 @@ import { sendEmail } from '../utils/email.js';
 import Inquiry from '../models/Inquiry.js';
 import SiteVisit from '../models/SiteVisit.js';
 
+// The platform's original/root admin account — permanently protected from
+// role changes regardless of how many other admins exist. Unlike the
+// last-admin check below (which only bites when exactly one admin remains),
+// this account can never be demoted, full stop.
+const PROTECTED_ADMIN_EMAIL = 'admin@fugipay.com';
+
 // GET /api/admin/stats
 export const stats = async (req, res, next) => {
   try {
@@ -332,6 +338,12 @@ export const setUserRole = async (req, res, next) => {
     }
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // The original admin account is permanently protected — its role can
+    // never be changed, by anyone, for any reason.
+    if (user.email === PROTECTED_ADMIN_EMAIL && role !== 'admin') {
+      return res.status(400).json({ success: false, message: 'This account is protected and cannot be changed.' });
+    }
 
     // Never let an admin strip their own oversight access — a slipped click
     // could otherwise lock the person out of the console entirely.

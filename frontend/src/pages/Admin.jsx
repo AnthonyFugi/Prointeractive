@@ -534,17 +534,23 @@ export default function Admin() {
                 {u.suspended ? 'Reinstate' : 'Suspend'}
               </button>
             )}
-            <select
-              value={u.role}
-              onChange={(e) => changeUserRole(u, e.target.value)}
-              className={`badge ${u.role === 'admin' ? 'verified' : u.role === 'business' ? 'paid' : 'closed'}`}
-              style={{ border: 'none', cursor: 'pointer', fontWeight: 600 }}
-              title="Change this user's role"
-            >
-              <option value="customer">customer</option>
-              <option value="business">business</option>
-              <option value="admin">admin</option>
-            </select>
+            {u.email === 'admin@fugipay.com' ? (
+              <span className="badge verified" title="This account is protected and cannot be changed">
+                admin 🔒
+              </span>
+            ) : (
+              <select
+                value={u.role}
+                onChange={(e) => changeUserRole(u, e.target.value)}
+                className={`badge ${u.role === 'admin' ? 'verified' : u.role === 'business' ? 'paid' : 'closed'}`}
+                style={{ border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                title="Change this user's role"
+              >
+                <option value="customer">customer</option>
+                <option value="business">business</option>
+                <option value="admin">admin</option>
+              </select>
+            )}
           </div>
         </div>
       ))}
