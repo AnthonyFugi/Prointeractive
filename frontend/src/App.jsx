@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { api } from './api.js';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import PendingPaymentBanner from './components/PendingPaymentBanner.jsx';
@@ -66,6 +67,14 @@ function PageTitle() {
 }
 
 export default function App() {
+  // One ping per browser session, not per page — sessionStorage naturally
+  // resets when the tab closes, so a visit is counted once per visit.
+  useEffect(() => {
+    if (sessionStorage.getItem('pi_visit_logged')) return;
+    sessionStorage.setItem('pi_visit_logged', '1');
+    api('/analytics/visit', { method: 'POST', body: { platform: 'web' } }).catch(() => {});
+  }, []);
+
   return (
     <>
       <Navbar />

@@ -3,7 +3,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect } from 'react';
 import { Image, Text, View } from 'react-native';
+import { api } from './src/api';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { CartProvider, useCart } from './src/context/CartContext';
 import { colors } from './src/theme';
@@ -177,6 +179,12 @@ const theme = {
 };
 
 export default function App() {
+  // Once per app launch — a fresh process already means a fresh visit,
+  // no need for a stored guard the way the web session-ping needs one.
+  useEffect(() => {
+    api('/analytics/visit', { method: 'POST', body: { platform: 'mobile' } }).catch(() => {});
+  }, []);
+
   return (
     <SafeAreaProvider>
       <AuthProvider>

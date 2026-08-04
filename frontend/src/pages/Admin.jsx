@@ -18,10 +18,6 @@ export default function Admin() {
   const [an, setAn] = useState(null);
   const [prodPage, setProdPage] = useState(1);
   const [prodPages, setProdPages] = useState(1);
-
-  useEffect(() => {
-    api(`/admin/products?page=${prodPage}&limit=25`).then((d) => { setAdminProducts(d.products); setProdPages(d.pages || 1); }).catch(() => {});
-  }, [prodPage]);
   const [prodSearch, setProdSearch] = useState('');
   const [prodFilter, setProdFilter] = useState('all');
   const [categories, setCategories] = useState([]);
@@ -51,12 +47,19 @@ export default function Admin() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const params = new URLSearchParams({ page: prodPage, limit: 25 });
+    if (prodFilter === 'featured') params.set('featured', 'true');
+    if (prodFilter === 'active') params.set('status', 'active');
+    if (prodFilter === 'hidden') params.set('status', 'hidden');
+    api(`/admin/products?${params}`).then((d) => { setAdminProducts(d.products); setProdPages(d.pages || 1); }).catch(() => {});
+  }, [prodPage, prodFilter]);
+
+  useEffect(() => {
     api('/admin/stats').then((d) => setStats(d.stats)).catch((e) => setError(e.message));
     api('/admin/businesses').then((d) => setBusinesses(d.businesses)).catch(() => {});
     api('/admin/users').then((d) => setUsers(d.users)).catch(() => {});
     api('/admin/orders').then((d) => setOrders(d.orders)).catch(() => {});
     api('/admin/reports').then((d) => setReports(d.reports)).catch(() => {});
-    api(`/admin/products?page=${prodPage}&limit=25`).then((d) => { setAdminProducts(d.products); setProdPages(d.pages || 1); }).catch(() => {});
     api('/admin/analytics').then((d) => setAn(d.analytics)).catch(() => {});
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
   }, []);
@@ -134,6 +137,21 @@ export default function Admin() {
       await api(`/admin/users/${u._id}/suspend`, { method: 'PATCH', body: { suspended: !u.suspended } });
       setUsers((prev) => prev.map((x) => (x._id === u._id ? { ...x, suspended: !u.suspended } : x)));
     } catch (e) { setError(e.message); }
+  };
+
+  const changeUserRole = async (u, role) => {
+    if (role === u.role) return;
+    const touchesAdmin = role === 'admin' || u.role === 'admin';
+    if (touchesAdmin) {
+      const verb = role === 'admin' ? 'Grant' : 'Remove';
+      if (!window.confirm(`${verb} admin/oversight access for ${u.name}?`)) return;
+    }
+    try {
+      await api(`/admin/users/${u._id}/role`, { method: 'PATCH', body: { role } });
+      setUsers((prev) => prev.map((x) => (x._id === u._id ? { ...x, role } : x)));
+    } catch (e) {
+      setError(e.message);
+    }
   };
 
   const toggleVerify = async (b) => {
@@ -311,6 +329,7 @@ export default function Admin() {
         const maxOrders = Math.max(1, ...an.ordersDaily.map((d) => d.orders));
         const maxRev = Math.max(1, ...an.ordersDaily.map((d) => d.revenue));
         const maxUsers = Math.max(1, ...an.usersDaily.map((d) => d.users));
+        const maxVisits = Math.max(1, ...(an.visitsDaily || []).map((d) => d.visits));
         const Bar = ({ v, max, color }) => (
           <div title={String(v)} style={{ flex: 1, background: 'var(--line)', borderRadius: 3, height: 64, display: 'flex', alignItems: 'flex-end' }}>
             <div style={{ width: '100%', borderRadius: 3, background: color, height: `${Math.round((v / max) * 100)}%`, minHeight: v > 0 ? 3 : 0 }} />
@@ -333,6 +352,7 @@ export default function Admin() {
                 ['Total businesses', an.totals.businesses, `${an.totals.verifiedBusinesses} verified`],
                 ['Product views', an.views.products],
                 ['Storefront visits', an.views.businesses],
+                ['Site visits (30d)', (an.visitsDaily || []).reduce((t, d) => t + d.visits, 0), `${an.totals.visits || 0} all-time`],
                 ['Orders (30d)', an.ordersDaily.reduce((t, d) => t + d.orders, 0)],
                 ['Revenue (30d, paid+)', money(an.ordersDaily.reduce((t, d) => t + d.revenue, 0))],
                 ['New users (30d)', an.usersDaily.reduce((t, d) => t + d.users, 0)],
@@ -358,6 +378,11 @@ export default function Admin() {
             <Section title="New users per day" aside="last 30 days">
               <div className="row" style={{ gap: 3, marginTop: '0.5rem', alignItems: 'flex-end' }}>
                 {an.usersDaily.map((d) => <Bar key={d._id} v={d.users} max={maxUsers} color="#15803d" />)}
+              </div>
+            </Section>
+            <Section title="Site visits per day" aside="last 30 days">
+              <div className="row" style={{ gap: 3, marginTop: '0.5rem', alignItems: 'flex-end' }}>
+                {(an.visitsDaily || []).map((d) => <Bar key={d._id} v={d.visits} max={maxVisits} color="#0e7490" />)}
               </div>
             </Section>
 
@@ -410,13 +435,13 @@ export default function Admin() {
           <input placeholder="Search products or businesses…" value={prodSearch}
             onChange={(e) => setProdSearch(e.target.value)} style={{ maxWidth: 280 }} />
           {[
-            ['all', `All (${adminProducts.length})`],
-            ['active', `Active (${adminProducts.filter((x) => x.isActive).length})`],
-            ['hidden', `Hidden (${adminProducts.filter((x) => !x.isActive).length})`],
-            ['featured', `★ Featured (${adminProducts.filter((x) => x.featured).length})`],
+            ['all', 'All'],
+            ['active', 'Active'],
+            ['hidden', 'Hidden'],
+            ['featured', '★ Featured'],
           ].map(([key, label]) => (
             <button key={key} className={`btn btn-sm ${prodFilter === key ? 'btn-navy' : 'btn-ghost'}`}
-              onClick={() => setProdFilter(key)}>
+              onClick={() => { setProdFilter(key); setProdPage(1); }}>
               {label}
             </button>
           ))}
@@ -424,7 +449,6 @@ export default function Admin() {
       )}
 
       {tab === 'products' && adminProducts
-        .filter((x) => (prodFilter === 'active' ? x.isActive : prodFilter === 'hidden' ? !x.isActive : prodFilter === 'featured' ? x.featured : true))
         .filter((x) => {
           const q = prodSearch.trim().toLowerCase();
           if (!q) return true;
@@ -510,9 +534,17 @@ export default function Admin() {
                 {u.suspended ? 'Reinstate' : 'Suspend'}
               </button>
             )}
-            <span className={`badge ${u.role === 'admin' ? 'verified' : u.role === 'business' ? 'paid' : 'closed'}`}>
-              {u.role}
-            </span>
+            <select
+              value={u.role}
+              onChange={(e) => changeUserRole(u, e.target.value)}
+              className={`badge ${u.role === 'admin' ? 'verified' : u.role === 'business' ? 'paid' : 'closed'}`}
+              style={{ border: 'none', cursor: 'pointer', fontWeight: 600 }}
+              title="Change this user's role"
+            >
+              <option value="customer">customer</option>
+              <option value="business">business</option>
+              <option value="admin">admin</option>
+            </select>
           </div>
         </div>
       ))}

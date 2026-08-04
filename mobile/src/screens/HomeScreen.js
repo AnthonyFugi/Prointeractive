@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +18,8 @@ export default function HomeScreen({ navigation }) {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const listRef = useRef(null);
   const [trending, setTrending] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [featuredBiz, setFeaturedBiz] = useState([]);
@@ -85,6 +87,9 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       <FlatList
+        ref={listRef}
+        onScroll={(e) => setShowScrollTop(e.nativeEvent.contentOffset.y > 600)}
+        scrollEventThrottle={200}
         data={products}
         numColumns={2}
         keyExtractor={(p) => p._id}
@@ -289,6 +294,20 @@ export default function HomeScreen({ navigation }) {
           <ProductCard product={item} onPress={() => navigation.navigate('Product', { id: item._id })} />
         )}
       />
+      {showScrollTop ? (
+        <Pressable
+          onPress={() => listRef.current?.scrollToOffset({ offset: 0, animated: true })}
+          style={{
+            position: 'absolute', right: spacing.l, bottom: spacing.l,
+            width: 48, height: 48, borderRadius: 24,
+            backgroundColor: colors.navy, alignItems: 'center', justifyContent: 'center',
+            shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 3 },
+            elevation: 5,
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800' }}>↑</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
