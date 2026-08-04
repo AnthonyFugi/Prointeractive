@@ -28,6 +28,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 import corporateRoutes from './routes/corporateRoutes.js';
 import mongoose from 'mongoose';
 import * as Sentry from '@sentry/node';
@@ -106,6 +107,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/corporate', corporateRoutes);
 
 // ---- Serve the built frontend in production ----

@@ -183,7 +183,11 @@ export default function App() {
         <CartProvider>
           <NavigationContainer theme={theme}>
             <StatusBar style="dark" />
-            <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={['top']}>
+            {/* No 'top' edge here: every stack below already renders its own
+                native header, which is safe-area-aware on its own. Reserving
+                the top inset here TOO stacked two gaps on top of each other.
+                The background colour still fills edge-to-edge without it. */}
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }} edges={[]}>
               <Tabs />
             </SafeAreaView>
           </NavigationContainer>

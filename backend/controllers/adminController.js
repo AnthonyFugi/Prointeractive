@@ -5,6 +5,7 @@ import Order from '../models/Order.js';
 import Report from '../models/Report.js';
 import { sendEmail } from '../utils/email.js';
 import Inquiry from '../models/Inquiry.js';
+import SiteVisit from '../models/SiteVisit.js';
 
 // GET /api/admin/stats
 export const stats = async (req, res, next) => {
@@ -212,13 +213,21 @@ export const listAllProducts = async (req, res, next) => {
   try {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Number(req.query.limit) || 25);
+    // Filters are applied server-side so pagination pages through the
+    // FILTERED set, not the whole catalog with the filter applied after —
+    // otherwise a rare filter (like "featured") could show one item per
+    // page even though every match is really just a few pages away.
+    const filter = {};
+    if (req.query.featured === 'true') filter.featured = true;
+    if (req.query.status === 'active') filter.isActive = true;
+    if (req.query.status === 'hidden') filter.isActive = false;
     const [products, total] = await Promise.all([
-      Product.find({})
+      Product.find(filter)
         .populate('business', 'name slug')
         .sort('-createdAt')
         .skip((page - 1) * limit)
         .limit(limit),
-      Product.countDocuments({}),
+      Product.countDocuments(filter),
     ]);
     res.json({ success: true, products, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
@@ -249,7 +258,7 @@ export const analytics = async (req, res, next) => {
     const days = 30;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const dayKey = { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } };
-    const [ordersDaily, usersDaily, statusSplit, paymentSplit, topProducts, topBusinesses, viewsTotals, categorySplit, totalProducts, activeProducts, totalBusinesses, verifiedBusinesses] = await Promise.all([
+    const [ordersDaily, usersDaily, visitsDaily, statusSplit, paymentSplit, topProducts, topBusinesses, viewsTotals, categorySplit, totalProducts, activeProducts, totalBusinesses, verifiedBusinesses, totalVisits] = await Promise.all([
       Order.aggregate([
         { $match: { createdAt: { $gte: since } } },
         { $group: { _id: dayKey, orders: { $sum: 1 }, revenue: { $sum: { $cond: [{ $in: ['$status', ['paid', 'shipped', 'delivered']] }, '$totalAmount', 0] } } } },
@@ -258,6 +267,11 @@ export const analytics = async (req, res, next) => {
       User.aggregate([
         { $match: { createdAt: { $gte: since } } },
         { $group: { _id: dayKey, users: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      SiteVisit.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: dayKey, visits: { $sum: 1 } } },
         { $sort: { _id: 1 } },
       ]),
       Order.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
@@ -292,15 +306,52 @@ export const analytics = async (req, res, next) => {
       Product.countDocuments({ isActive: true }),
       Business.countDocuments({}),
       Business.countDocuments({ verified: true }),
+      SiteVisit.countDocuments({}),
     ]);
     res.json({
       success: true,
       analytics: {
-        days, ordersDaily, usersDaily, statusSplit, paymentSplit, topProducts, topBusinesses,
+        days, ordersDaily, usersDaily, visitsDaily, statusSplit, paymentSplit, topProducts, topBusinesses,
         views: { products: viewsTotals[0][0]?.views || 0, businesses: viewsTotals[1][0]?.views || 0 },
         categorySplit,
-        totals: { products: totalProducts, activeProducts, businesses: totalBusinesses, verifiedBusinesses },
+        totals: { products: totalProducts, activeProducts, businesses: totalBusinesses, verifiedBusinesses, visits: totalVisits },
       },
     });
   } catch (err) { next(err); }
+};
+
+
+// PATCH /api/admin/users/:id/role  { role: 'customer' | 'business' | 'admin' }
+// Lets existing admins extend oversight to new team members without ever
+// touching the database directly.
+export const setUserRole = async (req, res, next) => {
+  try {
+    const { role } = req.body;
+    if (!['customer', 'business', 'admin'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' });
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Never let an admin strip their own oversight access — a slipped click
+    // could otherwise lock the person out of the console entirely.
+    if (String(user._id) === String(req.user._id) && role !== 'admin') {
+      return res.status(400).json({ success: false, message: 'You cannot remove your own admin access.' });
+    }
+
+    // Never demote the last remaining admin — the platform must always keep
+    // at least one person able to grant access back.
+    if (user.role === 'admin' && role !== 'admin') {
+      const adminCount = await User.countDocuments({ role: 'admin' });
+      if (adminCount <= 1) {
+        return res.status(400).json({ success: false, message: 'At least one admin must remain — promote someone else first.' });
+      }
+    }
+
+    user.role = role;
+    await user.save();
+    res.json({ success: true, user: { id: user._id, role: user.role } });
+  } catch (err) {
+    next(err);
+  }
 };
