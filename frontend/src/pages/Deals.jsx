@@ -4,6 +4,8 @@ import { api } from '../api.js';
 import ProductCard from '../components/ProductCard.jsx';
 
 export default function Deals() {
+  const [q, setQ] = useState('');
+  const [query, setQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
@@ -14,8 +16,13 @@ export default function Deals() {
 
   useEffect(() => {
     document.title = 'Deals · Prointeractive';
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
-    api('/products?onSale=true&page=1&limit=12')
+    const params = new URLSearchParams({ onSale: 'true', page: 1, limit: 12 });
+    if (query) params.set('q', query);
+    api(`/products?${params}`)
       .then((d) => {
         setProducts(d.products || []);
         setPage(1);
@@ -23,20 +30,22 @@ export default function Deals() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [query]);
 
   const loadMore = useCallback(() => {
     if (loading || loadingMore || page >= pages) return;
     const nextPage = page + 1;
     setLoadingMore(true);
-    api(`/products?onSale=true&page=${nextPage}&limit=12`)
+    const params = new URLSearchParams({ onSale: 'true', page: nextPage, limit: 12 });
+    if (query) params.set('q', query);
+    api(`/products?${params}`)
       .then((d) => {
         setProducts((prev) => [...prev, ...(d.products || [])]);
         setPage(nextPage);
       })
       .catch(() => {})
       .finally(() => setLoadingMore(false));
-  }, [loading, loadingMore, page, pages]);
+  }, [loading, loadingMore, page, pages, query]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -57,6 +66,15 @@ export default function Deals() {
         <p className="lede">
           Real businesses running real sales — same trust, same direct messaging, just marked down.
         </p>
+        <form className="searchbar" onSubmit={(e) => { e.preventDefault(); setQuery(q); }}>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search deals…"
+            aria-label="Search deals"
+          />
+          <button className="btn btn-navy" type="submit">Search</button>
+        </form>
       </section>
 
       {error && <p className="error-text">{error}</p>}
@@ -65,8 +83,8 @@ export default function Deals() {
         <Loader label="Loading deals…" />
       ) : products.length === 0 ? (
         <div className="empty">
-          <h3>No deals right now</h3>
-          <p>Sellers run special-occasion discounts from time to time — check back soon, or browse the full shop.</p>
+          <h3>{query ? `No deals matching "${query}"` : 'No deals right now'}</h3>
+          <p>{query ? 'Try a different search.' : 'Sellers run special-occasion discounts from time to time — check back soon, or browse the full shop.'}</p>
         </div>
       ) : (
         <>
