@@ -25,6 +25,7 @@ import ResetPassword from './pages/ResetPassword.jsx';
 import Terms from './pages/Terms.jsx';
 import Privacy from './pages/Privacy.jsx';
 import Sell from './pages/Sell.jsx';
+import Deals from './pages/Deals.jsx';
 import AccountDeletion from './pages/AccountDeletion.jsx';
 import ProductStandards from './pages/ProductStandards.jsx';
 
@@ -44,6 +45,7 @@ const TITLES = {
   '/dashboard': 'Dashboard',
   '/admin': 'Admin',
   '/sell': 'Sell on Prointeractive',
+  '/deals': 'Deals',
   '/terms': 'Terms & Conditions',
   '/privacy': 'Privacy Policy',
   '/product-standards': 'Product Standards',
@@ -92,6 +94,7 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/sell" element={<Sell />} />
+          <Route path="/deals" element={<Deals />} />
           <Route path="/account-deletion" element={<AccountDeletion />} />
           <Route path="/product-standards" element={<ProductStandards />} />
           <Route path="/products/:id" element={<ProductDetail />} />

@@ -34,6 +34,7 @@ export default function Navbar() {
 
         <nav className={`nav-links ${open ? 'open' : ''}`}>
           <NavLink to="/" onClick={close}>Shop</NavLink>
+          <NavLink to="/deals" onClick={close} style={{ color: 'var(--red)', fontWeight: 700 }}>Deals 🏷️</NavLink>
           <NavLink to="/businesses" onClick={close}>Businesses</NavLink>
           {(!user || user.role === 'customer') && (
             <NavLink to="/sell" onClick={close} className="sell-link">Sell</NavLink>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Loader from '../components/Loader.jsx';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
@@ -18,9 +18,12 @@ export default function Home() {
   const [featuredBiz, setFeaturedBiz] = useState([]);
   const [deals, setDeals] = useState([]);
   const [page, setPage] = useState(1);
-  const [data, setData] = useState({ products: [], pages: 1, total: 0 });
+  const [pages, setPages] = useState(1);
+  const [products, setProducts] = useState([]);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const sentinelRef = useRef(null);
 
   useEffect(() => {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
@@ -32,16 +35,52 @@ export default function Home() {
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ page, limit: 12 });
+    const params = new URLSearchParams({ page: 1, limit: 12 });
     if (query) params.set('q', query);
     if (category) params.set('category', category);
     if (favoritesOnly) params.set('favorites', 'true');
     if (savedOnly) params.set('saved', 'true');
     api(`/products?${params}`)
-      .then(setData)
+      .then((d) => {
+        setProducts(d.products || []);
+        setPage(1);
+        setPages(d.pages || 1);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [query, category, favoritesOnly, savedOnly, page]);
+  }, [query, category, favoritesOnly, savedOnly]);
+
+  // Fetches the NEXT page and APPENDS — this is what powers infinite scroll.
+  const loadMore = useCallback(() => {
+    if (loading || loadingMore || page >= pages) return;
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    const params = new URLSearchParams({ page: nextPage, limit: 12 });
+    if (query) params.set('q', query);
+    if (category) params.set('category', category);
+    if (favoritesOnly) params.set('favorites', 'true');
+    if (savedOnly) params.set('saved', 'true');
+    api(`/products?${params}`)
+      .then((d) => {
+        setProducts((prev) => [...prev, ...(d.products || [])]);
+        setPage(nextPage);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMore(false));
+  }, [loading, loadingMore, page, pages, query, category, favoritesOnly, savedOnly]);
+
+  // Watches a sentinel element at the bottom of the grid; loads the next
+  // page automatically as it scrolls into view — no Prev/Next clicking.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: '400px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   return (
     <div className="container">
@@ -49,9 +88,7 @@ export default function Home() {
         <div className="eyebrow">Making business interaction, Easy!</div>
         <h1>What you need, from businesses you trust.</h1>
         <p className="lede">
-          Every product connects you straight to the business behind it.
-          Ask a question, agree the details, and pay your way — mobile money,
-          card, or cash on delivery.
+          Message the business behind every product, then pay your way.
         </p>
         <form
           className="searchbar"
@@ -65,12 +102,8 @@ export default function Home() {
           />
           <button className="btn btn-navy" type="submit">Search</button>
         </form>
-        <p style={{ marginTop: '0.9rem', fontSize: '0.9rem' }}>
-          <span style={{ color: 'var(--navy)', fontWeight: 700 }}>✓ New &amp; authentic only</span>
-          <span className="muted">
-            {' '}— every listing must be first-owner, first-grade.{' '}
-            <Link to="/product-standards">Our Product Standards</Link>
-          </span>
+        <p style={{ marginTop: '0.9rem', fontSize: '0.9rem', color: 'var(--navy)', fontWeight: 700 }}>
+          ✓ New &amp; authentic only
         </p>
         {user?.role === 'business' ? (
           <p className="muted" style={{ marginTop: '0.75rem' }}>
@@ -112,18 +145,9 @@ export default function Home() {
 
       {error && <p className="error-text">{error}</p>}
       {!user && !query && !category && (
-        <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderColor: 'var(--navy)' }}>
-          <p style={{ margin: 0, flex: '1 1 260px' }}>
-            <strong>Shop smarter with a free account</strong>
-            <span className="muted" style={{ display: 'block', fontSize: '0.9rem' }}>
-              Follow your favorite stores, save items for later, and see what you care about first.
-            </span>
-          </p>
-          <div className="row">
-            <Link to="/register" className="btn btn-red btn-sm">Create account</Link>
-            <Link to="/login" className="btn btn-ghost btn-sm">Sign in</Link>
-          </div>
-        </div>
+        <p className="muted" style={{ fontSize: '0.85rem', margin: '0.5rem 0 1rem' }}>
+          <Link to="/register" style={{ fontWeight: 700 }}>Create a free account</Link> to follow stores and save items.
+        </p>
       )}
 
       {(featured.length > 0 || featuredBiz.length > 0) && !query && !category && !favoritesOnly && !savedOnly && (
@@ -158,7 +182,7 @@ export default function Home() {
         <section className="trending-band" style={{ borderColor: 'var(--red)' }}>
           <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
             <h2 style={{ margin: 0 }}>Deals 🏷️</h2>
-            <span className="muted" style={{ fontSize: '0.85rem' }}>Special-occasion discounts, while they last</span>
+            <Link to="/deals" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--red)' }}>See all deals →</Link>
           </div>
           <div className="trending-row">
             {deals.map((p) => (
@@ -188,7 +212,7 @@ export default function Home() {
 
       {loading ? (
         <Loader label="Loading products…" />
-      ) : data.products.length === 0 ? (
+      ) : products.length === 0 ? (
         <div className="empty">
           <h3>No products found</h3>
           <p>Try a different search, or clear the category filter.</p>
@@ -196,14 +220,20 @@ export default function Home() {
       ) : (
         <>
           <div className="grid">
-            {data.products.map((p) => <ProductCard key={p._id} product={p} />)}
+            {products.map((p) => <ProductCard key={p._id} product={p} />)}
           </div>
-          {data.pages > 1 && (
-            <div className="row" style={{ justifyContent: 'center', marginTop: '1.5rem' }}>
-              <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Previous</button>
-              <span className="muted">Page {page} of {data.pages}</span>
-              <button className="btn btn-ghost btn-sm" disabled={page >= data.pages} onClick={() => setPage(page + 1)}>Next →</button>
+          {/* Sentinel: as this scrolls into view, loadMore() fires automatically.
+              No Prev/Next — the grid just keeps going. */}
+          <div ref={sentinelRef} style={{ height: 1 }} />
+          {loadingMore && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '1.5rem 0' }}>
+              <Loader label="Loading more…" />
             </div>
+          )}
+          {!loadingMore && page >= pages && products.length > 12 && (
+            <p className="muted" style={{ textAlign: 'center', padding: '1.5rem 0', fontSize: '0.85rem' }}>
+              You've reached the end.
+            </p>
           )}
         </>
       )}

@@ -11,6 +11,7 @@ import { CartProvider, useCart } from './src/context/CartContext';
 import { colors } from './src/theme';
 
 import HomeScreen from './src/screens/HomeScreen';
+import DealsScreen from './src/screens/DealsScreen';
 import BusinessesScreen from './src/screens/BusinessesScreen';
 import CartScreen from './src/screens/CartScreen';
 import OrdersScreen from './src/screens/OrdersScreen';
@@ -56,6 +57,7 @@ function ShopStackScreen() {
       <ShopStack.Screen name="ShopHome" component={HomeScreen} options={{ headerTitle: () => <BrandHeader /> }} />
       <ShopStack.Screen name="Product" component={ProductScreen} options={{ title: '' }} />
       <ShopStack.Screen name="Business" component={BusinessScreen} options={{ title: 'Storefront' }} />
+      <ShopStack.Screen name="Deals" component={DealsScreen} options={{ title: 'Deals' }} />
     </ShopStack.Navigator>
   );
 }

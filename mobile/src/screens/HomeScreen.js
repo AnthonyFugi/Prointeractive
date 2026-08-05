@@ -245,7 +245,12 @@ export default function HomeScreen({ navigation }) {
                 <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1.5, borderColor: colors.red, paddingVertical: spacing.m, paddingLeft: spacing.m, marginBottom: spacing.l }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingRight: spacing.m, marginBottom: spacing.s }}>
                     <Text style={{ fontWeight: '800', fontSize: 17 }}>Deals 🏷️</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12 }}>While they last</Text>
+                    <Text
+                      style={{ color: colors.red, fontSize: 12, fontWeight: '700' }}
+                      onPress={() => navigation.navigate('Deals')}
+                    >
+                      See all →
+                    </Text>
                   </View>
                   <FlatList
                     horizontal

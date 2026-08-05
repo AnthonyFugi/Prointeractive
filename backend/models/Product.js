@@ -54,5 +54,9 @@ productSchema.virtual('effectivePrice').get(function () {
 
 productSchema.index({ name: 'text', description: 'text' }, { weights: { name: 10, description: 1 } });
 productSchema.index({ business: 1, isActive: 1 });
+// Supports the default shop browse: active products, optionally by
+// category, sorted newest-first. MongoDB can use a PREFIX of this index
+// for the plain (no-category) case too, so one index covers both shapes.
+productSchema.index({ isActive: 1, category: 1, createdAt: -1 });
 
 export default mongoose.model('Product', productSchema);
