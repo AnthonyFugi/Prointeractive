@@ -84,7 +84,7 @@ export default function Home() {
 
   return (
     <div className="container">
-      <section className="hero">
+      <section className="hero hero-home">
         <div className="eyebrow">Making business interaction, Easy!</div>
         <h1>What you need, from businesses you trust.</h1>
         <form
@@ -99,15 +99,15 @@ export default function Home() {
           />
           <button className="btn btn-navy" type="submit">Search</button>
         </form>
-        <p style={{ marginTop: '0.9rem', fontSize: '0.9rem', color: 'var(--navy)', fontWeight: 700 }}>
+        <p style={{ marginTop: '0.9rem', fontSize: '0.9rem', color: 'var(--navy)', fontWeight: 700, textAlign: 'center' }}>
           ✓ New &amp; authentic only
         </p>
         {user?.role === 'business' ? (
-          <p className="muted" style={{ marginTop: '0.75rem' }}>
+          <p className="muted" style={{ marginTop: '0.75rem', textAlign: 'center' }}>
             Manage your storefront in the <Link to="/dashboard" style={{ fontWeight: 600 }}>Dashboard →</Link>
           </p>
         ) : user?.role === 'admin' ? null : (
-          <p className="muted" style={{ marginTop: '0.75rem' }}>
+          <p className="muted" style={{ marginTop: '0.75rem', textAlign: 'center' }}>
             Own a business? <Link to="/sell" style={{ fontWeight: 600 }}>Start selling on Prointeractive →</Link>
           </p>
         )}

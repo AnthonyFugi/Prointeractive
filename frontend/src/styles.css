@@ -195,18 +195,30 @@ textarea { resize: vertical; min-height: 90px; }
 
 /* ---------- Hero ---------- */
 .hero { padding: 3.5rem 0 2rem; }
-.hero h1 {
-  font-size: clamp(2.4rem, 6vw, 3.6rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  max-width: 20ch;
-}
+
 .hero .eyebrow {
   font-size: 0.8rem; font-weight: 600; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--red); margin-bottom: 0.6rem;
 }
 .hero p.lede { color: var(--muted); max-width: 34rem; font-size: 1.05rem; }
-.searchbar { display: flex; gap: 0.6rem; max-width: 44rem; margin-top: 1.25rem; }
+.searchbar { display: flex; gap: 0.6rem; max-width: 44rem; margin: 1.25rem auto 0; }
+
+/* Home page hero only — scoped via .hero-home, never leaks to the
+   Account/Businesses/Corporate/Deals/Sell pages that share .hero */
+.hero-home { text-align: center; }
+.hero-home h1 {
+  font-size: clamp(1.5rem, 3.6vw, 2.3rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+@media (max-width: 420px) {
+  /* Below this, even the smallest clamp size can't fit the full headline
+     on one line without overflowing horizontally — better to wrap
+     gracefully here than force an overflow on the smallest phones. */
+  .hero-home h1 { white-space: normal; font-size: clamp(1.5rem, 7vw, 1.9rem); }
+}
+.hero-home .chips { justify-content: center; }
 .searchbar input {
   flex: 1;
   padding: 0.85rem 1.25rem;
