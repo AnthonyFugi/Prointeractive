@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Loader from '../components/Loader.jsx';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, money } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -11,6 +11,16 @@ import ImageCarousel from '../components/ImageCarousel.jsx';
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // location.key === 'default' means there's no real in-app history to
+  // return to (a fresh load / direct link) — fall back to the shop home
+  // rather than a no-op. Otherwise, genuinely go back to wherever the
+  // user actually came from (a storefront, Deals, search results, etc.)
+  // instead of always dumping them onto the generic shop page.
+  const goBack = () => {
+    if (location.key === 'default') navigate('/');
+    else navigate(-1);
+  };
   const { add } = useCart();
   const { user, refresh } = useAuth();
 
@@ -87,7 +97,9 @@ export default function ProductDetail() {
 
   return (
     <div className="container">
-      <p style={{ marginTop: '1.25rem' }}><Link to="/">← Back to shop</Link></p>
+      <p style={{ marginTop: '1.25rem' }}>
+        <a href="#back" onClick={(e) => { e.preventDefault(); goBack(); }}>← Back</a>
+      </p>
       <div className="panel">
         <div className="row spread" style={{ alignItems: 'flex-start' }}>
           {product.images?.length > 0 && (

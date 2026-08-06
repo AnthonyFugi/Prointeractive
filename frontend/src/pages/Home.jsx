@@ -87,9 +87,6 @@ export default function Home() {
       <section className="hero">
         <div className="eyebrow">Making business interaction, Easy!</div>
         <h1>What you need, from businesses you trust.</h1>
-        <p className="lede">
-          Message the business behind every product, then pay your way.
-        </p>
         <form
           className="searchbar"
           onSubmit={(e) => { e.preventDefault(); setPage(1); setQuery(q); }}

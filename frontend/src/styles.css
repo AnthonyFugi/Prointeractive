@@ -195,6 +195,12 @@ textarea { resize: vertical; min-height: 90px; }
 
 /* ---------- Hero ---------- */
 .hero { padding: 3.5rem 0 2rem; }
+.hero h1 {
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  max-width: 20ch;
+}
 .hero .eyebrow {
   font-size: 0.8rem; font-weight: 600; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--red); margin-bottom: 0.6rem;

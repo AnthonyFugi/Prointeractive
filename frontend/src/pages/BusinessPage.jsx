@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Loader from '../components/Loader.jsx';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import ProductCard from '../components/ProductCard.jsx';
@@ -9,6 +9,15 @@ import VerifiedBadge from '../components/VerifiedBadge.jsx';
 export default function BusinessPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Same reasoning as ProductDetail: a storefront can be reached from the
+  // directory, a product's seller link, Deals, search, or a shared link —
+  // "back" should return to whichever of those it actually was, not
+  // always dump the user into the generic directory.
+  const goBack = () => {
+    if (location.key === 'default') navigate('/businesses');
+    else navigate(-1);
+  };
   const { user, refresh } = useAuth();
   const [business, setBusiness] = useState(null);
   const [products, setProducts] = useState([]);
@@ -50,7 +59,9 @@ export default function BusinessPage() {
 
   return (
     <div className="container">
-      <p style={{ marginTop: '1.25rem' }}><Link to="/businesses">← All businesses</Link></p>
+      <p style={{ marginTop: '1.25rem' }}>
+        <a href="#back" onClick={(e) => { e.preventDefault(); goBack(); }}>← Back</a>
+      </p>
       <div className="panel">
         <div className="row spread">
           <div className="row" style={{ alignItems: 'center' }}>

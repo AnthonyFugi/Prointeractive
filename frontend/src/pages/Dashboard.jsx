@@ -546,13 +546,13 @@ export default function Dashboard() {
                 <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="pprice">Price (ZMW)</label>
                   <input id="pprice" type="number" min="0" step="0.01" required value={productForm.price}
-                    onChange={(e) => updateProductField('price', e.target.value)} />
+                    onChange={(e) => updateProductField('price', e.target.value)} style={{ minWidth: 0, width: '100%' }} />
                   {fieldErrors.price && <p className="field-error">{fieldErrors.price}</p>}
                 </div>
                 <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="pstock">Stock</label>
                   <input id="pstock" type="number" min="0" required value={productForm.stock}
-                    onChange={(e) => updateProductField('stock', e.target.value)} />
+                    onChange={(e) => updateProductField('stock', e.target.value)} style={{ minWidth: 0, width: '100%' }} />
                   {fieldErrors.stock && <p className="field-error">{fieldErrors.stock}</p>}
                 </div>
               </div>
@@ -560,13 +560,13 @@ export default function Dashboard() {
                 <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="psale">Sale price <span className="muted">(optional)</span></label>
                   <input id="psale" type="number" min="0" step="0.01" value={productForm.salePrice}
-                    onChange={(e) => updateProductField('salePrice', e.target.value)} />
+                    onChange={(e) => updateProductField('salePrice', e.target.value)} style={{ minWidth: 0, width: '100%' }} />
                   {fieldErrors.salePrice && <p className="field-error">{fieldErrors.salePrice}</p>}
                 </div>
                 <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="psaleend">Sale ends</label>
                   <input id="psaleend" type="date" value={productForm.saleEndsAt}
-                    onChange={(e) => updateProductField('saleEndsAt', e.target.value)} />
+                    onChange={(e) => updateProductField('saleEndsAt', e.target.value)} style={{ minWidth: 0, width: '100%' }} />
                   {fieldErrors.saleEndsAt && <p className="field-error">{fieldErrors.saleEndsAt}</p>}
                 </div>
               </div>
