@@ -542,32 +542,36 @@ export default function Dashboard() {
               <label htmlFor="pdesc">Description</label>
               <textarea id="pdesc" value={productForm.description}
                 onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
-              <div className="row">
-                <div style={{ flex: 1 }}>
+              <div className="row" style={{ flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="pprice">Price (ZMW)</label>
                   <input id="pprice" type="number" min="0" step="0.01" required value={productForm.price}
                     onChange={(e) => updateProductField('price', e.target.value)} />
                   {fieldErrors.price && <p className="field-error">{fieldErrors.price}</p>}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="pstock">Stock</label>
                   <input id="pstock" type="number" min="0" required value={productForm.stock}
                     onChange={(e) => updateProductField('stock', e.target.value)} />
                   {fieldErrors.stock && <p className="field-error">{fieldErrors.stock}</p>}
                 </div>
-                <div style={{ flex: 1 }}>
+              </div>
+              <div className="row" style={{ flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="psale">Sale price <span className="muted">(optional)</span></label>
                   <input id="psale" type="number" min="0" step="0.01" value={productForm.salePrice}
                     onChange={(e) => updateProductField('salePrice', e.target.value)} />
                   {fieldErrors.salePrice && <p className="field-error">{fieldErrors.salePrice}</p>}
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="psaleend">Sale ends</label>
                   <input id="psaleend" type="date" value={productForm.saleEndsAt}
                     onChange={(e) => updateProductField('saleEndsAt', e.target.value)} />
                   {fieldErrors.saleEndsAt && <p className="field-error">{fieldErrors.saleEndsAt}</p>}
                 </div>
-                <div style={{ flex: 1 }}>
+              </div>
+              <div className="row" style={{ flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="pcat">Category</label>
                   <select id="pcat" required value={productForm.category}
                     onChange={(e) => updateProductField('category', e.target.value)}>

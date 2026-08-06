@@ -59,7 +59,7 @@ export default function RegisterScreen({ navigation }) {
         } catch (e) {
           Alert.alert(
             'Account created — store setup incomplete',
-            e.message + '\n\nYou can finish setting up your store from your dashboard on proint.web.app.'
+            e.message + '\n\nYou can finish setting up your store from your dashboard on prointapp.com.'
           );
         }
       }
@@ -154,9 +154,9 @@ export default function RegisterScreen({ navigation }) {
         </View>
         <Text style={{ flex: 1, color: colors.muted, fontSize: 13 }}>
           I agree to the{' '}
-          <Text style={{ color: colors.navy, fontWeight: '700' }} onPress={() => Linking.openURL('https://proint.web.app/terms')}>Terms & Conditions</Text>
+          <Text style={{ color: colors.navy, fontWeight: '700' }} onPress={() => Linking.openURL('https://prointapp.com/terms')}>Terms & Conditions</Text>
           {' '}and{' '}
-          <Text style={{ color: colors.navy, fontWeight: '700' }} onPress={() => Linking.openURL('https://proint.web.app/privacy')}>Privacy Policy</Text>
+          <Text style={{ color: colors.navy, fontWeight: '700' }} onPress={() => Linking.openURL('https://prointapp.com/privacy')}>Privacy Policy</Text>
         </Text>
       </Pressable>
 

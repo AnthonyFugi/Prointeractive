@@ -42,7 +42,7 @@ export default function DeleteAccountScreen({ navigation }) {
         Deleting your account removes your profile, conversations, and favorites permanently.
         {user && user.role === 'business' ? ' Your storefront will be closed and your products removed from the shop.' : ''}
         {'\n\n'}Records of completed transactions are kept in anonymised form for legal and
-        accounting purposes (see proint.web.app/privacy).
+        accounting purposes (see prointapp.com/privacy).
       </Text>
       <TextInput
         placeholder="Your password"

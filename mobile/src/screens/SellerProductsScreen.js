@@ -44,7 +44,7 @@ export default function SellerProductsScreen({ navigation }) {
       <View style={{ flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}>
         <Text style={{ fontWeight: '800', fontSize: 16, textAlign: 'center' }}>Finish your store setup on the web</Text>
         <Text style={{ color: colors.muted, textAlign: 'center', marginTop: spacing.s }}>
-          Create your storefront profile at proint.web.app/dashboard — then manage products right here.
+          Create your storefront profile at prointapp.com/dashboard — then manage products right here.
         </Text>
       </View>
     );

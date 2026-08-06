@@ -10,12 +10,12 @@ Email/password sign-in is unchanged and always works. Each social provider appea
 ### Create the OAuth client
 1. https://console.cloud.google.com → select/create a project (e.g. "Prointeractive")
 2. **APIs & Services → OAuth consent screen** → External → fill app name, support email,
-   logo (optional), authorised domain `proint.web.app` → Save
+   logo (optional), authorised domain `prointapp.com` → Save
 3. **APIs & Services → Credentials → Create credentials → OAuth client ID**
    - Application type: **Web application**
    - Name: `Prointeractive Web`
    - **Authorised JavaScript origins:**
-     - `https://proint.web.app`
+     - `https://prointapp.com`
      - `http://localhost:5173`
    - Create → copy the **Client ID** (looks like `1234-abc.apps.googleusercontent.com`)
    - Also copy the **Client secret** shown next to it
@@ -56,12 +56,12 @@ domain verification.
 2. Description: `Prointeractive Web`, Identifier: **`com.proint.web`** → Register
 3. Open it → tick **Sign In with Apple** → **Configure**:
    - Primary App ID: `com.proint`
-   - **Domains and Subdomains:** `proint.web.app`
-   - **Return URLs:** `https://proint.web.app/login`
+   - **Domains and Subdomains:** `prointapp.com`
+   - **Return URLs:** `https://prointapp.com/login`
 4. Save. Download the **domain association file** Apple offers.
 
 ### c. Domain verification
-Apple must see a file at `https://proint.web.app/.well-known/apple-developer-domain-association.txt`.
+Apple must see a file at `https://prointapp.com/.well-known/apple-developer-domain-association.txt`.
 
 ```bash
 mkdir -p frontend/public/.well-known
@@ -77,7 +77,7 @@ Then return to the Services ID configuration and click **Verify**.
 | Render (backend) | `APPLE_CLIENT_ID` | `com.proint.web` (Services ID) |
 | Render (backend) | `APPLE_BUNDLE_ID` | `com.proint` (for the iOS app) |
 | `frontend/.env.production` | `VITE_APPLE_CLIENT_ID` | `com.proint.web` |
-| `frontend/.env.production` | `VITE_APPLE_REDIRECT_URI` | `https://proint.web.app/login` |
+| `frontend/.env.production` | `VITE_APPLE_REDIRECT_URI` | `https://prointapp.com/login` |
 
 Local development note: Apple **does not accept `localhost`** as a domain. The Apple
 button therefore only appears on the deployed site — leave the two `VITE_APPLE_*`

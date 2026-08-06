@@ -53,7 +53,7 @@ export default function AccountScreen({ navigation }) {
               {business.location ? <Text style={{ color: colors.muted, fontSize: 13, marginTop: 2 }}>📍 {business.location}</Text> : null}
               {business.phone ? <Text style={{ color: colors.muted, fontSize: 13, marginTop: 2 }}>📞 {business.phone}</Text> : null}
               <Text style={{ color: colors.navy, fontSize: 12, marginTop: spacing.s }}>
-                proint.web.app/businesses/{business.slug || business._id}
+                prointapp.com/businesses/{business.slug || business._id}
               </Text>
               <Text style={{ color: colors.muted, fontSize: 11, marginTop: spacing.s }}>
                 Edit store details, logo, and payouts in your web dashboard.

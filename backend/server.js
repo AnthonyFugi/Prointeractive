@@ -136,7 +136,7 @@ if (isProd) {
 
       if (!business || business.closed) return res.send(html);
 
-      const base = process.env.APP_URL || 'https://proint.web.app';
+      const base = process.env.APP_URL || 'https://prointapp.com';
       const title = escapeHtml(`${business.name} — on Prointeractive`);
       const desc = escapeHtml(
         business.description ||
