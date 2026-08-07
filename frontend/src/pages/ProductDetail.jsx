@@ -62,7 +62,6 @@ export default function ProductDetail() {
   const sendInquiry = async (e) => {
     e.preventDefault();
     if (!user) return navigate('/login', { state: { from: `/products/${id}` } });
-    if (!reviewForm.rating) { setReviewMsg('Pick a star rating first.'); return; }
     setAskState('');
     try {
       await api('/inquiries', {
@@ -84,6 +83,7 @@ export default function ProductDetail() {
   const sendReview = async (e) => {
     e.preventDefault();
     if (!user) return navigate('/login', { state: { from: `/products/${id}` } });
+    if (!reviewForm.rating) { setReviewMsg('Pick a star rating first.'); return; }
     setReviewMsg('');
     try {
       await api(`/products/${id}/reviews`, { method: 'POST', body: reviewForm });

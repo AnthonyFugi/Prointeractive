@@ -94,7 +94,7 @@ export default function RegisterScreen({ navigation }) {
       contentContainerStyle={{ padding: spacing.xl, paddingBottom: 48 }}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={{ fontSize: 26, fontWeight: '800', marginTop: spacing.l }}>Create account</Text>
+      <Text style={{ fontSize: 26, fontWeight: '800', marginTop: spacing.l }}>✨ Create account</Text>
 
       <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.l }}>
         <RoleCard value="customer" title="I'm shopping" sub="Browse and buy from businesses" />

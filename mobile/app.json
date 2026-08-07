@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "prointeractive",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "bundleIdentifier": "com.proint",
       "supportsTablet": false,
@@ -26,15 +21,13 @@
         "backgroundColor": "#ffffff"
       },
       "versionCode": 1,
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
       ]
     },
     "extra": {
-      "apiUrl": "https://prointeractive.onrender.com",
-      "eas": {
-        "projectId": "139f5e42-7f27-45c4-9dab-262a43cb72fa"
-      }
+      "apiUrl": "https://prointeractive.onrender.com"
     },
     "icon": "./assets/icon.png",
     "plugins": [
@@ -43,8 +36,15 @@
         {
           "photosPermission": "Allow Prointeractive to access your photos so you can add product images to your store."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
       ]
-    ],
-    "owner": "khahtech"
+    ]
   }
 }

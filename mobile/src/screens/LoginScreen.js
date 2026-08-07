@@ -23,7 +23,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.xl, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 26, fontWeight: '800' }}>Sign in</Text>
+      <Text style={{ fontSize: 26, fontWeight: '800' }}>🔑 Sign in</Text>
       <Text style={{ color: colors.muted, fontSize: 13, marginTop: 6 }}>
         Follow stores you love, save items for later, track orders, and message businesses directly.
       </Text>

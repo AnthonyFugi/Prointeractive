@@ -148,8 +148,14 @@ export default function AccountScreen({ navigation }) {
           <Text style={{ fontSize: 22, fontWeight: '800' }}>Welcome</Text>
           <Text style={{ color: colors.muted, marginTop: 4 }}>Sign in to order, pay, and message businesses.</Text>
           <Pressable onPress={() => navigation.navigate('Login')}
-            style={{ backgroundColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.l }}>
-            <Text style={{ color: '#fff', fontWeight: '800', textAlign: 'center' }}>Sign in</Text>
+            style={{ backgroundColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.l, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 16 }}>🔑</Text>
+            <Text style={{ color: '#fff', fontWeight: '800' }}>Sign in</Text>
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('Register')}
+            style={{ borderWidth: 1.5, borderColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.s, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 16 }}>✨</Text>
+            <Text style={{ color: colors.navy, fontWeight: '800' }}>Create account</Text>
           </Pressable>
         </>
       )}
