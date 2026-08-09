@@ -35,11 +35,13 @@ export default function ProductDetail() {
   const [asking, setAsking] = useState(false);
   const [askForm, setAskForm] = useState({ subject: '', message: '' });
   const [askState, setAskState] = useState('');
+  const [asking2, setAsking2] = useState(false);
 
   // Review form
   const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
   const [hoverStar, setHoverStar] = useState(0);
   const [reviewMsg, setReviewMsg] = useState('');
+  const [postingReview, setPostingReview] = useState(false);
 
   useEffect(() => {
     api(`/products/${id}`).then((d) => {
@@ -63,6 +65,7 @@ export default function ProductDetail() {
     e.preventDefault();
     if (!user) return navigate('/login', { state: { from: `/products/${id}` } });
     setAskState('');
+    setAsking2(true);
     try {
       await api('/inquiries', {
         method: 'POST',
@@ -77,6 +80,8 @@ export default function ProductDetail() {
       setAskForm({ subject: '', message: '' });
     } catch (err) {
       setAskState(err.message);
+    } finally {
+      setAsking2(false);
     }
   };
 
@@ -85,6 +90,7 @@ export default function ProductDetail() {
     if (!user) return navigate('/login', { state: { from: `/products/${id}` } });
     if (!reviewForm.rating) { setReviewMsg('Pick a star rating first.'); return; }
     setReviewMsg('');
+    setPostingReview(true);
     try {
       await api(`/products/${id}/reviews`, { method: 'POST', body: reviewForm });
       setReviewMsg('sent');
@@ -92,6 +98,8 @@ export default function ProductDetail() {
       setReviews(d.reviews);
     } catch (err) {
       setReviewMsg(err.message);
+    } finally {
+      setPostingReview(false);
     }
   };
 
@@ -218,7 +226,7 @@ export default function ProductDetail() {
             {askState === 'sent'
               ? <p className="success-text">Sent. Replies land in your <Link to="/inbox">inbox</Link>.</p>
               : askState && <p className="error-text">{askState}</p>}
-            <button className="btn btn-navy" style={{ marginTop: '0.5rem' }}>Send question</button>
+            <button className="btn btn-navy" disabled={asking2} style={{ marginTop: '0.5rem', opacity: asking2 ? 0.6 : 1 }}>{asking2 ? 'Sending…' : 'Send question'}</button>
           </form>
         )}
       </div>
@@ -264,7 +272,7 @@ export default function ProductDetail() {
           {reviewMsg === 'sent'
             ? <p className="success-text">Review published.</p>
             : reviewMsg && <p className="error-text">{reviewMsg}</p>}
-          <button className="btn btn-navy" style={{ marginTop: '0.5rem' }}>Publish review</button>
+          <button className="btn btn-navy" disabled={postingReview} style={{ marginTop: '0.5rem', opacity: postingReview ? 0.6 : 1 }}>{postingReview ? 'Posting…' : 'Publish review'}</button>
         </form>
       </div>
     </div>

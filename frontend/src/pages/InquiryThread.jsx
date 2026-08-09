@@ -22,6 +22,8 @@ export default function InquiryThread() {
   const [reportDetails, setReportDetails] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
 
   const load = () =>
     api(`/inquiries/${id}`)
@@ -34,12 +36,15 @@ export default function InquiryThread() {
 
   const send = async (e) => {
     e.preventDefault();
+    setSending(true);
     try {
       await api(`/inquiries/${id}/messages`, { method: 'POST', body: { message: reply } });
       setReply('');
       load();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -60,6 +65,7 @@ export default function InquiryThread() {
 
   const submitReport = async (e) => {
     e.preventDefault();
+    setReportBusy(true);
     try {
       await api('/reports', {
         method: 'POST',
@@ -70,6 +76,8 @@ export default function InquiryThread() {
       setNotice('Report sent. Our team will review this conversation.');
     } catch (err) {
       setNotice(err.message);
+    } finally {
+      setReportBusy(false);
     }
   };
 
@@ -108,7 +116,7 @@ export default function InquiryThread() {
           <label htmlFor="rdetails">Details (optional)</label>
           <textarea id="rdetails" rows={2} value={reportDetails} onChange={(e) => setReportDetails(e.target.value)} />
           <div className="row" style={{ marginTop: '0.5rem' }}>
-            <button className="btn btn-red btn-sm">Send report</button>
+            <button className="btn btn-red btn-sm" disabled={reportBusy}>{reportBusy ? 'Sending…' : 'Send report'}</button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setReporting(false)}>Cancel</button>
           </div>
         </form>
@@ -135,7 +143,7 @@ export default function InquiryThread() {
           <label htmlFor="reply">Reply</label>
           <textarea id="reply" required value={reply} onChange={(e) => setReply(e.target.value)} />
           <div className="row" style={{ marginTop: '0.75rem' }}>
-            <button className="btn btn-navy">Send reply</button>
+            <button className="btn btn-navy" disabled={sending}>{sending ? 'Sending…' : 'Send reply'}</button>
             <button type="button" className="btn btn-ghost" onClick={close}>Close conversation</button>
           </div>
         </form>

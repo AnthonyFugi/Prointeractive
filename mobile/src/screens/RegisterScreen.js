@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing } from '../theme';
@@ -11,7 +13,9 @@ const inputStyle = {
 const labelStyle = { fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.m, color: colors.ink };
 
 export default function RegisterScreen({ navigation }) {
-  const { register } = useAuth();
+  const { register, loginWithGoogle, loginWithApple } = useAuth();
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [appleBusy, setAppleBusy] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [role, setRole] = useState('customer');
   const [biz, setBiz] = useState({ name: '', location: '', phone: '', description: '' });
@@ -59,7 +63,7 @@ export default function RegisterScreen({ navigation }) {
         } catch (e) {
           Alert.alert(
             'Account created — store setup incomplete',
-            e.message + '\n\nYou can finish setting up your store from your dashboard on prointapp.com.'
+            e.message + '\n\nYou can finish setting up your store right from the Products tab.'
           );
         }
       }
@@ -166,6 +170,53 @@ export default function RegisterScreen({ navigation }) {
           {busy ? 'Creating…' : role === 'business' ? 'Create account & open store' : 'Create account'}
         </Text>
       </Pressable>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.l, marginBottom: spacing.m }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: colors.line }} />
+        <Text style={{ color: colors.muted, marginHorizontal: 10, fontSize: 12 }}>or</Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: colors.line }} />
+      </View>
+
+      {googleBusy ? (
+        <View style={{ height: 48, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={colors.ink} size="small" />
+        </View>
+      ) : (
+        <GoogleSigninButton
+          size={GoogleSigninButton.Size.Wide}
+          color={GoogleSigninButton.Color.Light}
+          style={{ width: '100%', height: 48 }}
+          onPress={async () => {
+            setGoogleBusy(true);
+            try { await loginWithGoogle(); } catch (e) { if (!e.cancelled) Alert.alert('Sign-up failed', e.message); }
+            finally { setGoogleBusy(false); }
+          }}
+        />
+      )}
+
+      {Platform.OS === 'ios' ? (
+        appleBusy ? (
+          <View style={{ height: 44, alignItems: 'center', justifyContent: 'center', marginTop: spacing.s }}>
+            <ActivityIndicator color={colors.ink} size="small" />
+          </View>
+        ) : (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            cornerRadius={10}
+            style={{ height: 44, marginTop: spacing.s }}
+            onPress={async () => {
+              setAppleBusy(true);
+              try { await loginWithApple(); } catch (e) { if (!e.cancelled) Alert.alert('Sign-up failed', e.message); }
+              finally { setAppleBusy(false); }
+            }}
+          />
+        )
+      ) : null}
+
+      <Text style={{ color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: spacing.m }}>
+        Continuing with Google or Apple means you agree to our Terms.
+      </Text>
     </ScrollView>
   );
 }

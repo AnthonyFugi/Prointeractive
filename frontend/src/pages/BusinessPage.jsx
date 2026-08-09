@@ -26,6 +26,7 @@ export default function BusinessPage() {
   const [asking, setAsking] = useState(false);
   const [form, setForm] = useState({ subject: '', message: '' });
   const [state, setState] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     api(`/businesses/${id}`).then((d) => {
@@ -42,6 +43,7 @@ export default function BusinessPage() {
   const send = async (e) => {
     e.preventDefault();
     if (!user) return navigate('/login', { state: { from: `/businesses/${id}` } });
+    setSending(true);
     try {
       await api('/inquiries', {
         method: 'POST',
@@ -51,6 +53,8 @@ export default function BusinessPage() {
       setForm({ subject: '', message: '' });
     } catch (err) {
       setState(err.message);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -120,7 +124,7 @@ export default function BusinessPage() {
             {state === 'sent'
               ? <p className="success-text">Sent. Replies land in your <Link to="/inbox">inbox</Link>.</p>
               : state && <p className="error-text">{state}</p>}
-            <button className="btn btn-navy" style={{ marginTop: '0.5rem' }}>Send message</button>
+            <button className="btn btn-navy" disabled={sending} style={{ marginTop: '0.5rem' }}>{sending ? 'Sending…' : 'Send message'}</button>
           </form>
         )}
       </div>

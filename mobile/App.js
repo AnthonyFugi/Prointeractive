@@ -155,10 +155,10 @@ function Tabs() {
     >
       {seller ? (
         <>
-          <Tab.Screen name="SellerOrdersTab" component={SellerOrdersStackScreen} options={{ tabBarLabel: 'Orders' }} />
+          <Tab.Screen name="ShopTab" component={ShopStackScreen} options={{ tabBarLabel: 'Shop' }} />
           <Tab.Screen name="ProductsTab" component={SellerProductsStackScreen} options={{ tabBarLabel: 'Products' }} />
           <Tab.Screen name="InboxTab" component={InboxStackScreen} options={{ tabBarLabel: 'Inbox' }} />
-          <Tab.Screen name="ShopTab" component={ShopStackScreen} options={{ tabBarLabel: 'Shop' }} />
+          <Tab.Screen name="SellerOrdersTab" component={SellerOrdersStackScreen} options={{ tabBarLabel: 'Orders' }} />
           <Tab.Screen name="AccountTab" component={AccountStackScreen} options={{ tabBarLabel: 'Account' }} />
         </>
       ) : (

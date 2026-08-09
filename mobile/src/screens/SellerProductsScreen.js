@@ -1,14 +1,28 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Alert, FlatList, Image, Pressable, RefreshControl, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import { colors, money, spacing } from '../theme';
+
+const inputStyle = {
+  backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,
+  borderRadius: 10, padding: 12,
+};
+const labelStyle = { fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.m, color: colors.ink };
 
 export default function SellerProductsScreen({ navigation }) {
   const [business, setBusiness] = useState(null);
   const [checked, setChecked] = useState(false);
   const [products, setProducts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Store-setup form state — only used when an account has role 'business'
+  // but no Business document exists yet (e.g. an older account, or one
+  // where creation failed partway through registration).
+  const [biz, setBiz] = useState({ name: '', location: '', phone: '', description: '' });
+  const [cats, setCats] = useState([]);
+  const [pickedCats, setPickedCats] = useState([]);
+  const [creatingBiz, setCreatingBiz] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -27,6 +41,43 @@ export default function SellerProductsScreen({ navigation }) {
   useFocusEffect(useCallback(() => { load(); }, [load]));
   const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
 
+  useEffect(() => {
+    if (checked && !business && cats.length === 0) {
+      api('/categories').then((d) => setCats(d.categories)).catch(() => {});
+    }
+  }, [checked, business]);
+
+  const toggleCat = (name) => {
+    setPickedCats((prev) => {
+      if (prev.includes(name)) return prev.filter((c) => c !== name);
+      if (prev.length >= 3) return prev;
+      return [...prev, name];
+    });
+  };
+
+  const createStore = async () => {
+    if (!biz.name.trim()) return Alert.alert('Business name', 'Enter your business name.');
+    if (pickedCats.length === 0) return Alert.alert('Category', 'Pick at least one category for your store.');
+    setCreatingBiz(true);
+    try {
+      await api('/businesses', {
+        method: 'POST',
+        body: {
+          name: biz.name.trim(),
+          categories: pickedCats,
+          location: biz.location.trim(),
+          phone: biz.phone.trim(),
+          description: biz.description.trim(),
+        },
+      });
+      await load();
+    } catch (e) {
+      Alert.alert('Could not create store', e.message);
+    } finally {
+      setCreatingBiz(false);
+    }
+  };
+
   const deactivate = (p) =>
     Alert.alert('Deactivate product?', `"${p.name}" will disappear from the shop.`, [
       { text: 'Cancel', style: 'cancel' },
@@ -41,12 +92,54 @@ export default function SellerProductsScreen({ navigation }) {
 
   if (checked && !business) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}>
-        <Text style={{ fontWeight: '800', fontSize: 16, textAlign: 'center' }}>Finish your store setup on the web</Text>
-        <Text style={{ color: colors.muted, textAlign: 'center', marginTop: spacing.s }}>
-          Create your storefront profile at prointapp.com/dashboard — then manage products right here.
+      <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ padding: spacing.l }}>
+        <Text style={{ fontWeight: '800', fontSize: 20 }}>Finish setting up your store</Text>
+        <Text style={{ color: colors.muted, marginTop: 4 }}>
+          A few details and your storefront goes live — you can add products right after.
         </Text>
-      </View>
+
+        <Text style={labelStyle}>Business name</Text>
+        <TextInput placeholder="e.g. Khah Technology" value={biz.name}
+          onChangeText={(v) => setBiz({ ...biz, name: v })} style={inputStyle} />
+
+        <Text style={labelStyle}>
+          Categories <Text style={{ color: colors.muted, fontWeight: '400' }}>(up to 3 — {pickedCats.length}/3)</Text>
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {cats.map((c) => {
+            const on = pickedCats.includes(c.name);
+            return (
+              <Pressable key={c._id} onPress={() => toggleCat(c.name)}
+                style={{
+                  borderRadius: 999, borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 6,
+                  borderColor: on ? colors.navy : colors.line,
+                  backgroundColor: on ? colors.navy : colors.surface,
+                }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: on ? '#fff' : colors.ink }}>{c.name}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text style={labelStyle}>Location <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
+        <TextInput placeholder="e.g. Lusaka" value={biz.location}
+          onChangeText={(v) => setBiz({ ...biz, location: v })} style={inputStyle} />
+
+        <Text style={labelStyle}>Business phone <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
+        <TextInput placeholder="09..." keyboardType="phone-pad" value={biz.phone}
+          onChangeText={(v) => setBiz({ ...biz, phone: v })} style={inputStyle} />
+
+        <Text style={labelStyle}>Short description <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
+        <TextInput placeholder="What do you sell?" multiline value={biz.description}
+          onChangeText={(v) => setBiz({ ...biz, description: v })} style={[inputStyle, { minHeight: 70 }]} />
+
+        <Pressable onPress={createStore} disabled={creatingBiz}
+          style={{ backgroundColor: colors.red, opacity: creatingBiz ? 0.6 : 1, borderRadius: 10, padding: 14, marginTop: spacing.l }}>
+          <Text style={{ color: '#fff', fontWeight: '800', textAlign: 'center' }}>
+            {creatingBiz ? 'Creating your store…' : 'Create store'}
+          </Text>
+        </Pressable>
+      </ScrollView>
     );
   }
 

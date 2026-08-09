@@ -50,11 +50,13 @@ export default function ProductScreen({ route, navigation }) {
   useEffect(() => { load(); }, [id]);
 
   const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
+  const [sendingAsk, setSendingAsk] = useState(false);
 
   if (!product) return <LoadingView />;
 
   const askSeller = async () => {
     if (!user) return navigation.navigate('AccountTab', { screen: 'Login' });
+    setSendingAsk(true);
     try {
       await api('/inquiries', {
         method: 'POST',
@@ -70,6 +72,8 @@ export default function ProductScreen({ route, navigation }) {
       Alert.alert('Sent', 'Your question is on its way. Replies land in your Inbox.');
     } catch (e) {
       Alert.alert('Could not send', e.message);
+    } finally {
+      setSendingAsk(false);
     }
   };
 
@@ -204,8 +208,9 @@ export default function ProductScreen({ route, navigation }) {
             multiline
             style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, minHeight: 80 }}
           />
-          <Pressable onPress={askSeller} style={{ backgroundColor: colors.navy, borderRadius: 10, padding: 12, marginTop: spacing.s }}>
-            <Text style={{ color: '#fff', fontWeight: '700', textAlign: 'center' }}>Send question</Text>
+          <Pressable onPress={askSeller} disabled={sendingAsk}
+            style={{ backgroundColor: colors.navy, opacity: sendingAsk ? 0.6 : 1, borderRadius: 10, padding: 12, marginTop: spacing.s }}>
+            <Text style={{ color: '#fff', fontWeight: '700', textAlign: 'center' }}>{sendingAsk ? 'Sending…' : 'Send question'}</Text>
           </Pressable>
         </View>
       ) : null}

@@ -60,13 +60,19 @@ export default function ThreadScreen({ route }) {
     ]);
   };
 
+  const [sending, setSending] = useState(false);
   const send = async () => {
     if (!reply.trim()) return;
+    setSending(true);
     try {
       await api(`/inquiries/${id}/messages`, { method: 'POST', body: { message: reply } });
       setReply('');
       load();
-    } catch (e) {}
+    } catch (e) {
+      Alert.alert('Could not send', e.message || 'Please try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -124,8 +130,9 @@ export default function ThreadScreen({ route }) {
             placeholder="Reply…"
             style={{ flex: 1, borderWidth: 1, borderColor: colors.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
           />
-          <Pressable onPress={send} style={{ backgroundColor: colors.navy, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: '700' }}>Send</Text>
+          <Pressable onPress={send} disabled={sending}
+            style={{ backgroundColor: colors.navy, opacity: sending ? 0.6 : 1, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' }}>
+            <Text style={{ color: '#fff', fontWeight: '700' }}>{sending ? '…' : 'Send'}</Text>
           </Pressable>
         </View>
       ) : (
