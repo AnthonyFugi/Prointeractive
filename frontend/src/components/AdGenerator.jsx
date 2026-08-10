@@ -3,11 +3,8 @@ import { money } from '../api.js';
 
 const NAVY = '#002368';
 const RED = '#bc0000';
-const PAPER = '#fafafa';
 const SIZE = 1080;
 
-// Draws an image into a target box using "object-fit: contain" behaviour —
-// canvas has no native equivalent, so this computes it by hand.
 function drawContain(ctx, img, x, y, w, h) {
   const scale = Math.min(w / img.width, h / img.height);
   const dw = img.width * scale;
@@ -18,15 +15,26 @@ function drawContain(ctx, img, x, y, w, h) {
 function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    // Required for the canvas to remain exportable when the image comes
-    // from a different origin (our S3 bucket) — without this, the canvas
-    // is "tainted" and toBlob()/toDataURL() throw a SecurityError even
-    // though the image displays completely normally on the page itself.
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = () => {
+      const err = new Error('Image failed to load — likely missing CORS access for this origin.');
+      err.name = 'ImageLoadError';
+      reject(err);
+    };
     img.src = src;
   });
+}
+
+// Rounded-rect helper for browsers/canvas versions without ctx.roundRect.
+function roundRect(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); return; }
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
 }
 
 export default function AdGenerator({ product, onClose }) {
@@ -41,57 +49,53 @@ export default function AdGenerator({ product, onClose }) {
     async function render() {
       setError('');
       try {
-        await document.fonts.ready; // avoid drawing with a fallback font mid-load
+        await document.fonts.ready;
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         canvas.width = SIZE;
         canvas.height = SIZE;
 
-        // Background
-        ctx.fillStyle = '#fff';
+        // Bold navy background — this is what actually reads as "promotional
+        // graphic" rather than "information card". The product photo then
+        // sits on a white spotlight card, which gives it depth against the
+        // colour rather than blending into a flat white page.
+        ctx.fillStyle = NAVY;
         ctx.fillRect(0, 0, SIZE, SIZE);
 
-        // Header band
-        ctx.fillStyle = NAVY;
-        ctx.fillRect(0, 0, SIZE, 150);
+        // Platform mark — the real logo image, not a typed wordmark.
+        try {
+          const logo = await loadImage('/logo.png');
+          if (cancelled) return;
+          ctx.drawImage(logo, 56, 50, 64, 64);
+        } catch (_e) { /* same-origin asset — failure here is unexpected but non-fatal */ }
         ctx.fillStyle = '#fff';
-        ctx.font = "700 52px 'Bricolage Grotesque', sans-serif";
+        ctx.font = "800 40px 'Bricolage Grotesque', sans-serif";
         ctx.textBaseline = 'middle';
-        ctx.fillText('Pro·interactive', 60, 78);
-        ctx.font = "600 22px 'Karla', sans-serif";
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.fillText('MAKING BUSINESS INTERACTION, EASY!', 60, 122);
+        ctx.fillText('Pro·interactive', 134, 82);
 
-        // Product photo card
-        const photoBox = { x: 90, y: 200, w: SIZE - 180, h: 560 };
-        ctx.fillStyle = PAPER;
-        ctx.strokeStyle = '#e4e4e4';
-        ctx.lineWidth = 2;
-        const r = 24;
-        ctx.beginPath();
-        ctx.roundRect(photoBox.x, photoBox.y, photoBox.w, photoBox.h, r);
+        // Product photo — white spotlight card for contrast against navy.
+        const photoBox = { x: 90, y: 170, w: SIZE - 180, h: 500 };
+        ctx.fillStyle = '#fff';
+        roundRect(ctx, photoBox.x, photoBox.y, photoBox.w, photoBox.h, 28);
         ctx.fill();
-        ctx.stroke();
 
         if (product.images?.[0]) {
           const img = await loadImage(product.images[0]);
           if (cancelled) return;
           ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(photoBox.x, photoBox.y, photoBox.w, photoBox.h, r);
+          roundRect(ctx, photoBox.x, photoBox.y, photoBox.w, photoBox.h, 28);
           ctx.clip();
-          drawContain(ctx, img, photoBox.x + 20, photoBox.y + 20, photoBox.w - 40, photoBox.h - 40);
+          drawContain(ctx, img, photoBox.x + 24, photoBox.y + 24, photoBox.w - 48, photoBox.h - 48);
           ctx.restore();
         }
 
-        // SALE ribbon — a small rotated "sticker" rather than a flat badge
+        // SALE sticker — rotated for a bit of energy, not a flat label.
         if (product.onSale) {
           ctx.save();
-          ctx.translate(photoBox.x + 90, photoBox.y + 70);
+          ctx.translate(photoBox.x + 85, photoBox.y + 60);
           ctx.rotate(-0.26);
           ctx.fillStyle = RED;
-          ctx.beginPath();
-          ctx.roundRect(-95, -34, 190, 68, 8);
+          roundRect(ctx, -95, -34, 190, 68, 8);
           ctx.fill();
           ctx.fillStyle = '#fff';
           ctx.font = "800 34px 'Bricolage Grotesque', sans-serif";
@@ -101,51 +105,76 @@ export default function AdGenerator({ product, onClose }) {
           ctx.restore();
         }
 
-        // Product name
-        let y = photoBox.y + photoBox.h + 70;
-        ctx.fillStyle = '#111';
-        ctx.font = "800 46px 'Bricolage Grotesque', sans-serif";
-        wrapText(ctx, product.name, 60, y, SIZE - 120, 54, 2);
+        // Product name — large, white, on navy.
+        let y = photoBox.y + photoBox.h + 68;
+        ctx.fillStyle = '#fff';
+        ctx.font = "800 44px 'Bricolage Grotesque', sans-serif";
+        y = wrapText(ctx, product.name, 60, y, SIZE - 120, 52, 2);
 
-        // Price
-        y += 130;
+        // Price — a real graphic element (a bold red pill), not plain text.
+        y += 46;
+        const priceStr = money(product.onSale ? product.effectivePrice : product.price, product.currency);
+        ctx.font = "800 52px 'Bricolage Grotesque', sans-serif";
+        const priceWidth = ctx.measureText(priceStr).width;
+        const pillPad = 34;
+        const pillW = priceWidth + pillPad * 2;
+        const pillH = 86;
+        ctx.fillStyle = RED;
+        roundRect(ctx, 60, y - pillH / 2, pillW, pillH, pillH / 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(priceStr, 60 + pillPad, y + 4);
+
         if (product.onSale) {
-          ctx.font = "600 34px 'Karla', sans-serif";
-          ctx.fillStyle = '#999';
           const original = money(product.price, product.currency);
-          ctx.fillText(original, 60, y);
-          const strikeWidth = ctx.measureText(original).width;
+          ctx.font = "600 30px 'Karla', sans-serif";
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          const ox = 60 + pillW + 24;
+          ctx.fillText(original, ox, y);
+          const strikeW = ctx.measureText(original).width;
           ctx.beginPath();
-          ctx.moveTo(60, y - 10);
-          ctx.lineTo(60 + strikeWidth, y - 10);
-          ctx.strokeStyle = '#999';
+          ctx.moveTo(ox, y - 2);
+          ctx.lineTo(ox + strikeW, y - 2);
+          ctx.strokeStyle = 'rgba(255,255,255,0.55)';
           ctx.lineWidth = 3;
           ctx.stroke();
-
-          ctx.font = "800 56px 'Bricolage Grotesque', sans-serif";
-          ctx.fillStyle = RED;
-          ctx.fillText(money(product.effectivePrice, product.currency), 60 + strikeWidth + 24, y + 6);
-        } else {
-          ctx.font = "800 56px 'Bricolage Grotesque', sans-serif";
-          ctx.fillStyle = RED;
-          ctx.fillText(money(product.price, product.currency), 60, y);
         }
 
-        // Business name
-        y += 60;
+        // Seller row — real business logo image where available, name, and
+        // the verified mark, styled like a proper seller byline.
+        y += 90;
+        let bizX = 60;
+        if (product.business?.logoUrl) {
+          try {
+            const bizLogo = await loadImage(product.business.logoUrl);
+            if (cancelled) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(bizX + 26, y, 26, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(bizX, y - 26, 52, 52);
+            drawContain(ctx, bizLogo, bizX, y - 26, 52, 52);
+            ctx.restore();
+            bizX += 68;
+          } catch (_e) { /* missing/blocked business logo — fall back to text-only, non-fatal */ }
+        }
         ctx.font = "700 30px 'Karla', sans-serif";
-        ctx.fillStyle = NAVY;
-        const bizLine = product.business?.verified
-          ? `${product.business.name}  ✓`
-          : product.business?.name || '';
-        ctx.fillText(bizLine, 60, y);
+        ctx.fillStyle = '#fff';
+        ctx.textBaseline = 'middle';
+        const bizLine = product.business?.verified ? `${product.business.name}  ✓` : (product.business?.name || '');
+        ctx.fillText(bizLine, bizX, y);
 
-        // Footer band
-        ctx.fillStyle = '#e8ecf5';
-        ctx.fillRect(0, SIZE - 90, SIZE, 90);
-        ctx.font = "600 26px 'Karla', sans-serif";
-        ctx.fillStyle = NAVY;
-        ctx.fillText(`prointapp.com/products/${product._id}`, 60, SIZE - 45);
+        // CTA band — a genuine call to action, not quiet footer text.
+        ctx.fillStyle = RED;
+        ctx.fillRect(0, SIZE - 110, SIZE, 110);
+        ctx.fillStyle = '#fff';
+        ctx.font = "800 34px 'Bricolage Grotesque', sans-serif";
+        ctx.fillText('🛍️ Shop now on Prointeractive', 60, SIZE - 68);
+        ctx.font = "600 24px 'Karla', sans-serif";
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillText(`prointapp.com/products/${product._id}`, 60, SIZE - 32);
 
         canvas.toBlob((b) => {
           if (cancelled || !b) return;
@@ -154,11 +183,13 @@ export default function AdGenerator({ product, onClose }) {
         }, 'image/png');
       } catch (e) {
         if (!cancelled) {
-          setError(
-            e.name === 'SecurityError'
-              ? "Couldn't generate the image right now. Please try again shortly, or let us know if this keeps happening."
-              : 'Something went wrong creating the ad. Please try again.'
-          );
+          if (e.name === 'SecurityError' || e.name === 'ImageLoadError') {
+            setError("Couldn't generate the image right now. Please try again shortly, or let us know if this keeps happening.");
+          } else {
+            setError('Something went wrong creating the ad. Please try again.');
+          }
+          // eslint-disable-next-line no-console
+          console.error('AdGenerator failed:', e.name, e.message);
         }
       }
     }
@@ -183,7 +214,7 @@ export default function AdGenerator({ product, onClose }) {
         await navigator.share({
           files: [file],
           title: product.name,
-          text: `${product.name} — ${money(product.effectivePrice ?? product.price, product.currency)} on Prointeractive`,
+          text: `${product.name} — ${money(product.onSale ? product.effectivePrice : product.price, product.currency)} on Prointeractive`,
         });
       } catch (_e) { /* user cancelled — not an error */ }
     }
@@ -226,7 +257,6 @@ export default function AdGenerator({ product, onClose }) {
   );
 }
 
-// Simple word-wrap for canvas text, capped at maxLines (appends … if it overflows).
 function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
   const words = text.split(' ');
   let line = '';
@@ -246,4 +276,5 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
     lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, '…');
   }
   lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight));
+  return y + (lines.length - 1) * lineHeight;
 }

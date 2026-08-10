@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Loader from '../components/Loader.jsx';
-import AdGenerator from '../components/AdGenerator.jsx';
+
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, money } from '../api.js';
 import { useCart } from '../context/CartContext.jsx';
@@ -37,7 +37,6 @@ export default function ProductDetail() {
   const [askForm, setAskForm] = useState({ subject: '', message: '' });
   const [askState, setAskState] = useState('');
   const [asking2, setAsking2] = useState(false);
-  const [showAdGen, setShowAdGen] = useState(false);
 
   // Review form
   const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
@@ -183,14 +182,8 @@ export default function ProductDetail() {
               onClick={() => setAsking(!asking)}>
               Ask the seller
             </button>
-            <button className="btn btn-ghost" style={{ width: '100%', marginTop: '0.5rem' }}
-              onClick={() => setShowAdGen(true)}>
-              📢 Create shareable ad
-            </button>
           </div>
         </div>
-
-        {showAdGen && <AdGenerator product={product} onClose={() => setShowAdGen(false)} />}
 
         <p style={{ marginTop: '0.75rem' }}>
           {reported ? (

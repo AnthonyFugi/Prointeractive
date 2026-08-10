@@ -173,7 +173,7 @@ export const listProducts = async (req, res, next) => {
 // GET /api/products/:id  (public)
 export const getProduct = async (req, res, next) => {
   try {
-    const product = await Product.findById(req.params.id).populate('business', 'name slug verified location');
+    const product = await Product.findById(req.params.id).populate('business', 'name slug verified location logoUrl');
     if (product) Product.updateOne({ _id: product._id }, { $inc: { views: 1 } }).catch(() => {});
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, product });

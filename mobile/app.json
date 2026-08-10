@@ -24,12 +24,18 @@
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA"
+      ],
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "extra": {
       "apiUrl": "https://prointeractive.onrender.com",
       "googleClientId": "486712223464-qt91nunrjuuq9onc897it8dcujkc61rn.apps.googleusercontent.com",
-      "googleClientIdIOS": "486712223464-1f0d5dach6b7eof215fqd66coam4cmfj.apps.googleusercontent.com"
+      "googleClientIdIOS": "486712223464-1f0d5dach6b7eof215fqd66coam4cmfj.apps.googleusercontent.com",
+      "eas": {
+        "projectId": "139f5e42-7f27-45c4-9dab-262a43cb72fa"
+      }
     },
     "icon": "./assets/icon.png",
     "plugins": [
