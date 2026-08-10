@@ -335,6 +335,7 @@ textarea { resize: vertical; min-height: 90px; }
 .bubble {
   max-width: 75%; padding: 0.6rem 0.9rem; border-radius: 14px;
   background: var(--surface); border: 1px solid var(--line);
+  white-space: pre-line;
 }
 .bubble.mine { align-self: flex-end; background: var(--navy); color: #fff; border-color: var(--navy); }
 .bubble .who { font-size: 0.75rem; font-weight: 600; opacity: 0.75; margin-bottom: 0.15rem; }

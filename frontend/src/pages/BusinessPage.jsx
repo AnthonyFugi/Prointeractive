@@ -79,7 +79,7 @@ export default function BusinessPage() {
             <div>
             <h1>{business.name}{business.verified && <VerifiedBadge size={22} />}</h1>
             <p className="muted">{(business.categories?.length ? business.categories.join(' · ') : business.category)}{business.location && ` · ${business.location}`}{business.phone && ` · ${business.phone}`}</p>
-            {business.description && <p>{business.description}</p>}
+            {business.description && <p style={{ whiteSpace: 'pre-line' }}>{business.description}</p>}
             </div>
           </div>
           <div className="row">

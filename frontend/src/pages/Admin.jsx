@@ -562,7 +562,7 @@ export default function Admin() {
           <div>
             <strong style={{ textTransform: 'capitalize' }}>{r.targetType}</strong>
             <span className="muted"> · {r.reason.replace(/_/g, ' ')} · by {r.reporter?.name || 'Unknown'} · {new Date(r.createdAt).toLocaleString()}</span>
-            {r.details && <p className="muted" style={{ margin: '0.25rem 0 0' }}>"{r.details}"</p>}
+            {r.details && <p className="muted" style={{ margin: '0.25rem 0 0', whiteSpace: 'pre-line' }}>"{r.details}"</p>}
             <p className="muted" style={{ margin: '0.25rem 0 0', fontSize: '0.8rem' }}>target id: {r.targetId}</p>
           </div>
           <div className="row">

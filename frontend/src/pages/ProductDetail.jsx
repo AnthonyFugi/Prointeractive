@@ -125,7 +125,7 @@ export default function ProductDetail() {
               {product.business.location && ` · ${product.business.location}`}
             </p>
             {product.ratingCount > 0 && <Rating value={product.ratingAverage} count={product.ratingCount} />}
-            <p style={{ marginTop: '0.75rem' }}>{product.description}</p>
+            <p style={{ marginTop: '0.75rem', whiteSpace: 'pre-line' }}>{product.description}</p>
             <p className="muted">{product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}</p>
           </div>
           <div style={{ flex: '0 0 220px' }}>
@@ -241,7 +241,7 @@ export default function ProductDetail() {
               <strong>{r.user?.name || 'Customer'}</strong>
               <Rating value={r.rating} />
             </div>
-            {r.comment && <p style={{ margin: '0.4rem 0 0' }}>{r.comment}</p>}
+            {r.comment && <p style={{ margin: '0.4rem 0 0', whiteSpace: 'pre-line' }}>{r.comment}</p>}
           </div>
         ))}
 
