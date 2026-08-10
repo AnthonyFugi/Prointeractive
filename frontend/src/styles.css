@@ -243,6 +243,12 @@ textarea { resize: vertical; min-height: 90px; }
 
 /* ---------- Cards & grids ---------- */
 .grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+/* Grid items default to min-width:auto, meaning they refuse to shrink below
+   their content's intrinsic width — a card with a nowrap row (e.g. a name +
+   a Follow button that won't shrink) can silently force the whole grid
+   track wider than the viewport. This is the fix, applied once here rather
+   than chased individually on every page that uses .grid. */
+.grid > * { min-width: 0; }
 .card {
   background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius); overflow: hidden;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import LoadingView from '../components/LoadingView';
-import { ActivityIndicator, Alert, Dimensions, Image, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, Pressable, RefreshControl, ScrollView, Share, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
@@ -197,6 +197,19 @@ export default function ProductScreen({ route, navigation }) {
         style={{ borderWidth: 1.5, borderColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.s }}
       >
         <Text style={{ color: colors.navy, fontWeight: '800', textAlign: 'center' }}>Ask the seller</Text>
+      </Pressable>
+      <Pressable
+        onPress={() => {
+          const price = product.onSale
+            ? money(product.effectivePrice, product.currency)
+            : money(product.price, product.currency);
+          Share.share({
+            message: `${product.name} — ${price} on Prointeractive\nhttps://prointapp.com/products/${product._id}`,
+          }).catch(() => {});
+        }}
+        style={{ borderWidth: 1.5, borderColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.s }}
+      >
+        <Text style={{ color: colors.navy, fontWeight: '800', textAlign: 'center' }}>📢 Share this product</Text>
       </Pressable>
 
       {asking ? (

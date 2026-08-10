@@ -159,6 +159,38 @@ if (isProd) {
     }
   });
 
+  app.get('/products/:id', async (req, res) => {
+    const html = loadIndexHtml();
+    try {
+      const { default: Product } = await import('./models/Product.js');
+      const product = await Product.findById(req.params.id).populate('business', 'name');
+      if (!product || !product.isActive) return res.send(html);
+
+      const base = process.env.APP_URL || 'https://prointapp.com';
+      const priceText = product.onSale
+        ? `${product.currency} ${product.effectivePrice.toLocaleString()} (was ${product.currency} ${product.price.toLocaleString()})`
+        : `${product.currency} ${product.price.toLocaleString()}`;
+      const title = escapeHtml(`${product.name} — ${priceText}`);
+      const desc = escapeHtml(
+        `${product.name} from ${product.business?.name || 'a verified seller'} on Prointeractive. ${priceText}.`
+      );
+      const url = `${base}/products/${product._id}`;
+      const image = product.images?.[0] || `${base}/og-image.png`;
+
+      const out = html
+        .replace(/<title>[\s\S]*?<\/title>/, `<title>${title}</title>`)
+        .replace(/(property="og:title" content=")[^"]*(")/, `$1${title}$2`)
+        .replace(/(property="og:description" content=")[^"]*(")/, `$1${desc}$2`)
+        .replace(/(property="og:url" content=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(property="og:image" content=")[^"]*(")/, `$1${escapeHtml(image)}$2`)
+        .replace(/(name="twitter:image" content=")[^"]*(")/, `$1${escapeHtml(image)}$2`)
+        .replace(/(name="description" content=")[^"]*(")/, `$1${desc}$2`);
+      res.send(out);
+    } catch (_err) {
+      res.send(html);
+    }
+  });
+
   app.get(/^(?!\/api\/).*/, (req, res) => res.sendFile(path.join(dist, 'index.html')));
 }
 

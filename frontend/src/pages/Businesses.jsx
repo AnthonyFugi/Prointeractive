@@ -101,7 +101,7 @@ export default function Businesses() {
                     {b.logoUrl ? <img src={b.logoUrl} alt={b.name} /> : b.name[0].toUpperCase()}
                   </div>
                   <div className="card-body">
-                    <div className="row spread" style={{ gap: '0.5rem', flexWrap: 'nowrap' }}>
+                    <div className="row spread" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
                       <span className="name" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {b.name}{b.verified && <VerifiedBadge size={15} />}
                       </span>
