@@ -8,8 +8,12 @@ export default function CartScreen({ navigation }) {
   if (items.length === 0) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontWeight: '700', fontSize: 16 }}>Your cart is empty</Text>
-        <Text style={{ color: colors.muted, marginTop: 4 }}>Find something in the Shop tab.</Text>
+        <Text style={{ fontSize: 44 }}>🛒</Text>
+        <Text style={{ fontWeight: '700', fontSize: 16, marginTop: spacing.s }}>Your cart is empty</Text>
+        <Pressable onPress={() => navigation.navigate('ShopTab')}
+          style={{ backgroundColor: colors.navy, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24, marginTop: spacing.l }}>
+          <Text style={{ color: '#fff', fontWeight: '800' }}>Browse the shop</Text>
+        </Pressable>
       </View>
     );
   }

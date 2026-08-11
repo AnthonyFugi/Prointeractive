@@ -3,6 +3,15 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import SocialAuth from '../components/SocialAuth.jsx';
 
+function friendlySignInError(message) {
+  if (!message) return "We couldn't sign you in. Please try again.";
+  if (message === 'Invalid credentials') {
+    return "That email or password doesn't look right. Please try again.";
+  }
+  const looksTechnical = /error|failed to fetch|network request|timeout|undefined|null/i.test(message) && message.length > 60;
+  return looksTechnical ? "We couldn't sign you in. Please check your connection and try again." : message;
+}
+
 export default function Login() {
   const { login, loginWithGoogle, loginWithApple } = useAuth();
   const navigate = useNavigate();
@@ -17,7 +26,7 @@ export default function Login() {
       await fn(...args);
       navigate(location.state?.from || '/');
     } catch (err) {
-      setError(err.message);
+      setError(friendlySignInError(err.message));
     } finally {
       setBusy(false);
     }
@@ -30,7 +39,7 @@ export default function Login() {
       await login(form.email, form.password);
       navigate(location.state?.from || '/');
     } catch (err) {
-      setError(err.message);
+      setError(friendlySignInError(err.message));
     } finally {
       setBusy(false);
     }
@@ -42,10 +51,10 @@ export default function Login() {
         <h1>Sign in</h1>
         <form onSubmit={submit}>
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" required value={form.email}
+          <input id="email" type="email" autoComplete="email" required value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <label htmlFor="password">Password</label>
-          <input id="password" type="password" required value={form.password}
+          <input id="password" type="password" autoComplete="current-password" required value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })} />
           {error && <p className="error-text">{error}</p>}
           <button className="btn btn-red" style={{ marginTop: '1rem', width: '100%' }} disabled={busy}>

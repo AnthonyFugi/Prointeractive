@@ -10,7 +10,7 @@ import { colors, spacing } from '../theme';
 
 export default function BusinessScreen({ route, navigation }) {
   const { id } = route.params;
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [business, setBusiness] = useState(null);
   const [products, setProducts] = useState([]);
   const [fav, setFav] = useState(null); // null until user known
@@ -37,6 +37,10 @@ export default function BusinessScreen({ route, navigation }) {
     try {
       await api(`/businesses/${id}/favorite`, { method: 'POST', body: { favorited: !isFav } });
       setFav(!isFav);
+      // Sync the shared user object too — without this, the Account screen's
+      // Following list has no way to know anything changed, since it only
+      // re-fetches when user.favoriteBusinesses itself actually updates.
+      refresh?.();
     } catch (e) {
       Alert.alert('Failed', e.message);
     }

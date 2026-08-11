@@ -62,7 +62,23 @@ export default function OrdersScreen({ navigation }) {
       data={orders}
       keyExtractor={(o) => o._id}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      ListEmptyComponent={<Text style={{ textAlign: 'center', color: colors.muted, marginTop: 40 }}>No orders yet</Text>}
+      ListEmptyComponent={
+        <View style={{ alignItems: 'center', paddingTop: 60, paddingHorizontal: spacing.xl }}>
+          <Text style={{ fontSize: 56 }}>📦</Text>
+          <Text style={{ fontWeight: '800', fontSize: 18, marginTop: spacing.m, textAlign: 'center' }}>
+            No orders yet
+          </Text>
+          <Text style={{ color: colors.muted, marginTop: 4, textAlign: 'center' }}>
+            When you place an order, you'll be able to track it right here.
+          </Text>
+          <Pressable
+            onPress={() => navigation.navigate('ShopTab')}
+            style={{ backgroundColor: colors.navy, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24, marginTop: spacing.l }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '800' }}>Start shopping</Text>
+          </Pressable>
+        </View>
+      }
       renderItem={({ item: o }) => (
         <View style={{ backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.line, padding: spacing.l, marginBottom: spacing.s }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -1,5 +1,17 @@
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View } from 'react-native';
+
+function friendlySignInError(message) {
+  if (!message) return "We couldn't sign you in. Please try again.";
+  if (message === 'Invalid credentials') {
+    return "That email or password doesn't look right. Please try again.";
+  }
+  // Anything that doesn't read like a clean, specific message from our own
+  // backend (a network failure, a native SDK's own internal error text,
+  // etc.) — show a warm, generic fallback rather than raw technical text.
+  const looksTechnical = /error|failed to fetch|network request|timeout|undefined|null/i.test(message) && message.length > 60;
+  return looksTechnical ? "We couldn't sign you in. Please check your connection and try again." : message;
+}
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +31,7 @@ export default function LoginScreen({ navigation }) {
       await login(email, password);
       navigation.goBack();
     } catch (e) {
-      Alert.alert('Sign in failed', e.message);
+      Alert.alert('Sign in failed', friendlySignInError(e.message));
     } finally {
       setBusy(false);
     }
@@ -31,7 +43,7 @@ export default function LoginScreen({ navigation }) {
       await loginWithGoogle();
       navigation.goBack();
     } catch (e) {
-      if (!e.cancelled) Alert.alert('Sign in failed', e.message);
+      if (!e.cancelled) Alert.alert('Sign in failed', friendlySignInError(e.message));
     } finally {
       setGoogleBusy(false);
     }
@@ -43,7 +55,7 @@ export default function LoginScreen({ navigation }) {
       await loginWithApple();
       navigation.goBack();
     } catch (e) {
-      if (!e.cancelled) Alert.alert('Sign in failed', e.message);
+      if (!e.cancelled) Alert.alert('Sign in failed', friendlySignInError(e.message));
     } finally {
       setAppleBusy(false);
     }

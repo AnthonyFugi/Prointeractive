@@ -57,6 +57,10 @@ export default function ProductDetail() {
   if (!product) return <div className="container"><Loader /></div>;
 
   const addToCart = () => {
+    // Checked here, at the earliest point of commitment, rather than
+    // waiting until checkout — matching the same choice already made
+    // for mobile, so both platforms behave consistently.
+    if (!user) return navigate('/login', { state: { from: `/products/${id}` } });
     add(product, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 3500);

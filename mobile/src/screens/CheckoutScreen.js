@@ -22,7 +22,6 @@ export default function CheckoutScreen({ navigation }) {
   const groupList = Object.values(groups);
 
   const placeOrders = async () => {
-    if (!user) return navigation.navigate('AccountTab', { screen: 'Login' });
     if (!address.line1 || !address.city) return Alert.alert('Missing details', 'Please fill in your delivery address.');
     if (!address.phone) return Alert.alert('Phone needed', 'Add a phone number so the seller can reach you for delivery.');
     setBusy(true);
@@ -53,6 +52,27 @@ export default function CheckoutScreen({ navigation }) {
     }
   };
 
+  // Gate before the form ever renders — previously this only checked at the
+  // final "Place order" tap, meaning someone could fill in their entire
+  // delivery address and payment method first, only to be sent to log in
+  // and lose everything they'd just typed.
+  if (!user) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.paper, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}>
+        <Text style={{ fontWeight: '800', fontSize: 18, textAlign: 'center' }}>Sign in to check out</Text>
+        <Text style={{ color: colors.muted, textAlign: 'center', marginTop: spacing.s }}>
+          You'll need an account so we can send order updates and let the seller reach you.
+        </Text>
+        <Pressable
+          onPress={() => navigation.navigate('AccountTab', { screen: 'Login' })}
+          style={{ backgroundColor: colors.navy, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 28, marginTop: spacing.l }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '800' }}>Sign in</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ padding: spacing.l }}>
       {groupList.map((g) => (
@@ -63,21 +83,21 @@ export default function CheckoutScreen({ navigation }) {
       <Text style={{ color: colors.red, fontWeight: '900', fontSize: 20, marginTop: spacing.s }}>{money(total)}</Text>
 
       <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Delivery address</Text>
-      <TextInput placeholder="Address" value={address.line1}
+      <TextInput placeholder="Address" placeholderTextColor={colors.muted} value={address.line1}
         onChangeText={(v) => setAddress({ ...address, line1: v })}
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
-      <TextInput placeholder="City" value={address.city}
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s, fontSize: 15, color: colors.ink }} />
+      <TextInput placeholder="City" placeholderTextColor={colors.muted} value={address.city}
         onChangeText={(v) => setAddress({ ...address, city: v })}
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
-      <TextInput placeholder="Country" value={address.country}
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s, fontSize: 15, color: colors.ink }} />
+      <TextInput placeholder="Country" placeholderTextColor={colors.muted} value={address.country}
         onChangeText={(v) => setAddress({ ...address, country: v })}
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
-      <TextInput placeholder="Phone number (for the delivery)" keyboardType="phone-pad" value={address.phone}
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s, fontSize: 15, color: colors.ink }} />
+      <TextInput placeholder="Phone number (for the delivery)" placeholderTextColor={colors.muted} keyboardType="phone-pad" value={address.phone}
         onChangeText={(v) => setAddress({ ...address, phone: v })}
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
-      <TextInput placeholder="Delivery note — landmarks, directions (optional)" value={address.note}
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s, fontSize: 15, color: colors.ink }} />
+      <TextInput placeholder="Delivery note — landmarks, directions (optional)" placeholderTextColor={colors.muted} value={address.note}
         onChangeText={(v) => setAddress({ ...address, note: v })}
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s }} />
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s, fontSize: 15, color: colors.ink }} />
 
       <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Payment method</Text>
       {METHODS.map((m) => (

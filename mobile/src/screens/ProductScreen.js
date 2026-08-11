@@ -10,7 +10,7 @@ import { colors, money, spacing } from '../theme';
 export default function ProductScreen({ route, navigation }) {
   const { id } = route.params;
   const { add } = useCart();
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [message, setMessage] = useState('');
@@ -161,6 +161,10 @@ export default function ProductScreen({ route, navigation }) {
       <Pressable
         disabled={product.stock < 1}
         onPress={() => {
+          // Checked here, at the earliest point of commitment, rather than
+          // waiting until checkout — so someone never builds up a cart only
+          // to be asked to sign in once they're ready to actually order.
+          if (!user) return navigation.navigate('AccountTab', { screen: 'Login' });
           add(product, 1);
           setJustAdded(true);
           setTimeout(() => setJustAdded(false), 3000);
@@ -179,6 +183,7 @@ export default function ProductScreen({ route, navigation }) {
               try {
                 await api(`/products/${product._id}/favorite`, { method: 'POST', body: { favorited: !isSaved } });
                 setSavedLocal(!isSaved);
+                refresh?.();
               } catch (e) { Alert.alert('Failed', e.message); }
             }}
             style={{
@@ -218,8 +223,9 @@ export default function ProductScreen({ route, navigation }) {
             value={message}
             onChangeText={setMessage}
             placeholder="Is this available in other sizes?"
+            placeholderTextColor={colors.muted}
             multiline
-            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, minHeight: 80 }}
+            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, minHeight: 80, fontSize: 15, color: colors.ink }}
           />
           <Pressable onPress={askSeller} disabled={sendingAsk}
             style={{ backgroundColor: colors.navy, opacity: sendingAsk ? 0.6 : 1, borderRadius: 10, padding: 12, marginTop: spacing.s }}>
@@ -281,7 +287,7 @@ export default function ProductScreen({ route, navigation }) {
             value={myComment}
             onChangeText={setMyComment}
             multiline
-            style={{ backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: 10, marginTop: spacing.s, minHeight: 60 }}
+            style={{ backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 8, padding: 10, marginTop: spacing.s, minHeight: 60, fontSize: 15, color: colors.ink }}
           />
           <Pressable onPress={submitReview} disabled={sendingReview}
             style={{ backgroundColor: colors.navy, opacity: sendingReview ? 0.6 : 1, borderRadius: 8, padding: 12, marginTop: spacing.s }}>

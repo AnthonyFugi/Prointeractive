@@ -6,18 +6,39 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { colors, spacing } from '../theme';
 
 export default function BusinessesScreen({ navigation }) {
-  const { user } = useAuth();
-  const [followSet, setFollowSet] = useState(null); // null until seeded from user
-  const followedIds = followSet || new Set((user?.favoriteBusinesses || []).map(String));
+  const { user, refresh } = useAuth();
+  // followedIds is ALWAYS computed fresh from user — never cached locally —
+  // so a change made anywhere else (like unfollowing from the Account
+  // screen) is reflected here immediately, not just the other way round.
+  // `pending` is only a short-lived optimistic flag for whichever single
+  // item is currently mid-request, cleared the moment it settles either
+  // way, so it can never "lock in" and go stale the way a whole cached
+  // Set previously did.
+  const [pending, setPending] = useState({});
+  const followedIds = new Set((user?.favoriteBusinesses || []).map(String));
+  const isFollowed = (id) => {
+    const key = String(id);
+    return Object.prototype.hasOwnProperty.call(pending, key) ? pending[key] : followedIds.has(key);
+  };
   const toggleFollow = async (b) => {
-    const isOn = followedIds.has(String(b._id));
-    const next = new Set(followedIds);
-    if (isOn) next.delete(String(b._id)); else next.add(String(b._id));
-    setFollowSet(next); // optimistic
+    const id = String(b._id);
+    const isOn = isFollowed(id);
+    setPending((p) => ({ ...p, [id]: !isOn })); // optimistic, this item only
     try {
       await api(`/businesses/${b._id}/favorite`, { method: 'POST', body: { favorited: !isOn } });
+      // Sync the shared user object — this is the real source of truth
+      // followedIds reads from; once it resolves, the pending override for
+      // this item is cleared below and the fresh, correct value takes over.
+      await refresh?.();
     } catch (e) {
-      setFollowSet(followedIds); // revert
+      // leave pending as-is on failure momentarily; cleared in finally below
+      // reverts visually back to the pre-toggle state since user never changed
+    } finally {
+      setPending((p) => {
+        const next = { ...p };
+        delete next[id];
+        return next;
+      });
     }
   };
   const [q, setQ] = useState('');
@@ -48,8 +69,9 @@ export default function BusinessesScreen({ navigation }) {
         onChangeText={setQ}
         onSubmitEditing={() => setQuery(q)}
         placeholder="Search businesses…"
+        placeholderTextColor={colors.muted}
         returnKeyType="search"
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: colors.ink }}
       />
       <FlatList
         data={businesses}
@@ -76,6 +98,7 @@ export default function BusinessesScreen({ navigation }) {
               )}
               <Text style={{ fontWeight: '700', fontSize: 16, flexShrink: 1 }}>{b.name}</Text>
               {b.verified ? <VerifiedBadge size={15} /> : null}
+              <View style={{ width: 6 }} />
               <View style={{ flex: 1 }} />
               {user && user.role === 'customer' ? (
                 <Pressable
@@ -84,11 +107,11 @@ export default function BusinessesScreen({ navigation }) {
                   style={{
                     borderRadius: 999, borderWidth: 1.5, paddingHorizontal: 10, paddingVertical: 4,
                     borderColor: colors.red,
-                    backgroundColor: followedIds.has(String(b._id)) ? colors.red : 'transparent',
+                    backgroundColor: isFollowed(b._id) ? colors.red : 'transparent',
                   }}
                 >
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: followedIds.has(String(b._id)) ? '#fff' : colors.red }}>
-                    {followedIds.has(String(b._id)) ? '✓ Following' : '+ Follow'}
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: isFollowed(b._id) ? '#fff' : colors.red }}>
+                    {isFollowed(b._id) ? '✓ Following' : '+ Follow'}
                   </Text>
                 </Pressable>
               ) : null}

@@ -158,6 +158,8 @@ function Tabs() {
           <Tab.Screen name="ShopTab" component={ShopStackScreen} options={{ tabBarLabel: 'Shop' }} />
           <Tab.Screen name="ProductsTab" component={SellerProductsStackScreen} options={{ tabBarLabel: 'Products' }} />
           <Tab.Screen name="InboxTab" component={InboxStackScreen} options={{ tabBarLabel: 'Inbox' }} />
+          <Tab.Screen name="CartTab" component={CartStackScreen}
+            options={{ tabBarLabel: 'Cart', tabBarBadge: count > 0 ? count : undefined }} />
           <Tab.Screen name="SellerOrdersTab" component={SellerOrdersStackScreen} options={{ tabBarLabel: 'Orders' }} />
           <Tab.Screen name="AccountTab" component={AccountStackScreen} options={{ tabBarLabel: 'Account' }} />
         </>

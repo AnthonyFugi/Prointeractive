@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GoogleSignin, isErrorWithCode, statusCodes } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import Constants from 'expo-constants';
 
@@ -52,7 +52,13 @@ export async function signInWithGoogle() {
     }
     return idToken;
   } catch (e) {
-    if (e.code === 'SIGN_IN_CANCELLED' || e.code === '-5' || /cancel/i.test(e.message || '')) {
+    // The library's own documented pattern: use isErrorWithCode() as a type
+    // guard before comparing against statusCodes, rather than comparing a
+    // raw string directly — a raw comparison has a real, documented history
+    // of misclassifying genuine cancellations as failures on this exact
+    // Expo/RN generation, which is exactly what surfaces as a confusing
+    // technical error instead of the sign-in sheet just quietly closing.
+    if (isErrorWithCode(e) && e.code === statusCodes.SIGN_IN_CANCELLED) {
       const err = new Error('Sign-in was cancelled.');
       err.cancelled = true;
       throw err;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +28,13 @@ export default function AccountScreen({ navigation }) {
     try {
       await api(`/businesses/${b._id}/favorite`, { method: 'POST', body: { favorited: false } });
       setFollowing((prev) => (prev || []).filter((x) => x._id !== b._id));
+      // This was the missing piece — every other screen (Businesses,
+      // BusinessScreen, ProductScreen) was already fixed to read fresh from
+      // user.favoriteBusinesses, but Account's own Unfollow button never
+      // actually updated that shared object, only its own local list. So
+      // the other screens were correctly reading a value that had never
+      // been told anything changed.
+      refresh?.();
     } catch (_e) {}
   };
 
@@ -61,27 +68,58 @@ export default function AccountScreen({ navigation }) {
             </View>
           ) : null}
           {user.role === 'customer' && following && following.length > 0 ? (
-            <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.l }}>
+            <View style={{ marginTop: spacing.l }}>
               <Text style={{ fontWeight: '800', marginBottom: spacing.s }}>Following ({following.length})</Text>
               {following.map((b) => (
-                <View key={b._id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
-                  <Pressable style={{ flex: 1 }} onPress={() => navigation.navigate('ShopTab')}>
-                    <Text style={{ fontWeight: '600' }} numberOfLines={1}>{b.name}</Text>
+                <View
+                  key={b._id}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center',
+                    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10,
+                    padding: 10, marginBottom: spacing.s,
+                  }}
+                >
+                  {b.logoUrl ? (
+                    <Image
+                      source={{ uri: b.logoUrl }}
+                      style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line, marginRight: spacing.m }}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: colors.navySoft, marginRight: spacing.m, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ color: colors.navy, fontWeight: '800', fontSize: 16 }}>{b.name?.[0]?.toUpperCase() || '?'}</Text>
+                    </View>
+                  )}
+                  <Pressable style={{ flex: 1 }} onPress={() => navigation.navigate('Business', { id: b._id })}>
+                    <Text style={{ fontWeight: '700' }} numberOfLines={1}>{b.name}</Text>
                     <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
                       {(b.categories && b.categories.length ? b.categories.join(' · ') : b.category) || ''}
                     </Text>
                   </Pressable>
-                  <Text style={{ color: colors.muted, fontWeight: '700', fontSize: 12, paddingLeft: 10 }} onPress={() => unfollow(b)}>
-                    Unfollow
-                  </Text>
+                  <Pressable
+                    onPress={() => unfollow(b)}
+                    hitSlop={8}
+                    style={{ borderWidth: 1.5, borderColor: colors.red, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginLeft: spacing.s }}
+                  >
+                    <Text style={{ color: colors.red, fontWeight: '700', fontSize: 12 }}>Unfollow</Text>
+                  </Pressable>
                 </View>
               ))}
             </View>
           ) : null}
 
           <Pressable onPress={() => navigation.navigate('Inbox')}
-            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.xl }}>
-            <Text style={{ fontWeight: '700' }}>Inbox — conversations with businesses</Text>
+            style={{
+              flexDirection: 'row', alignItems: 'center',
+              backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10,
+              padding: 14, marginTop: spacing.xl,
+            }}>
+            <Text style={{ fontSize: 20, marginRight: 10 }}>💬</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700' }}>Messages</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, marginTop: 1 }}>Conversations with businesses</Text>
+            </View>
+            <Text style={{ color: colors.muted, fontSize: 18 }}>›</Text>
           </Pressable>
           <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 14, marginTop: spacing.s }}>
             <Text style={{ fontWeight: '700', marginBottom: 8 }}>Display currency</Text>
