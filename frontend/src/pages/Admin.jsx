@@ -202,7 +202,7 @@ export default function Admin() {
               </div>
             ))}
           </div>
-        ) : <p className="muted">Loading…</p>
+        ) : <Loader />
       )}
 
       {tab === 'businesses' && (

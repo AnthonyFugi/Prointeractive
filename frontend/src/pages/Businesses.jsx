@@ -1,10 +1,35 @@
 import { useEffect, useState } from 'react';
+import Loader from '../components/Loader.jsx';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Rating from '../components/Rating.jsx';
 import VerifiedBadge from '../components/VerifiedBadge.jsx';
+import { getDominantColor } from '../utils/dominantColor.js';
 
+
+function BusinessCardImg({ business }) {
+  const [wash, setWash] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (business.logoUrl) {
+      getDominantColor(business.logoUrl).then((color) => {
+        if (!cancelled) setWash(color);
+      });
+    }
+    return () => { cancelled = true; };
+  }, [business.logoUrl]);
+
+  return (
+    <div
+      className={`card-img${business.logoUrl ? ' logo' : ''}`}
+      style={wash ? { backgroundColor: wash } : undefined}
+    >
+      {business.logoUrl ? <img src={business.logoUrl} alt={business.name} /> : business.name[0].toUpperCase()}
+    </div>
+  );
+}
 
 export default function Businesses() {
   const { user, refresh } = useAuth();
@@ -85,7 +110,7 @@ export default function Businesses() {
 
       {error && <p className="error-text">{error}</p>}
       {loading ? (
-        <p className="muted">Loading businesses…</p>
+        <Loader label="Loading businesses…" />
       ) : data.businesses.length === 0 ? (
         <div className="empty">
           <h3>No businesses found</h3>
@@ -97,25 +122,21 @@ export default function Businesses() {
             {data.businesses.map((b) => (
               <Link key={b._id} to={`/businesses/${b.slug || b._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <article className="card">
-                  <div className={`card-img${b.logoUrl ? ' logo' : ''}`}>
-                    {b.logoUrl ? <img src={b.logoUrl} alt={b.name} /> : b.name[0].toUpperCase()}
-                  </div>
+                  <BusinessCardImg business={b} />
                   <div className="card-body">
-                    <div className="row spread" style={{ gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <span className="name" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {b.name}{b.verified && <VerifiedBadge size={15} />}
-                      </span>
-                      {(!user || user.role === 'customer') && (
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${followed(b._id) ? 'btn-red' : 'btn-ghost'}`}
-                          style={{ flexShrink: 0 }}
-                          onClick={(e) => toggleFollow(e, b)}
-                        >
-                          {followed(b._id) ? '✓ Following' : '+ Follow'}
-                        </button>
-                      )}
-                    </div>
+                    <span className="name" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                      {b.name}{b.verified && <VerifiedBadge size={15} />}
+                    </span>
+                    {(!user || user.role === 'customer') && (
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${followed(b._id) ? 'btn-red' : 'btn-ghost'}`}
+                        style={{ alignSelf: 'flex-start' }}
+                        onClick={(e) => toggleFollow(e, b)}
+                      >
+                        {followed(b._id) ? '✓ Following' : '+ Follow'}
+                      </button>
+                    )}
                     <span className="biz">{(b.categories?.length ? b.categories.join(' · ') : b.category)}{b.location && ` · ${b.location}`}</span>
                     {b.ratingCount > 0 && <Rating value={b.ratingAverage} count={b.ratingCount} />}
                   </div>

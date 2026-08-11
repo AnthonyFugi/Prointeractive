@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Loader from '../components/Loader.jsx';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -58,7 +59,7 @@ export default function InquiryThread() {
   };
 
   if (error) return <div className="container"><p className="error-text">{error}</p></div>;
-  if (!inquiry) return <div className="container"><p className="muted">Loading…</p></div>;
+  if (!inquiry) return <div className="container"><Loader /></div>;
 
   const iAmCustomer = user && inquiry.customer && (inquiry.customer._id === user.id || inquiry.customer === user.id);
   const otherPartyId = iAmCustomer ? inquiry.business?.owner : inquiry.customer?._id || inquiry.customer;

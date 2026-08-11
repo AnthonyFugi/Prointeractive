@@ -61,6 +61,7 @@ a:hover { text-decoration: underline; }
 .wordmark { display: flex; align-items: center; gap: 0.5rem; }
 .wordmark .dot { color: var(--red); }
 .nav-right { display: flex; align-items: center; gap: 0.6rem; margin-left: auto; order: 3; }
+.nav-quick-account { display: none !important; }
 @media (max-width: 760px) {
   .nav-inner { padding: 0.75rem 1rem; }
 }
@@ -361,6 +362,7 @@ main { min-height: 70vh; padding-bottom: 2rem; }
 }
 
 .nav-toggle { display: block; }
+  .nav-quick-account { display: flex !important; align-items: center; }
   .nav-links {
     display: none; order: 4; width: 100%;
     flex-direction: column; align-items: flex-start; gap: 0.25rem;
@@ -371,6 +373,12 @@ main { min-height: 70vh; padding-bottom: 2rem; }
 }
 
 @media (max-width: 640px) {
+  /* Section headers ("Featured — Hand-picked on Prointeractive" etc.) use
+     justify-content: space-between on desktop, which reads fine with room
+     to breathe. On a narrow phone there isn't enough width to actually
+     spread them apart, so the subtitle ends up crammed right next to the
+     heading instead. Stacking them removes the cramped adjacency entirely. */
+  .section-header { flex-direction: column; align-items: flex-start !important; gap: 0.15rem; }
   .searchbar { flex-direction: column; }
   .grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
   .hero { padding: 2rem 0 1.25rem; }

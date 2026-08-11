@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Loader from '../components/Loader.jsx';
 import { Link } from 'react-router-dom';
 import { api, money } from '../api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
@@ -324,7 +325,7 @@ export default function Dashboard() {
     }
   };
 
-  if (!checked) return <div className="container"><p className="muted">Loading…</p></div>;
+  if (!checked) return <div className="container"><Loader /></div>;
 
   if (!business) {
     return (

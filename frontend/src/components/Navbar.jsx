@@ -21,6 +21,23 @@ export default function Navbar() {
         </Link>
 
         <div className="nav-right">
+          {/* Always reachable on mobile, even with the hamburger menu closed —
+              without this, "Sign in" was only ever visible after opening the
+              menu, with nothing on the collapsed header hinting it existed. */}
+          {user ? (
+            <Link
+              to={user.role === 'business' ? '/dashboard' : user.role === 'admin' ? '/admin' : '/account'}
+              className="nav-quick-account"
+              onClick={close}
+              title={user.role === 'business' ? 'Your dashboard' : user.role === 'admin' ? 'Admin console' : 'My account'}
+            >
+              <span className="nav-user-avatar" aria-hidden="true">{user.name?.[0]?.toUpperCase() || '?'}</span>
+            </Link>
+          ) : (
+            <Link to="/login" className="nav-quick-account btn btn-ghost btn-sm" onClick={close}>
+              Sign in
+            </Link>
+          )}
           <Link to="/cart" className="cart-pill" onClick={close}>Cart · {count}</Link>
           <button
             className="nav-toggle"

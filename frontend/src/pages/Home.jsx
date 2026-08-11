@@ -149,7 +149,7 @@ export default function Home() {
 
       {(featured.length > 0 || featuredBiz.length > 0) && !query && !category && !favoritesOnly && !savedOnly && (
         <section className="featured-band">
-          <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
+          <div className="row spread section-header" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
             <h2 style={{ margin: 0 }}>Featured</h2>
             <span className="muted" style={{ fontSize: '0.85rem' }}>Hand-picked on Prointeractive</span>
           </div>
@@ -177,7 +177,7 @@ export default function Home() {
 
       {deals.length > 0 && !query && !category && !favoritesOnly && !savedOnly && (
         <section className="trending-band" style={{ borderColor: 'var(--red)' }}>
-          <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
+          <div className="row spread section-header" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
             <h2 style={{ margin: 0 }}>Deals 🏷️</h2>
             <Link to="/deals" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--red)' }}>See all deals →</Link>
           </div>
@@ -193,7 +193,7 @@ export default function Home() {
 
       {trending.length > 0 && !query && !category && !favoritesOnly && !savedOnly && (
         <section className="trending-band">
-          <div className="row spread" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
+          <div className="row spread section-header" style={{ alignItems: 'baseline', marginBottom: '0.5rem' }}>
             <h2 style={{ margin: 0 }}>Trending 🔥</h2>
             <span className="muted" style={{ fontSize: '0.85rem' }}>Most ordered this month</span>
           </div>
