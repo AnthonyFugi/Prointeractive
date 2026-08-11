@@ -376,6 +376,13 @@ main { min-height: 70vh; padding-bottom: 2rem; }
   .hero { padding: 2rem 0 1.25rem; }
   .container { padding: 0 1rem; }
   .panel { padding: 1rem; }
+  /* Tabs default to a horizontally-scrolling row with a deliberately
+     hidden scrollbar (a nice look on desktop) — but on a narrow phone that
+     means later tabs (e.g. "Payouts") can be pushed off-screen with zero
+     visual hint that there's more to scroll to. Wrapping instead guarantees
+     every tab is always visible without anyone needing to discover a swipe. */
+  .tabs { overflow-x: visible; flex-wrap: wrap; }
+  .tab { flex-shrink: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
