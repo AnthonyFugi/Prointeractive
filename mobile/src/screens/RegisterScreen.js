@@ -8,7 +8,7 @@ import { colors, spacing } from '../theme';
 
 const inputStyle = {
   backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,
-  borderRadius: 10, padding: 12,
+  borderRadius: 10, padding: 12, fontSize: 15, color: colors.ink,
 };
 const labelStyle = { fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.m, color: colors.ink };
 
@@ -106,19 +106,19 @@ export default function RegisterScreen({ navigation }) {
       </View>
 
       <Text style={labelStyle}>Full name</Text>
-      <TextInput placeholder="Name" value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} style={inputStyle} />
+      <TextInput placeholder="Name" placeholderTextColor={colors.muted} value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} style={inputStyle} />
       <Text style={labelStyle}>Email</Text>
-      <TextInput placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={form.email}
+      <TextInput placeholder="Email" placeholderTextColor={colors.muted} autoCapitalize="none" keyboardType="email-address" textContentType="username" autoComplete="email" value={form.email}
         onChangeText={(v) => setForm({ ...form, email: v })} style={inputStyle} />
       <Text style={labelStyle}>Password</Text>
-      <TextInput placeholder="Password (8+ characters)" secureTextEntry value={form.password}
+      <TextInput placeholder="Password (8+ characters)" placeholderTextColor={colors.muted} secureTextEntry value={form.password} textContentType="newPassword" autoComplete="new-password"
         onChangeText={(v) => setForm({ ...form, password: v })} style={inputStyle} />
 
       {role === 'business' ? (
         <View style={{ marginTop: spacing.l, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.m }}>
           <Text style={{ fontWeight: '800', fontSize: 16 }}>Your store</Text>
           <Text style={labelStyle}>Business name</Text>
-          <TextInput placeholder="e.g. Khah Technology" value={biz.name} onChangeText={(v) => setBiz({ ...biz, name: v })} style={inputStyle} />
+          <TextInput placeholder="e.g. Khah Technology" placeholderTextColor={colors.muted} value={biz.name} onChangeText={(v) => setBiz({ ...biz, name: v })} style={inputStyle} />
           <Text style={labelStyle}>
             Categories <Text style={{ color: colors.muted, fontWeight: '400' }}>(up to 3 — {pickedCats.length}/3)</Text>
           </Text>
@@ -138,11 +138,11 @@ export default function RegisterScreen({ navigation }) {
             })}
           </View>
           <Text style={labelStyle}>Location <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
-          <TextInput placeholder="e.g. Lusaka" value={biz.location} onChangeText={(v) => setBiz({ ...biz, location: v })} style={inputStyle} />
+          <TextInput placeholder="e.g. Lusaka" placeholderTextColor={colors.muted} value={biz.location} onChangeText={(v) => setBiz({ ...biz, location: v })} style={inputStyle} />
           <Text style={labelStyle}>Business phone <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
-          <TextInput placeholder="09..." keyboardType="phone-pad" value={biz.phone} onChangeText={(v) => setBiz({ ...biz, phone: v })} style={inputStyle} />
+          <TextInput placeholder="09..." placeholderTextColor={colors.muted} keyboardType="phone-pad" value={biz.phone} onChangeText={(v) => setBiz({ ...biz, phone: v })} style={inputStyle} />
           <Text style={labelStyle}>Short description <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
-          <TextInput placeholder="What do you sell?" multiline value={biz.description}
+          <TextInput placeholder="What do you sell?" placeholderTextColor={colors.muted} multiline value={biz.description}
             onChangeText={(v) => setBiz({ ...biz, description: v })} style={[inputStyle, { minHeight: 70 }]} />
         </View>
       ) : null}
@@ -167,7 +167,7 @@ export default function RegisterScreen({ navigation }) {
       <Pressable onPress={submit} disabled={busy}
         style={{ backgroundColor: colors.red, opacity: busy ? 0.6 : 1, borderRadius: 12, padding: 16, marginTop: spacing.l }}>
         <Text style={{ color: '#fff', fontWeight: '800', textAlign: 'center', fontSize: 16 }}>
-          {busy ? 'Creating…' : role === 'business' ? 'Create account & open store' : 'Create account'}
+          {busy ? 'Creating…' : role === 'business' ? 'Create account & Open store' : 'Create account'}
         </Text>
       </Pressable>
 

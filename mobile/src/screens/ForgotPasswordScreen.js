@@ -45,11 +45,14 @@ export default function ForgotPasswordScreen({ navigation }) {
       </Text>
       <TextInput
         placeholder="Email"
+        placeholderTextColor={colors.muted}
         autoCapitalize="none"
         keyboardType="email-address"
+        textContentType="username"
+        autoComplete="email"
         value={email}
         onChangeText={setEmail}
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.l }}
+        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.l, fontSize: 15, color: colors.ink }}
       />
       <Pressable onPress={submit} disabled={busy}
         style={{ backgroundColor: colors.red, opacity: busy ? 0.6 : 1, borderRadius: 10, padding: 14, marginTop: spacing.l }}>
