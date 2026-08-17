@@ -204,6 +204,11 @@ export const updateProduct = async (req, res, next) => {
       if (req.body[f] !== undefined) product[f] = req.body[f];
     });
     await product.save();
+    // Populate before responding — without this, any caller that trusts
+    // this response to refresh its local state (e.g. Admin's product list)
+    // ends up overwriting a properly-populated business object with a raw,
+    // unpopulated ObjectId, which then displays as "Unknown business".
+    await product.populate('business', 'name slug verified');
     res.json({ success: true, product });
   } catch (err) {
     next(err);

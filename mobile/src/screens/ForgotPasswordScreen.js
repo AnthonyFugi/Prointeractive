@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import { colors, spacing } from '../theme';
 
@@ -23,7 +23,7 @@ export default function ForgotPasswordScreen({ navigation }) {
 
   if (sent) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.xl, justifyContent: 'center' }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.paper, padding: spacing.xl, justifyContent: 'center' }}>
         <Text style={{ fontSize: 22, fontWeight: '800' }}>Check your email</Text>
         <Text style={{ color: colors.muted, marginTop: spacing.s, lineHeight: 21 }}>
           If that account exists, a reset link is on its way (valid for 15 minutes — check spam too).
@@ -33,12 +33,13 @@ export default function ForgotPasswordScreen({ navigation }) {
           style={{ backgroundColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.xl }}>
           <Text style={{ color: '#fff', fontWeight: '800', textAlign: 'center' }}>Back to sign in</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.xl, justifyContent: 'center' }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.paper }} keyboardVerticalOffset={90}>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl, justifyContent: 'center' }} keyboardShouldPersistTaps="handled">
       <Text style={{ fontSize: 26, fontWeight: '800' }}>Reset password</Text>
       <Text style={{ color: colors.muted, marginTop: 4 }}>
         Enter your account email and we'll send you a reset link.
@@ -60,6 +61,7 @@ export default function ForgotPasswordScreen({ navigation }) {
           {busy ? 'Sending…' : 'Send reset link'}
         </Text>
       </Pressable>
-    </View>
+    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

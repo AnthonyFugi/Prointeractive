@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
@@ -39,7 +39,10 @@ export default function AccountScreen({ navigation }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.xl }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.paper }}
+      contentContainerStyle={{ flexGrow: 1, padding: spacing.xl }}
+    >
       {user ? (
         <>
           <Text style={{ fontSize: 22, fontWeight: '800' }}>{user.name}</Text>
@@ -200,6 +203,6 @@ export default function AccountScreen({ navigation }) {
       <Text style={{ color: colors.muted, textAlign: 'center', marginTop: 'auto', fontSize: 12 }}>
         Pro·interactive — Making business interaction, Easy!
       </Text>
-    </View>
+    </ScrollView>
   );
 }

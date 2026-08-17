@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 function friendlySignInError(message) {
   if (!message) return "We couldn't sign you in. Please try again.";
@@ -62,7 +62,8 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper, padding: spacing.xl, justifyContent: 'center' }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.paper }} keyboardVerticalOffset={90}>
+    <ScrollView contentContainerStyle={{ flexGrow: 1, padding: spacing.xl, justifyContent: 'center' }} keyboardShouldPersistTaps="handled">
       <Text style={{ fontSize: 26, fontWeight: '800' }}>🔑 Sign in</Text>
       <Text style={{ color: colors.muted, fontSize: 13, marginTop: 6 }}>
         Follow stores you love, save items for later, track orders, and message businesses directly.
@@ -119,6 +120,7 @@ export default function LoginScreen({ navigation }) {
       <Pressable onPress={() => navigation.navigate('ForgotPassword')} style={{ marginTop: spacing.s }}>
         <Text style={{ color: colors.muted, textAlign: 'center', fontWeight: '600' }}>Forgot your password?</Text>
       </Pressable>
-    </View>
+    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

@@ -113,6 +113,10 @@ export const updateBusiness = async (req, res, next) => {
       if (req.body[f] !== undefined) business[f] = req.body[f];
     });
     await business.save();
+    // Same reasoning as updateProduct's populate — without this, a caller
+    // that trusts this response to refresh its local state (e.g. Admin's
+    // business list) loses the populated owner name/email it had before.
+    await business.populate('owner', 'name email');
     res.json({ success: true, business });
   } catch (err) {
     next(err);

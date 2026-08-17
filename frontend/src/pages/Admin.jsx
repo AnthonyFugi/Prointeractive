@@ -23,6 +23,10 @@ export default function Admin() {
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [editingCat, setEditingCat] = useState(null); // { id, name }
+  const [editingBusiness, setEditingBusiness] = useState(null); // full form object, or null
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editError, setEditError] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const moveCategory = async (index, dir) => {
     const next = [...categories];
@@ -166,6 +170,100 @@ export default function Admin() {
     }
   };
 
+  const openEditBusiness = (b) => {
+    setEditError('');
+    setEditingBusiness({
+      _id: b._id,
+      name: b.name || '',
+      description: b.description || '',
+      categories: b.categories?.length ? [...b.categories] : (b.category ? [b.category] : []),
+      location: b.location || '',
+      phone: b.phone || '',
+    });
+  };
+
+  const toggleEditCategory = (name) => {
+    setEditingBusiness((f) => {
+      const has = f.categories.includes(name);
+      return { ...f, categories: has ? f.categories.filter((c) => c !== name) : [...f.categories, name] };
+    });
+  };
+
+  const saveBusinessEdit = async (e) => {
+    e.preventDefault();
+    if (!editingBusiness.name.trim()) return setEditError('Business name is required.');
+    if (editingBusiness.categories.length === 0) return setEditError('Pick at least one category.');
+    setSavingEdit(true);
+    setEditError('');
+    try {
+      const d = await api(`/businesses/${editingBusiness._id}`, {
+        method: 'PATCH',
+        body: {
+          name: editingBusiness.name.trim(),
+          description: editingBusiness.description.trim(),
+          categories: editingBusiness.categories,
+          location: editingBusiness.location.trim(),
+          phone: editingBusiness.phone.trim(),
+        },
+      });
+      setBusinesses((prev) => prev.map((x) => (x._id === editingBusiness._id ? d.business : x)));
+      setEditingBusiness(null);
+    } catch (err) {
+      setEditError(err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const openEditProduct = (p) => {
+    setEditError('');
+    setEditingProduct({
+      _id: p._id,
+      name: p.name || '',
+      description: p.description || '',
+      price: p.price ?? '',
+      currency: p.currency || 'ZMW',
+      stock: p.stock ?? '',
+      category: p.category || '',
+      salePrice: p.salePrice ?? '',
+      saleEndsAt: p.saleEndsAt ? p.saleEndsAt.slice(0, 10) : '',
+    });
+  };
+
+  const saveProductEdit = async (e) => {
+    e.preventDefault();
+    const f = editingProduct;
+    if (!f.name.trim()) return setEditError('Product name is required.');
+    if (f.price === '' || Number(f.price) < 0) return setEditError('Enter a valid price.');
+    if (f.stock === '' || Number(f.stock) < 0) return setEditError('Enter a valid stock quantity.');
+    if (f.salePrice !== '' && !f.saleEndsAt) return setEditError('Set an end date for the sale, or clear the sale price.');
+    if (f.saleEndsAt && f.salePrice === '') return setEditError('Set a sale price, or clear the end date.');
+    if (f.salePrice !== '' && Number(f.salePrice) >= Number(f.price)) return setEditError('Sale price must be lower than the regular price.');
+    setSavingEdit(true);
+    setEditError('');
+    try {
+      const d = await api(`/products/${f._id}`, {
+        method: 'PATCH',
+        body: {
+          name: f.name.trim(),
+          description: f.description.trim(),
+          price: Number(f.price),
+          currency: f.currency,
+          stock: Number(f.stock),
+          category: f.category,
+          salePrice: f.salePrice === '' ? null : Number(f.salePrice),
+          saleEndsAt: f.saleEndsAt === '' ? null : f.saleEndsAt,
+        },
+      });
+      setAdminProducts((prev) => prev.map((x) => (x._id === f._id ? d.product : x)));
+      setEditingProduct(null);
+    } catch (err) {
+      setEditError(err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const STAT_LABELS = stats && [
     ['Users', stats.users],
     ['Businesses', stats.businesses],
@@ -260,6 +358,7 @@ export default function Admin() {
           </div>
           <div className="row">
             {b.closed && <span className="badge cancelled">closed</span>}
+            <button className="btn btn-sm btn-ghost" onClick={() => openEditBusiness(b)}>Edit</button>
             <button className={`btn btn-sm ${b.featured ? 'btn-red' : 'btn-ghost'}`} onClick={() => toggleBusinessFeatured(b)}>
               {b.featured ? '★ Featured' : '☆ Feature'}
             </button>
@@ -469,6 +568,7 @@ export default function Admin() {
               </div>
             </div>
             <div className="row">
+              <button className="btn btn-sm btn-ghost" onClick={() => openEditProduct(x)}>Edit</button>
               <button className={`btn btn-sm ${x.featured ? 'btn-red' : 'btn-ghost'}`} onClick={() => toggleProductFeatured(x)}>
                 {x.featured ? '★ Featured' : '☆ Feature'}
               </button>
@@ -600,6 +700,105 @@ export default function Admin() {
           </div>
         </div>
       ))}
+
+      {editingBusiness && (
+        <div className="modal-overlay" onClick={() => !savingEdit && setEditingBusiness(null)}>
+          <form className="modal-panel" onClick={(e) => e.stopPropagation()} onSubmit={saveBusinessEdit}>
+            <h3 style={{ marginTop: 0 }}>Edit business</h3>
+            <label htmlFor="ebname">Business name</label>
+            <input id="ebname" required value={editingBusiness.name}
+              onChange={(e) => setEditingBusiness({ ...editingBusiness, name: e.target.value })} />
+            <label htmlFor="ebdesc">Description</label>
+            <textarea id="ebdesc" rows={3} value={editingBusiness.description}
+              onChange={(e) => setEditingBusiness({ ...editingBusiness, description: e.target.value })} />
+            <label>Categories</label>
+            <div className="row" style={{ flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+              {categories.map((c) => {
+                const on = editingBusiness.categories.includes(c.name);
+                return (
+                  <button
+                    type="button"
+                    key={c._id}
+                    className={`btn btn-sm ${on ? 'btn-red' : 'btn-ghost'}`}
+                    onClick={() => toggleEditCategory(c.name)}
+                  >
+                    {c.name}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="row">
+              <div style={{ flex: 1 }}>
+                <label htmlFor="ebloc">Location</label>
+                <input id="ebloc" value={editingBusiness.location}
+                  onChange={(e) => setEditingBusiness({ ...editingBusiness, location: e.target.value })} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label htmlFor="ebphone">Phone</label>
+                <input id="ebphone" value={editingBusiness.phone}
+                  onChange={(e) => setEditingBusiness({ ...editingBusiness, phone: e.target.value })} />
+              </div>
+            </div>
+            {editError && <p className="error-text">{editError}</p>}
+            <div className="row" style={{ marginTop: '1rem', gap: '0.5rem' }}>
+              <button className="btn btn-red" disabled={savingEdit}>{savingEdit ? 'Saving…' : 'Save changes'}</button>
+              <button type="button" className="btn btn-ghost" disabled={savingEdit} onClick={() => setEditingBusiness(null)}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {editingProduct && (
+        <div className="modal-overlay" onClick={() => !savingEdit && setEditingProduct(null)}>
+          <form className="modal-panel" onClick={(e) => e.stopPropagation()} onSubmit={saveProductEdit}>
+            <h3 style={{ marginTop: 0 }}>Edit product</h3>
+            <label htmlFor="epname">Product name</label>
+            <input id="epname" required value={editingProduct.name}
+              onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })} />
+            <label htmlFor="epdesc">Description</label>
+            <textarea id="epdesc" rows={3} value={editingProduct.description}
+              onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })} />
+            <div className="row">
+              <div style={{ flex: 1 }}>
+                <label htmlFor="epprice">Price</label>
+                <input id="epprice" type="number" min="0" step="0.01" value={editingProduct.price}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })} style={{ minWidth: 0, width: '100%' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label htmlFor="epstock">Stock</label>
+                <input id="epstock" type="number" min="0" value={editingProduct.stock}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, stock: e.target.value })} style={{ minWidth: 0, width: '100%' }} />
+              </div>
+            </div>
+            <label htmlFor="epcat">Category</label>
+            <select id="epcat" value={editingProduct.category}
+              onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}>
+              {categories.map((c) => <option key={c._id} value={c.name}>{c.name}</option>)}
+            </select>
+            <div className="row">
+              <div style={{ flex: 1 }}>
+                <label htmlFor="epsale">Sale price (optional)</label>
+                <input id="epsale" type="number" min="0" step="0.01" value={editingProduct.salePrice}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, salePrice: e.target.value })} style={{ minWidth: 0, width: '100%' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label htmlFor="epsaleend">Sale ends</label>
+                <input id="epsaleend" type="date" value={editingProduct.saleEndsAt}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, saleEndsAt: e.target.value })} style={{ minWidth: 0, width: '100%' }} />
+              </div>
+            </div>
+            {editError && <p className="error-text">{editError}</p>}
+            <div className="row" style={{ marginTop: '1rem', gap: '0.5rem' }}>
+              <button className="btn btn-red" disabled={savingEdit}>{savingEdit ? 'Saving…' : 'Save changes'}</button>
+              <button type="button" className="btn btn-ghost" disabled={savingEdit} onClick={() => setEditingProduct(null)}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

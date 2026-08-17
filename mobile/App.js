@@ -34,8 +34,8 @@ const Tab = createBottomTabNavigator();
 // Consistent, breathable header styling on every stack
 const BrandHeader = () => (
   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-    <Image source={require('./assets/icon.png')} style={{ width: 26, height: 26, borderRadius: 6 }} />
-    <Text style={{ fontWeight: '800', fontSize: 17, color: colors.ink }}>Pro·interactive</Text>
+    <Image source={require('./assets/icon.png')} style={{ width: 36, height: 36, borderRadius: 8 }} />
+    <Text style={{ fontWeight: '800', fontSize: 19, color: colors.ink }}>Pro·interactive</Text>
   </View>
 );
 
