@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from './api.js';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
@@ -68,6 +68,47 @@ function PageTitle() {
   return null;
 }
 
+function AppDownloadBanner() {
+  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem('pi_app_banner_dismissed') === '1');
+  if (dismissed) return null;
+  const dismiss = () => {
+    sessionStorage.setItem('pi_app_banner_dismissed', '1');
+    setDismissed(true);
+  };
+  return (
+    <div
+      style={{
+        background: 'var(--navy)', color: '#fff', fontSize: '0.85rem',
+        padding: '0.55rem 1rem', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap', textAlign: 'center',
+      }}
+    >
+      <span>📱 Get the Prointeractive app for a faster, more personal experience.</span>
+      <a
+        href="https://apps.apple.com/zm/app/prointeractive/id6792581995"
+        target="_blank" rel="noopener noreferrer"
+        style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline' }}
+      >
+        App Store
+      </a>
+      <a
+        href="https://play.google.com/store/apps/details?id=com.proint"
+        target="_blank" rel="noopener noreferrer"
+        style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline' }}
+      >
+        Google Play
+      </a>
+      <button
+        onClick={dismiss}
+        aria-label="Dismiss"
+        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: '1rem', padding: '0 0.25rem' }}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
   // One ping per browser session, not per page — sessionStorage naturally
   // resets when the tab closes, so a visit is counted once per visit.
@@ -79,6 +120,7 @@ export default function App() {
 
   return (
     <>
+      <AppDownloadBanner />
       <Navbar />
       <PendingPaymentBanner />
       <main>
