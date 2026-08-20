@@ -49,7 +49,6 @@ export default function ForgotPasswordScreen({ navigation }) {
         placeholderTextColor={colors.muted}
         autoCapitalize="none"
         keyboardType="email-address"
-        textContentType="username"
         autoComplete="email"
         value={email}
         onChangeText={setEmail}

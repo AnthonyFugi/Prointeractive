@@ -121,6 +121,12 @@ export default function App() {
           <Link to="/privacy">Privacy</Link>
           <Link to="/product-standards">Standards</Link>
           <Link to="/corporate">Corporate</Link>
+          <a href="https://apps.apple.com/zm/app/prointeractive/id6792581995" target="_blank" rel="noopener noreferrer">
+            App Store
+          </a>
+          <a href="https://play.google.com/store/apps/details?id=com.proint" target="_blank" rel="noopener noreferrer">
+            Google Play
+          </a>
         </div>
       </footer>
     </>

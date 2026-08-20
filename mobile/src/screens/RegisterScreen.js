@@ -108,10 +108,10 @@ export default function RegisterScreen({ navigation }) {
       <Text style={labelStyle}>Full name</Text>
       <TextInput placeholder="Name" placeholderTextColor={colors.muted} value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} style={inputStyle} />
       <Text style={labelStyle}>Email</Text>
-      <TextInput placeholder="Email" placeholderTextColor={colors.muted} autoCapitalize="none" keyboardType="email-address" textContentType="username" autoComplete="email" value={form.email}
+      <TextInput placeholder="Email" placeholderTextColor={colors.muted} autoCapitalize="none" keyboardType="email-address" autoComplete="email" value={form.email}
         onChangeText={(v) => setForm({ ...form, email: v })} style={inputStyle} />
       <Text style={labelStyle}>Password</Text>
-      <TextInput placeholder="Password (8+ characters)" placeholderTextColor={colors.muted} secureTextEntry value={form.password} textContentType="newPassword" autoComplete="new-password"
+      <TextInput placeholder="Password (8+ characters)" placeholderTextColor={colors.muted} secureTextEntry value={form.password} autoComplete="new-password"
         onChangeText={(v) => setForm({ ...form, password: v })} style={inputStyle} />
 
       {role === 'business' ? (
