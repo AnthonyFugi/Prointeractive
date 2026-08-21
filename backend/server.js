@@ -153,7 +153,12 @@ if (isProd) {
       const { idOrSlug } = req.params;
       const business = (
         /^[0-9a-fA-F]{24}$/.test(idOrSlug) ? await Business.findById(idOrSlug) : null
-      ) || await Business.findOne({ slug: idOrSlug.toLowerCase() });
+      ) || await Business.findOne({ slug: idOrSlug.toLowerCase() })
+        // Same previousSlugs fallback as the API. Without it a link shared
+        // before a slug correction would still load the page (the client
+        // resolves it) but crawlers would get no preview — so the WhatsApp
+        // share would silently lose its card.
+        || await Business.findOne({ previousSlugs: idOrSlug.toLowerCase() });
 
       if (!business || business.closed) return res.send(html);
 

@@ -154,7 +154,10 @@ export const getBusiness = async (req, res, next) => {
     const { id } = req.params;
     const business = (
       /^[0-9a-fA-F]{24}$/.test(id) ? await Business.findById(id) : null
-    ) || await Business.findOne({ slug: id.toLowerCase() });
+    ) || await Business.findOne({ slug: id.toLowerCase() })
+      // Fall back to a slug this business used to have, so links shared before
+      // a correction still land on the right storefront.
+      || await Business.findOne({ previousSlugs: id.toLowerCase() });
     if (business && business.closed) {
       return res.status(404).json({ success: false, message: 'This storefront is closed' });
     }

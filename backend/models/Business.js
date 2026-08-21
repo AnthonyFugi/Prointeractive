@@ -11,6 +11,14 @@ const businessSchema = new mongoose.Schema(
     },
     name: { type: String, required: [true, 'Business name is required'], trim: true },
     slug: { type: String, unique: true, lowercase: true },
+    /**
+     * Slugs this business used to have.
+     *
+     * Changing a slug silently breaks every link already shared — in a WhatsApp
+     * group, in a printed flyer, in a Google result. Keeping the old ones and
+     * falling back to them on lookup means a correction costs nobody a visit.
+     */
+    previousSlugs: { type: [String], default: [], index: true },
     description: { type: String, default: '' },
     category: { type: String, lowercase: true, trim: true }, // legacy single value (kept in sync = categories[0])
     categories: { type: [String], default: [] },
@@ -40,11 +48,8 @@ const businessSchema = new mongoose.Schema(
 const slugify = (name) =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-// Slug is generated once and never changes — printed links stay valid even if
-// the business renames. Suffix added only when the clean slug is taken.
-// Same normalisation as User.phone. The "Chat on WhatsApp" button is built
-// from this value, and a number stored as typed produces a dead link for some
-// sellers and a working one for others.
+// Same normalisation as User.phone, so a number stored as typed doesn't
+// produce a dead link for some sellers and a working one for others.
 businessSchema.pre('save', function (next) {
   if (this.isModified('phone') && this.phone) {
     this.phone = normalizePhone(this.phone) || this.phone;
@@ -52,6 +57,14 @@ businessSchema.pre('save', function (next) {
   next();
 });
 
+// Slug is generated once and never changes on rename — printed and shared
+// links stay valid even if the business renames. Suffix added only when the
+// clean slug is taken.
+//
+// Deliberately no auto-regeneration: a slug that shifts under a shared link is
+// a broken link. When a slug genuinely needs correcting (created under a
+// placeholder name, say), scripts/fixBusinessSlug.js does it explicitly and
+// records the old one in previousSlugs so the old URL keeps resolving.
 businessSchema.pre('save', async function (next) {
   if (this.slug) return next();
   const base = slugify(this.name) || 'business';
