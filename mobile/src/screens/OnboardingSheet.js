@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { colors, spacing } from '../theme';
 import {
   getLocalInterests, setLocalInterests, hasSeenWelcome, markWelcomeSeen, shouldOfferOnboarding,
+  getPendingFollows, setPendingFollows, markOnboardingDoneLocally,
 } from '../interests';
 
 /**
@@ -18,13 +19,15 @@ import {
  * Rendered once, from the shop tab. `onInterestsChanged` lets HomeScreen
  * refetch with the new picks without a full remount.
  */
-export default function OnboardingSheet({ onInterestsChanged }) {
+export default function OnboardingSheet({ onInterestsChanged, navigation }) {
   const { user, refresh } = useAuth();
   const [stage, setStage] = useState(null); // null | 'welcome' | 'categories' | 'stores'
   const [categories, setCategories] = useState([]);
   const [chosen, setChosen] = useState(new Set());
   const [suggested, setSuggested] = useState([]);
   const [following, setFollowing] = useState(new Set());
+  // Signed-out: stores the visitor asked to follow, applied once they sign in.
+  const [pending, setPending] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
@@ -33,9 +36,10 @@ export default function OnboardingSheet({ onInterestsChanged }) {
     let alive = true;
     (async () => {
       const seen = await hasSeenWelcome();
+      const offer = await shouldOfferOnboarding(user);
       if (!alive) return;
       if (!seen) setStage('welcome');
-      else if (shouldOfferOnboarding(user)) setStage('categories');
+      else if (offer) setStage('categories');
     })();
     return () => { alive = false; };
   }, [user]);
@@ -43,10 +47,11 @@ export default function OnboardingSheet({ onInterestsChanged }) {
   useEffect(() => {
     if (stage !== 'categories' || categories.length) return;
     setLoading(true);
-    Promise.all([api('/categories'), getLocalInterests()])
-      .then(([d, local]) => {
+    Promise.all([api('/categories'), getLocalInterests(), getPendingFollows()])
+      .then(([d, local, pend]) => {
         setCategories(d.categories || []);
         setChosen(new Set(user?.interests?.length ? user.interests : local));
+        setPending(new Set(pend.map((b) => b.id)));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -62,6 +67,7 @@ export default function OnboardingSheet({ onInterestsChanged }) {
     });
 
   const persist = async (list, flags = {}) => {
+    if (flags.completed || flags.skipped) await markOnboardingDoneLocally();
     await setLocalInterests(list);
     if (!user) return;
     try {
@@ -85,7 +91,17 @@ export default function OnboardingSheet({ onInterestsChanged }) {
   };
 
   const toggleFollow = async (b) => {
-    if (!user) { setNote('Sign in to follow stores. Your picks are saved either way.'); return; }
+    if (!user) {
+      // Record the intent instead of rejecting the tap — applied on sign-in.
+      const on = !pending.has(b._id);
+      const next = new Set(pending);
+      on ? next.add(b._id) : next.delete(b._id);
+      setPending(next);
+      await setPendingFollows(
+        [...next].map((id) => ({ id, name: suggested.find((x) => x._id === id)?.name || '' }))
+      );
+      return;
+    }
     const on = !following.has(b._id);
     setFollowing((prev) => { const n = new Set(prev); on ? n.add(b._id) : n.delete(b._id); return n; });
     try {
@@ -103,6 +119,15 @@ export default function OnboardingSheet({ onInterestsChanged }) {
     setBusy(false);
     onInterestsChanged?.(list);
     setStage(null);
+  };
+
+  // Save first, then leave — nothing is lost on the way to the form, and the
+  // follows are applied automatically once they're signed in.
+  const leaveFor = (screen) => async () => {
+    await persist([...chosen], { completed: true });
+    await markWelcomeSeen();
+    setStage(null);
+    navigation?.navigate('AccountTab', { screen });
   };
 
   const skipPicker = async () => {
@@ -194,16 +219,32 @@ export default function OnboardingSheet({ onInterestsChanged }) {
                     </View>
                     <Pressable
                       onPress={() => toggleFollow(b)}
-                      style={[s.followBtn, following.has(b._id) ? s.followOn : s.followOff]}
+                      style={[s.followBtn, (user ? following.has(b._id) : pending.has(b._id)) ? s.followOn : s.followOff]}
                     >
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: following.has(b._id) ? colors.ink : '#fff' }}>
-                        {following.has(b._id) ? 'Following' : 'Follow'}
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: (user ? following.has(b._id) : pending.has(b._id)) ? colors.ink : '#fff' }}>
+                        {(user ? following.has(b._id) : pending.has(b._id)) ? (user ? 'Following' : 'Selected') : 'Follow'}
                       </Text>
                     </Pressable>
                   </View>
                 ))}
               </ScrollView>
               {note ? <Text style={{ color: colors.muted, fontSize: 12, marginBottom: spacing.s }}>{note}</Text> : null}
+              {!user && pending.size > 0 && (
+                <View style={s.signInBox}>
+                  <Text style={{ fontSize: 13, color: colors.ink, marginBottom: spacing.s }}>
+                    {pending.size === 1 ? '1 store selected.' : `${pending.size} stores selected.`}
+                    {' '}Sign in and we'll follow {pending.size === 1 ? 'it' : 'them'} for you.
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <Pressable style={[s.smallBtn, s.smallBtnNavy]} onPress={leaveFor('Register')}>
+                      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Create account</Text>
+                    </Pressable>
+                    <Pressable style={[s.smallBtn, s.smallBtnGhost]} onPress={leaveFor('Login')}>
+                      <Text style={{ color: colors.ink, fontWeight: '700', fontSize: 13 }}>Sign in</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
               <Pressable style={[s.btn, s.btnRed]} onPress={finish} disabled={busy}>
                 <Text style={s.btnRedText}>{busy ? 'Saving…' : 'Start shopping'}</Text>
               </Pressable>
@@ -237,4 +278,8 @@ const s = StyleSheet.create({
   followBtn: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5 },
   followOn: { backgroundColor: 'transparent', borderColor: colors.line },
   followOff: { backgroundColor: colors.navy, borderColor: colors.navy },
+  signInBox: { backgroundColor: colors.paper, borderRadius: 10, padding: spacing.m, marginBottom: spacing.s },
+  smallBtn: { flex: 1, borderRadius: 8, paddingVertical: 9, alignItems: 'center', borderWidth: 1.5 },
+  smallBtnNavy: { backgroundColor: colors.navy, borderColor: colors.navy },
+  smallBtnGhost: { backgroundColor: 'transparent', borderColor: colors.line },
 });

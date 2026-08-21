@@ -104,7 +104,7 @@ export default function HomeScreen({ navigation }) {
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       {/* Mounted only on the shop tab. A product opened from a shared link
           deep-links straight to ProductScreen and never meets this. */}
-      <OnboardingSheet onInterestsChanged={setInterests} />
+      <OnboardingSheet onInterestsChanged={setInterests} navigation={navigation} />
       <FlatList
         ref={listRef}
         onScroll={(e) => setShowScrollTop(e.nativeEvent.contentOffset.y > 600)}

@@ -12,6 +12,8 @@ import { api } from './api';
  */
 const INTERESTS_KEY = 'pi_interests';
 const SEEN_KEY = 'pi_welcome_seen';
+const PENDING_FOLLOWS_KEY = 'pi_pending_follows';
+const DONE_KEY = 'pi_onboarding_done';
 
 export async function getLocalInterests() {
   try {
@@ -45,10 +47,62 @@ export async function markWelcomeSeen() {
 }
 
 /**
+ * Stores a signed-out visitor asked to follow. Recorded rather than refused,
+ * then applied for real on sign-in, so the tap is never a dead end.
+ */
+export async function getPendingFollows() {
+  try {
+    const raw = await AsyncStorage.getItem(PENDING_FOLLOWS_KEY);
+    const v = raw ? JSON.parse(raw) : [];
+    return Array.isArray(v) ? v : [];
+  } catch { return []; }
+}
+
+export async function setPendingFollows(list) {
+  try { await AsyncStorage.setItem(PENDING_FOLLOWS_KEY, JSON.stringify(list || [])); } catch { /* ignore */ }
+}
+
+export async function clearPendingFollows() {
+  try { await AsyncStorage.removeItem(PENDING_FOLLOWS_KEY); } catch { /* ignore */ }
+}
+
+/** Best-effort per store: one failure shouldn't cost the others. */
+export async function applyPendingFollows() {
+  const pending = await getPendingFollows();
+  if (!pending.length) return 0;
+  const results = await Promise.allSettled(
+    pending.map((b) => api(`/businesses/${b.id}/favorite`, { method: 'POST', body: { favorited: true } }))
+  );
+  const failed = pending.filter((_, i) => results[i].status === 'rejected');
+  if (failed.length) await setPendingFollows(failed);
+  else await clearPendingFollows();
+  return pending.length - failed.length;
+}
+
+/**
+ * Local record that the picker has been dealt with on this device — covers the
+ * async gap at sign-up where the fresh account has no interests yet and the
+ * picker would otherwise reopen on someone who just finished it.
+ */
+export async function markOnboardingDoneLocally() {
+  try { await AsyncStorage.setItem(DONE_KEY, 'true'); } catch { /* ignore */ }
+}
+export async function isOnboardingDoneLocally() {
+  try { return (await AsyncStorage.getItem(DONE_KEY)) === 'true'; } catch { return false; }
+}
+export async function clearOnboardingDoneLocally() {
+  try { await AsyncStorage.removeItem(DONE_KEY); } catch { /* ignore */ }
+}
+
+/**
  * Fold locally-picked interests into a freshly signed-in account.
  * Union, so picks from another device survive.
  */
 export async function mergeLocalInterestsIntoAccount(user) {
+  // Follows first — they're what the shopper actively tapped, and they should
+  // land even when there were no interests to merge.
+  await applyPendingFollows().catch(() => {});
+
   const local = await getLocalInterests();
   if (!local.length) return null;
   const merged = [...new Set([...(user?.interests || []), ...local])];
@@ -58,17 +112,22 @@ export async function mergeLocalInterestsIntoAccount(user) {
       body: { interests: merged, completed: true },
     });
     await clearLocalInterests();
+    await clearOnboardingDoneLocally();
     return d.interests;
   } catch {
     return null; // keep the local copy and retry on the next sign-in
   }
 }
 
-/** Whether to offer the picker. Once only, and never to sellers. */
-export const shouldOfferOnboarding = (user) => {
+/**
+ * Whether to offer the picker. Once only, and never to sellers.
+ * Async because the local completion flag lives in AsyncStorage.
+ */
+export async function shouldOfferOnboarding(user) {
   if (!user) return false;
   if (user.role === 'business' || user.role === 'admin') return false;
+  if (await isOnboardingDoneLocally()) return false;
   const o = user.onboarding || {};
   if (o.completedAt || o.skippedAt) return false;
   return !(user.interests || []).length;
-};
+}
