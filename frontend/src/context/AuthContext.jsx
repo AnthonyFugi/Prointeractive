@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { setDisplayCurrency, api } from '../api.js';
+import { forgetAutoSignIn } from '../credentials.js';
+import { mergeLocalInterestsIntoAccount } from '../interests.js';
 
 const AuthCtx = createContext(null);
 export const useAuth = () => useContext(AuthCtx);
@@ -17,9 +19,14 @@ export function AuthProvider({ children }) {
       .finally(() => setReady(true));
   }, []);
 
-  const save = (data) => {
+  const save = async (data) => {
     localStorage.setItem('pi_token', data.token);
     setUser(data.user);
+    // Anything picked while browsing signed-out is folded into the account,
+    // so the shopper isn't asked the same question twice. Union, not
+    // overwrite — picks made on another device are kept.
+    const merged = await mergeLocalInterestsIntoAccount(data.user);
+    if (merged) setUser((u) => (u ? { ...u, interests: merged } : u));
   };
 
   const login = async (email, password) =>
@@ -37,6 +44,9 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem('pi_token');
     setUser(null);
+    // Signing out should mean the next person to pick up this device has to
+    // choose an account deliberately, not get signed straight back in.
+    forgetAutoSignIn();
   };
 
   const refresh = async () => {

@@ -7,6 +7,7 @@ import Business from '../models/Business.js';
 import Product from '../models/Product.js';
 import Inquiry from '../models/Inquiry.js';
 import { welcomeEmail, passwordResetEmail } from '../utils/email.js';
+import Category from '../models/Category.js';
 
 const googleClient = new OAuth2Client();
 
@@ -20,7 +21,11 @@ const sendAuth = (res, user, status = 200) => {
   res.status(status).json({
     success: true,
     token: signToken(user._id),
-    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    user: {
+      id: user._id, name: user.name, email: user.email, role: user.role,
+      interests: user.interests || [],
+      onboarding: user.onboarding || { completedAt: null, skippedAt: null },
+    },
   });
 };
 
@@ -69,10 +74,15 @@ export const login = async (req, res, next) => {
 
 // GET /api/auth/me
 export const getMe = async (req, res) => {
-  const { _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses = [], favoriteProducts = [], preferences } = req.user;
+  const { _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses = [], favoriteProducts = [], preferences, interests = [], onboarding } = req.user;
   res.json({
     success: true,
-    user: { id: _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses, favoriteProducts, preferences: preferences || { currency: 'ZMW', city: '' } },
+    user: {
+      id: _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses, favoriteProducts,
+      preferences: preferences || { currency: 'ZMW', city: '' },
+      interests,
+      onboarding: onboarding || { completedAt: null, skippedAt: null },
+    },
   });
 };
 
@@ -234,6 +244,47 @@ export const updatePreferences = async (req, res, next) => {
     }
     await req.user.save();
     res.json({ success: true, preferences: req.user.preferences });
+  } catch (err) { next(err); }
+};
+
+
+/**
+ * PATCH /api/auth/onboarding
+ * Body: { interests?: [String], completed?: Boolean, skipped?: Boolean }
+ *
+ * Records what the shopper said they're interested in, and that they've been
+ * through (or deliberately dismissed) the picker. Deliberately tolerant: a
+ * shopper can save interests without finishing, finish without picking
+ * anything, or skip entirely — none of those are error states.
+ */
+export const updateOnboarding = async (req, res, next) => {
+  try {
+    const { interests, completed, skipped } = req.body;
+
+    if (interests !== undefined) {
+      if (!Array.isArray(interests)) {
+        return res.status(400).json({ success: false, message: 'Interests must be a list' });
+      }
+      const cleaned = [...new Set(
+        interests.map((c) => String(c).toLowerCase().trim()).filter(Boolean)
+      )].slice(0, 12);
+      // Drop anything that isn't a live category rather than rejecting the
+      // whole request — a category renamed mid-session shouldn't cost the
+      // shopper the other nine choices they just made.
+      const known = await Category.find({ name: { $in: cleaned } }).select('name');
+      req.user.interests = known.map((c) => c.name);
+    }
+
+    req.user.onboarding = req.user.onboarding || {};
+    if (completed) req.user.onboarding.completedAt = new Date();
+    if (skipped) req.user.onboarding.skippedAt = new Date();
+
+    await req.user.save({ validateBeforeSave: false });
+    res.json({
+      success: true,
+      interests: req.user.interests,
+      onboarding: req.user.onboarding,
+    });
   } catch (err) { next(err); }
 };
 

@@ -5,6 +5,8 @@ import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import { colors, spacing } from '../theme';
+import OnboardingSheet from './OnboardingSheet';
+import { getLocalInterests } from '../interests';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -26,6 +28,16 @@ export default function HomeScreen({ navigation }) {
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  // Interests come from the account when signed in, otherwise from whatever
+  // was picked on this device before creating one.
+  const [interests, setInterests] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+    if (user?.interests?.length) { setInterests(user.interests); return undefined; }
+    getLocalInterests().then((l) => { if (alive) setInterests(l); });
+    return () => { alive = false; };
+  }, [user]);
 
   useEffect(() => {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
@@ -43,6 +55,9 @@ export default function HomeScreen({ navigation }) {
     if (category) params.set('category', category);
     if (favoritesOnly) params.set('favorites', 'true');
     if (savedOnly) params.set('saved', 'true');
+    // Signed-out visitors personalise via the query string; signed-in ones are
+    // resolved server-side from the account.
+    if (!user && interests.length) params.set('interests', interests.join(','));
     return api(`/products?${params}`)
       .then((d) => {
         setProducts(d.products || []);
@@ -50,7 +65,7 @@ export default function HomeScreen({ navigation }) {
         setPages(d.pages || 1);
       })
       .catch(() => {});
-  }, [query, category, favoritesOnly, savedOnly]);
+  }, [query, category, favoritesOnly, savedOnly, interests, user]);
 
   // Fetches the NEXT page and APPENDS — this is what powers infinite scroll.
   // Previously the screen had no pagination at all: a hard limit of 20
@@ -64,6 +79,7 @@ export default function HomeScreen({ navigation }) {
     if (category) params.set('category', category);
     if (favoritesOnly) params.set('favorites', 'true');
     if (savedOnly) params.set('saved', 'true');
+    if (!user && interests.length) params.set('interests', interests.join(','));
     api(`/products?${params}`)
       .then((d) => {
         setProducts((prev) => [...prev, ...(d.products || [])]);
@@ -71,7 +87,7 @@ export default function HomeScreen({ navigation }) {
       })
       .catch(() => {})
       .finally(() => setLoadingMore(false));
-  }, [loading, loadingMore, page, pages, query, category, favoritesOnly, savedOnly]);
+  }, [loading, loadingMore, page, pages, query, category, favoritesOnly, savedOnly, interests, user]);
 
   useEffect(() => {
     setLoading(true);
@@ -86,6 +102,9 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
+      {/* Mounted only on the shop tab. A product opened from a shared link
+          deep-links straight to ProductScreen and never meets this. */}
+      <OnboardingSheet onInterestsChanged={setInterests} />
       <FlatList
         ref={listRef}
         onScroll={(e) => setShowScrollTop(e.nativeEvent.contentOffset.y > 600)}

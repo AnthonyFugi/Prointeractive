@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import SocialAuth from '../components/SocialAuth.jsx';
+import { offerToSavePassword } from '../credentials.js';
 
 function friendlySignInError(message) {
   if (!message) return "We couldn't sign you in. Please try again.";
@@ -37,6 +38,10 @@ export default function Login() {
     setBusy(true); setError('');
     try {
       await login(form.email, form.password);
+      // Offer to save only after the server has confirmed the credentials —
+      // prompting on a failed attempt would invite the user to save a password
+      // that doesn't work.
+      await offerToSavePassword(form.email, form.password);
       navigate(location.state?.from || '/');
     } catch (err) {
       setError(friendlySignInError(err.message));
@@ -51,10 +56,10 @@ export default function Login() {
         <h1>Sign in</h1>
         <form onSubmit={submit}>
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" autoComplete="email" required value={form.email}
+          <input id="email" name="email" type="email" autoComplete="username email" required value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <label htmlFor="password">Password</label>
-          <input id="password" type="password" autoComplete="current-password" required value={form.password}
+          <input id="password" name="password" type="password" autoComplete="current-password" required value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })} />
           {error && <p className="error-text">{error}</p>}
           <button className="btn btn-red" style={{ marginTop: '1rem', width: '100%' }} disabled={busy}>

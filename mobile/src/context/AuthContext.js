@@ -3,6 +3,7 @@ import { api, setToken, clearToken } from '../api';
 import Constants from 'expo-constants';
 import { setDisplayCurrency } from '../theme';
 import { signInWithGoogle, signInWithApple } from '../socialAuth';
+import { mergeLocalInterestsIntoAccount } from '../interests';
 
 const Ctx = createContext(null);
 export const useAuth = () => useContext(Ctx);
@@ -31,30 +32,37 @@ export function AuthProvider({ children }) {
     import('../push').then(({ registerForPush }) => registerForPush()).catch(() => {});
   }, [user]);
 
+  // Shared tail for every sign-in path: store the token, set the user, then
+  // fold in anything picked while browsing signed-out so the shopper isn't
+  // asked the same question twice.
+  const completeSignIn = async (d) => {
+    await setToken(d.token);
+    setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW');
+    setUser(d.user);
+    const merged = await mergeLocalInterestsIntoAccount(d.user);
+    if (merged) setUser((u) => (u ? { ...u, interests: merged } : u));
+  };
+
   const login = async (email, password) => {
     const d = await api('/auth/login', { method: 'POST', body: { email, password } });
-    await setToken(d.token);
-    (setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW'), setUser(d.user));
+    await completeSignIn(d);
   };
 
   const register = async (form) => {
     const d = await api('/auth/register', { method: 'POST', body: form });
-    await setToken(d.token);
-    (setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW'), setUser(d.user));
+    await completeSignIn(d);
   };
 
   const loginWithGoogle = async () => {
     const idToken = await signInWithGoogle();
     const d = await api('/auth/google', { method: 'POST', body: { credential: idToken } });
-    await setToken(d.token);
-    (setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW'), setUser(d.user));
+    await completeSignIn(d);
   };
 
   const loginWithApple = async () => {
     const { identityToken, name } = await signInWithApple();
     const d = await api('/auth/apple', { method: 'POST', body: { identityToken, name } });
-    await setToken(d.token);
-    (setDisplayCurrency(d.user && d.user.preferences ? d.user.preferences.currency : 'ZMW'), setUser(d.user));
+    await completeSignIn(d);
   };
 
   const refresh = async () => {

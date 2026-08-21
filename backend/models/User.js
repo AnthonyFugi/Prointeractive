@@ -38,9 +38,27 @@ const userSchema = new mongoose.Schema(
       currency: { type: String, enum: ['ZMW', 'USD'], default: 'ZMW' },
       city: { type: String, trim: true, maxlength: 60, default: '' },
     },
+    // Category names the shopper picked during onboarding. Used to weight
+    // their feed and to suggest stores worth following. Validated against the
+    // live Category list on write, so a renamed category can't rot in here.
+    interests: { type: [String], default: [] },
+    // Onboarding is offered once, never forced. `skippedAt` is recorded so we
+    // don't nag someone who has already said no thanks; `completedAt` so we
+    // don't re-ask someone who has already chosen.
+    onboarding: {
+      completedAt: { type: Date, default: null },
+      skippedAt: { type: Date, default: null },
+    },
     suspended: { type: Boolean, default: false },
     resetPasswordTokenHash: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
+    // Audit trail for admin-initiated resets. Any admin able to reset a
+    // seller's password can reach that seller's payout details, so every use
+    // is recorded against the account and the user is emailed about it.
+    lastAdminPasswordReset: {
+      at: { type: Date, default: null },
+      by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    },
   },
   { timestamps: true }
 );

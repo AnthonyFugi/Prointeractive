@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import Welcome from '../components/Welcome.jsx';
+import InterestPicker from '../components/InterestPicker.jsx';
+import { getLocalInterests, shouldOfferOnboarding } from '../interests.js';
 
 export default function Home() {
   const { user } = useAuth();
@@ -23,7 +26,20 @@ export default function Home() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showPicker, setShowPicker] = useState(false);
+  // Interests come from the account when signed in, otherwise from whatever
+  // this browser picked before creating one.
+  const [interests, setInterests] = useState(() => getLocalInterests());
   const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    if (user?.interests?.length) setInterests(user.interests);
+  }, [user]);
+
+  // Offered once, after sign-up, and never to sellers — see shouldOfferOnboarding.
+  useEffect(() => {
+    if (shouldOfferOnboarding(user)) setShowPicker(true);
+  }, [user]);
 
   useEffect(() => {
     api('/categories').then((d) => setCategories(d.categories)).catch(() => {});
@@ -40,6 +56,9 @@ export default function Home() {
     if (category) params.set('category', category);
     if (favoritesOnly) params.set('favorites', 'true');
     if (savedOnly) params.set('saved', 'true');
+    // Signed-out visitors personalise via the query string; signed-in ones are
+    // handled server-side from the account, so sending it twice is harmless.
+    if (!user && interests.length) params.set('interests', interests.join(','));
     api(`/products?${params}`)
       .then((d) => {
         setProducts(d.products || []);
@@ -48,7 +67,7 @@ export default function Home() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [query, category, favoritesOnly, savedOnly]);
+  }, [query, category, favoritesOnly, savedOnly, interests, user]);
 
   // Fetches the NEXT page and APPENDS — this is what powers infinite scroll.
   const loadMore = useCallback(() => {
@@ -60,6 +79,7 @@ export default function Home() {
     if (category) params.set('category', category);
     if (favoritesOnly) params.set('favorites', 'true');
     if (savedOnly) params.set('saved', 'true');
+    if (!user && interests.length) params.set('interests', interests.join(','));
     api(`/products?${params}`)
       .then((d) => {
         setProducts((prev) => [...prev, ...(d.products || [])]);
@@ -67,7 +87,7 @@ export default function Home() {
       })
       .catch(() => {})
       .finally(() => setLoadingMore(false));
-  }, [loading, loadingMore, page, pages, query, category, favoritesOnly, savedOnly]);
+  }, [loading, loadingMore, page, pages, query, category, favoritesOnly, savedOnly, interests, user]);
 
   // Watches a sentinel element at the bottom of the grid; loads the next
   // page automatically as it scrolls into view — no Prev/Next clicking.
@@ -84,6 +104,15 @@ export default function Home() {
 
   return (
     <div className="container">
+      {/* Mounted only here, never on /product/* or /business/* — a link shared
+          in a WhatsApp group must open straight onto the item. */}
+      <Welcome onPickInterests={() => setShowPicker(true)} />
+      {showPicker && (
+        <InterestPicker
+          onClose={() => setShowPicker(false)}
+          onSaved={(list) => { setInterests(list); setPage(1); }}
+        />
+      )}
       <section className="hero hero-home">
         <div className="eyebrow">Making business interaction, Easy!</div>
         <h1>What you need, from businesses you trust.</h1>

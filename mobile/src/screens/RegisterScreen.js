@@ -108,10 +108,15 @@ export default function RegisterScreen({ navigation }) {
       <Text style={labelStyle}>Full name</Text>
       <TextInput placeholder="Name" placeholderTextColor={colors.muted} value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} style={inputStyle} />
       <Text style={labelStyle}>Email</Text>
-      <TextInput placeholder="Email" placeholderTextColor={colors.muted} autoCapitalize="none" keyboardType="email-address" autoComplete="email" value={form.email}
+      <TextInput placeholder="Email" placeholderTextColor={colors.muted} autoCapitalize="none" keyboardType="email-address"
+        autoComplete="username" textContentType="username" importantForAutofill="yes" value={form.email}
         onChangeText={(v) => setForm({ ...form, email: v })} style={inputStyle} />
       <Text style={labelStyle}>Password</Text>
-      <TextInput placeholder="Password (8+ characters)" placeholderTextColor={colors.muted} secureTextEntry value={form.password} autoComplete="new-password"
+      {/* textContentType="newPassword" is what makes iOS offer a generated
+          strong password here and then prompt to save it after sign-up. */}
+      <TextInput placeholder="Password (8+ characters)" placeholderTextColor={colors.muted} secureTextEntry value={form.password}
+        autoComplete="new-password" textContentType="newPassword" importantForAutofill="yes"
+        passwordRules="minlength: 8;"
         onChangeText={(v) => setForm({ ...form, password: v })} style={inputStyle} />
 
       {role === 'business' ? (

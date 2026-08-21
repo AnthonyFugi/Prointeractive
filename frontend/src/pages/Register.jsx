@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import SocialAuth from '../components/SocialAuth.jsx';
+import { offerToSavePassword } from '../credentials.js';
 
 export default function Register() {
   const { register, loginWithGoogle, loginWithApple } = useAuth();
@@ -31,6 +32,9 @@ export default function Register() {
     setBusy(true); setError('');
     try {
       await register({ ...form, acceptedTerms: accepted });
+      // Sign-up is the best moment to offer this: the password was just
+      // invented, so it's the one most likely to be forgotten.
+      await offerToSavePassword(form.email, form.password, form.name);
       navigate(form.role === 'business' ? '/dashboard' : '/');
     } catch (err) {
       setError(err.message);
@@ -49,9 +53,9 @@ export default function Register() {
           <label htmlFor="name">Name</label>
           <input id="name" required value={form.name} onChange={set('name')} />
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" required value={form.email} onChange={set('email')} />
+          <input id="email" name="email" type="email" autoComplete="username email" required value={form.email} onChange={set('email')} />
           <label htmlFor="password">Password (8+ characters)</label>
-          <input id="password" type="password" minLength={8} required value={form.password} onChange={set('password')} />
+          <input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required value={form.password} onChange={set('password')} />
           <label htmlFor="role">I want to</label>
           <select id="role" value={form.role} onChange={set('role')}>
             <option value="customer">Shop as a customer</option>

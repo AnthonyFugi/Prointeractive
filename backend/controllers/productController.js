@@ -110,10 +110,22 @@ export const listProducts = async (req, res, next) => {
 
     const skip = (Number(page) - 1) * Number(limit);
     const followIds = req.user?.favoriteBusinesses || [];
-    const followFirst =
-      followIds.length > 0 && !q && !business && !favorites && !saved && featured !== 'true' && onSale !== 'true' && sort === '-createdAt';
+    // Interests come from the account when signed in, or from the query string
+    // for a visitor who picked some before creating one — the feed personalises
+    // either way, which is the whole point of letting people browse first.
+    const interestList = (req.query.interests
+      ? String(req.query.interests).split(',')
+      : req.user?.interests || []
+    ).map((c) => String(c).trim().toLowerCase()).filter(Boolean);
 
-    if (followFirst) {
+    // The personalised default feed. Only for the plain browse view: any
+    // explicit filter or search means the shopper has told us what they want,
+    // and second-guessing that with their interests would be worse than useless.
+    const personalise =
+      (followIds.length > 0 || interestList.length > 0) &&
+      !q && !business && !favorites && !saved && featured !== 'true' && onSale !== 'true' && sort === '-createdAt';
+
+    if (personalise) {
       const agg = await Product.aggregate([
         { $match: filter },
         { $addFields: {
@@ -122,8 +134,18 @@ export const listProducts = async (req, res, next) => {
         { $addFields: {
           effectivePrice: { $cond: ['$onSale', '$salePrice', '$price'] },
         } },
-        { $addFields: { followed: { $cond: [{ $in: ['$business', followIds] }, 1, 0] } } },
-        { $sort: { followed: -1, createdAt: -1 } },
+        { $addFields: {
+          followed: { $cond: [{ $in: ['$business', followIds] }, 1, 0] },
+          // A store they follow is a stronger signal than a category they
+          // ticked once, so following always outranks interest.
+          interested: interestList.length
+            ? { $cond: [{ $in: ['$category', interestList] }, 1, 0] }
+            : 0,
+          inStock: { $cond: [{ $gt: ['$stock', 0] }, 1, 0] },
+        } },
+        // Out-of-stock items sink rather than vanish — hiding them entirely
+        // would make a thin catalogue look even thinner.
+        { $sort: { followed: -1, interested: -1, inStock: -1, createdAt: -1 } },
         { $skip: skip },
         { $limit: Number(limit) },
       ]);

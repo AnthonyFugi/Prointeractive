@@ -40,6 +40,79 @@ export const createBusiness = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/businesses/suggested?interests=fashion,electronics&limit=6
+ *
+ * Stores worth following, for the end of the onboarding picker. Works signed
+ * out (interests come from the query string) and signed in (falls back to the
+ * saved ones).
+ *
+ * Ranking, strongest signal first:
+ *   1. matches an interest they just picked
+ *   2. actually has something to sell — a store with no live products is a
+ *      dead end, and following one is a wasted recommendation
+ *   3. verified, then featured
+ *   4. same city as the shopper
+ *
+ * Note on city: `location` is free text and, until Prointeractive is live in a
+ * second city, nearly every store will match. It is deliberately the WEAKEST
+ * signal rather than a filter — filtering on it today would exclude stores for
+ * typing "Lusaka, Zambia" instead of "Lusaka" while excluding nobody real.
+ */
+export const suggestedBusinesses = async (req, res, next) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 6, 20);
+    const fromQuery = String(req.query.interests || '')
+      .split(',').map((c) => c.trim().toLowerCase()).filter(Boolean);
+    const interests = fromQuery.length ? fromQuery : (req.user?.interests || []);
+
+    const filter = { closed: { $ne: true } };
+    // Never suggest a store the shopper already follows.
+    const following = (req.user?.favoriteBusinesses || []).map((id) => id);
+    if (following.length) filter._id = { $nin: following };
+    // A seller shouldn't be told to follow their own storefront.
+    if (req.user?._id) filter.owner = { $ne: req.user._id };
+
+    const city = req.user?.preferences?.city?.trim();
+    const cityRe = city
+      ? new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      : null;
+
+    const withStock = await Product.distinct('business', { isActive: true, stock: { $gt: 0 } });
+
+    const businesses = await Business.aggregate([
+      { $match: filter },
+      { $addFields: {
+        interestMatch: interests.length
+          ? { $size: { $setIntersection: [{ $ifNull: ['$categories', []] }, interests] } }
+          : 0,
+        hasStock: { $cond: [{ $in: ['$_id', withStock] }, 1, 0] },
+        near: cityRe
+          ? { $cond: [{ $regexMatch: { input: { $ifNull: ['$location', ''] }, regex: cityRe } }, 1, 0] }
+          : 0,
+      } },
+      { $sort: {
+        interestMatch: -1,
+        hasStock: -1,
+        verified: -1,
+        featured: -1,
+        near: -1,
+        ratingAverage: -1,
+        createdAt: -1,
+      } },
+      { $limit: limit },
+      { $project: {
+        name: 1, slug: 1, description: 1, logoUrl: 1, location: 1,
+        categories: 1, verified: 1, ratingAverage: 1, ratingCount: 1, interestMatch: 1,
+      } },
+    ]);
+
+    res.json({ success: true, businesses });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // GET /api/businesses  (public, with filters)
 export const listBusinesses = async (req, res, next) => {
   try {

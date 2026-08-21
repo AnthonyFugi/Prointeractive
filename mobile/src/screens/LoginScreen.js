@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 function friendlySignInError(message) {
   if (!message) return "We couldn't sign you in. Please try again.";
@@ -16,6 +16,30 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing } from '../theme';
+
+// Styles live here, created once, on purpose.
+//
+// These inputs previously had their style passed as an inline object literal.
+// That builds a brand-new object on every render, so every keystroke handed
+// UIKit what looked like a changed prop and iOS re-evaluated the field — which
+// is what made the QuickType bar re-trigger constantly and led to
+// textContentType being removed last time. The prop churn was the bug, not
+// textContentType. With a stable StyleSheet reference the field is left alone
+// between keystrokes, and the autofill hints below can safely come back.
+const styles = StyleSheet.create({
+  input: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+    color: colors.ink,
+  },
+  inputFirst: { marginTop: spacing.l },
+  inputNext: { marginTop: spacing.s },
+  label: { fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.s, color: colors.ink },
+});
 
 export default function LoginScreen({ navigation }) {
   const { login, loginWithGoogle, loginWithApple } = useAuth();
@@ -68,12 +92,38 @@ export default function LoginScreen({ navigation }) {
       <Text style={{ color: colors.muted, fontSize: 13, marginTop: 6 }}>
         Follow stores you love, save items for later, track orders, and message businesses directly.
       </Text>
-      <Text style={{ fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.s, color: colors.ink }}>Email</Text>
-      <TextInput placeholder="Email" placeholderTextColor={colors.muted} autoCapitalize="none" keyboardType="email-address" autoComplete="email" value={email} onChangeText={setEmail}
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.l, fontSize: 15, color: colors.ink }} />
-      <Text style={{ fontWeight: '700', fontSize: 13, marginBottom: 4, marginTop: spacing.s, color: colors.ink }}>Password</Text>
-      <TextInput placeholder="Password" placeholderTextColor={colors.muted} secureTextEntry value={password} onChangeText={setPassword} autoComplete="current-password"
-        style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 10, padding: 12, marginTop: spacing.s, fontSize: 15, color: colors.ink }} />
+      <Text style={styles.label}>Email</Text>
+      <TextInput
+        placeholder="Email"
+        placeholderTextColor={colors.muted}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        // 'username' is what marks this as the account identifier for both
+        // platforms' password managers; 'email' alone only shapes the keyboard.
+        autoComplete="username"
+        textContentType="username"
+        importantForAutofill="yes"
+        value={email}
+        onChangeText={setEmail}
+        style={[styles.input, styles.inputFirst]}
+      />
+      <Text style={styles.label}>Password</Text>
+      <TextInput
+        placeholder="Password"
+        placeholderTextColor={colors.muted}
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        autoComplete="current-password"
+        textContentType="password"
+        importantForAutofill="yes"
+        // Submitting from the keyboard, rather than only via the button, is
+        // what iOS treats as a login attempt — it's part of what triggers the
+        // system's own "Save Password?" prompt afterwards.
+        returnKeyType="go"
+        onSubmitEditing={submit}
+        style={[styles.input, styles.inputNext]}
+      />
       <Pressable onPress={submit} disabled={busy}
         style={{ backgroundColor: colors.red, opacity: busy ? 0.6 : 1, borderRadius: 10, padding: 14, marginTop: spacing.l }}>
         <Text style={{ color: '#fff', fontWeight: '800', textAlign: 'center' }}>{busy ? 'Signing in…' : 'Sign in'}</Text>
