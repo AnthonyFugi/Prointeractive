@@ -1,0 +1,22 @@
+[
+  {
+    "relation": ["delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.proint",
+      "sha256_cert_fingerprints": [
+        "5C:52:A7:99:80:CA:EA:B3:C6:32:DC:38:4D:0E:54:DD:F8:B5:4F:3B"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.proint",
+      "sha256_cert_fingerprints": [
+        "5C:52:A7:99:80:CA:EA:B3:C6:32:DC:38:4D:0E:54:DD:F8:B5:4F:3B"
+      ]
+    }
+  }
+]

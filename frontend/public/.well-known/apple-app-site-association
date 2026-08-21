@@ -1,0 +1,14 @@
+{
+  "webcredentials": {
+    "apps": ["285FPMM73U.com.proint"]
+  },
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "285FPMM73U.com.proint",
+        "paths": ["/products/*", "/businesses/*", "/reset-password*"]
+      }
+    ]
+  }
+}
