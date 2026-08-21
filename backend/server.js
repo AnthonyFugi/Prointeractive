@@ -33,6 +33,7 @@ import corporateRoutes from './routes/corporateRoutes.js';
 import mongoose from 'mongoose';
 import * as Sentry from '@sentry/node';
 import { startMaintenance } from './utils/maintenance.js';
+import { commissionPercent, markupPercent, PRICE_ROUNDING } from './utils/pricing.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === 'production';
@@ -95,6 +96,19 @@ app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 30, standardHead
 
 app.get('/api/health', (req, res) =>
   res.json({ success: true, name: 'Prointeractive API', time: new Date().toISOString() })
+);
+
+// Public pricing config — lets seller-facing forms show a live, correct
+// breakdown while typing without hardcoding the rate in three codebases.
+app.get('/api/pricing', (req, res) =>
+  res.json({
+    success: true,
+    pricing: {
+      commissionPercent: commissionPercent(),
+      markupPercent: markupPercent(),
+      rounding: PRICE_ROUNDING,
+    },
+  })
 );
 
 app.use('/api/auth', authRoutes);

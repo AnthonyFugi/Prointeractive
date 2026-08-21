@@ -3,6 +3,7 @@ import Loader from '../components/Loader.jsx';
 import { Link } from 'react-router-dom';
 import { api, money } from '../api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
+import { usePricing } from '../pricing.js';
 
 const ONLINE_NEXT = { pending: 'paid', paid: 'shipped', shipped: 'delivered' };
 const ONLINE_LABEL = { pending: 'Mark as paid', paid: 'Mark as shipped', shipped: 'Mark as delivered' };
@@ -14,9 +15,28 @@ const nextStatusFor = (o) =>
 const nextLabelFor = (o) =>
   o.paymentMethod === 'cash_on_delivery' ? COD_LABEL[o.status] : ONLINE_LABEL[o.status];
 
-const EMPTY_PRODUCT = { name: '', description: '', price: '', category: '', stock: '', images: [], salePrice: '', saleEndsAt: '' };
+const EMPTY_PRODUCT = { name: '', description: '', basePrice: '', category: '', stock: '', images: [], baseSalePrice: '', saleEndsAt: '' };
+
+/**
+ * Live "here's what this actually means" line under a take-home input.
+ * Sellers enter what they want to receive; this shows the shelf price that
+ * results and the commission inside it, so nothing about the arrangement is
+ * hidden from them.
+ */
+function PriceBreakdown({ base, pricing }) {
+  const n = Number(base);
+  if (!base || !Number.isFinite(n) || n <= 0) return null;
+  const { listPrice, commission, net } = pricing.breakdown(n);
+  return (
+    <p className="muted" style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', lineHeight: 1.45 }}>
+      Listed at <strong>{money(listPrice)}</strong> · our {pricing.commissionPercent}% commission{' '}
+      {money(commission)} · you receive <strong>{money(net)}</strong>
+    </p>
+  );
+}
 
 export default function Dashboard() {
+  const pricing = usePricing();
   const [tab, setTab] = useState('products');
   const [business, setBusiness] = useState(null);
   const [checked, setChecked] = useState(false);
@@ -229,26 +249,28 @@ export default function Dashboard() {
     setError('');
     const fe = {};
     if (!productForm.name.trim()) fe.name = 'Give the product a name.';
-    if (productForm.price === '' || Number(productForm.price) <= 0) fe.price = 'Enter a price greater than 0.';
+    if (productForm.basePrice === '' || Number(productForm.basePrice) <= 0) fe.basePrice = 'Enter how much you want to receive (greater than 0).';
     if (productForm.stock === '' || Number(productForm.stock) < 0) fe.stock = 'Enter how many are in stock (0 or more).';
     if (!productForm.category) fe.category = 'Pick a category.';
     if (!productForm.images || productForm.images.length === 0) fe.images = 'Add at least one product photo.';
-    if (productForm.salePrice !== '' && !productForm.saleEndsAt) {
-      fe.saleEndsAt = 'Set an end date for the sale, or clear the sale price.';
+    if (productForm.baseSalePrice !== '' && !productForm.saleEndsAt) {
+      fe.saleEndsAt = 'Set an end date for the sale, or clear the sale amount.';
     }
-    if (productForm.saleEndsAt && productForm.salePrice === '') {
-      fe.salePrice = 'Set a sale price, or clear the end date.';
+    if (productForm.saleEndsAt && productForm.baseSalePrice === '') {
+      fe.baseSalePrice = 'Set a sale amount, or clear the end date.';
     }
-    if (productForm.salePrice !== '' && Number(productForm.salePrice) >= Number(productForm.price)) {
-      fe.salePrice = 'Sale price must be lower than the regular price.';
+    if (productForm.baseSalePrice !== '' && Number(productForm.baseSalePrice) >= Number(productForm.basePrice)) {
+      fe.baseSalePrice = 'Your sale take-home must be lower than your regular take-home.';
     }
     setFieldErrors(fe);
     if (Object.keys(fe).length > 0) return;
+    // Only the seller's target take-home is sent — the server derives the
+    // shelf price from it, so the two can never drift apart.
     const body = {
       ...productForm,
-      price: Number(productForm.price),
+      basePrice: Number(productForm.basePrice),
       stock: Number(productForm.stock),
-      salePrice: productForm.salePrice === '' ? null : Number(productForm.salePrice),
+      baseSalePrice: productForm.baseSalePrice === '' ? null : Number(productForm.baseSalePrice),
       saleEndsAt: productForm.saleEndsAt === '' ? null : productForm.saleEndsAt,
     };
     setSavingProduct(true);
@@ -278,10 +300,13 @@ export default function Dashboard() {
     // been renamed or removed from the live list, forcing a reselect just
     // to save an unrelated change (like a price update) is the wrong trade.
     setProductForm({
-      name: p.name, description: p.description, price: p.price,
+      name: p.name, description: p.description,
+      // Listings created before commission-inclusive pricing have no
+      // basePrice yet; fall back to what the current shelf price nets.
+      basePrice: p.basePrice ?? Math.round(p.price * (1 - pricing.commissionPercent / 100) * 100) / 100,
       category: p.category || '',
       stock: p.stock, images: p.images || [],
-      salePrice: p.salePrice ?? '',
+      baseSalePrice: p.baseSalePrice ?? (p.salePrice != null ? Math.round(p.salePrice * (1 - pricing.commissionPercent / 100) * 100) / 100 : ''),
       saleEndsAt: p.saleEndsAt ? p.saleEndsAt.slice(0, 10) : '',
     });
     setShowProductForm(true);
@@ -545,10 +570,11 @@ export default function Dashboard() {
                 onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} />
               <div className="row" style={{ flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 140px', minWidth: 0 }}>
-                  <label htmlFor="pprice">Price (ZMW)</label>
-                  <input id="pprice" type="number" min="0" step="0.01" required value={productForm.price}
-                    onChange={(e) => updateProductField('price', e.target.value)} style={{ minWidth: 0, width: '100%' }} />
-                  {fieldErrors.price && <p className="field-error">{fieldErrors.price}</p>}
+                  <label htmlFor="pprice">Amount you receive (ZMW)</label>
+                  <input id="pprice" type="number" min="0" step="0.01" required value={productForm.basePrice}
+                    onChange={(e) => updateProductField('basePrice', e.target.value)} style={{ minWidth: 0, width: '100%' }} />
+                  {fieldErrors.basePrice && <p className="field-error">{fieldErrors.basePrice}</p>}
+                  <PriceBreakdown base={productForm.basePrice} pricing={pricing} />
                 </div>
                 <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="pstock">Stock</label>
@@ -559,10 +585,11 @@ export default function Dashboard() {
               </div>
               <div className="row" style={{ flexWrap: 'wrap' }}>
                 <div style={{ flex: '1 1 140px', minWidth: 0 }}>
-                  <label htmlFor="psale">Sale price <span className="muted">(optional)</span></label>
-                  <input id="psale" type="number" min="0" step="0.01" value={productForm.salePrice}
-                    onChange={(e) => updateProductField('salePrice', e.target.value)} style={{ minWidth: 0, width: '100%' }} />
-                  {fieldErrors.salePrice && <p className="field-error">{fieldErrors.salePrice}</p>}
+                  <label htmlFor="psale">Sale — amount you receive <span className="muted">(optional)</span></label>
+                  <input id="psale" type="number" min="0" step="0.01" value={productForm.baseSalePrice}
+                    onChange={(e) => updateProductField('baseSalePrice', e.target.value)} style={{ minWidth: 0, width: '100%' }} />
+                  {fieldErrors.baseSalePrice && <p className="field-error">{fieldErrors.baseSalePrice}</p>}
+                  <PriceBreakdown base={productForm.baseSalePrice} pricing={pricing} />
                 </div>
                 <div style={{ flex: '1 1 140px', minWidth: 0 }}>
                   <label htmlFor="psaleend">Sale ends</label>
@@ -643,7 +670,10 @@ export default function Dashboard() {
                   <strong>{p.name}</strong>
                   {!p.isActive && <span className="badge cancelled" style={{ marginLeft: 8 }}>hidden</span>}
                   <p className="muted" style={{ margin: 0 }}>
-                    {money(p.price, p.currency)} · {p.stock} in stock · {p.category}
+                    {money(p.price, p.currency)}
+                    {p.basePrice != null && (
+                      <> <span title="What you receive after commission">(you get {money(p.basePrice, p.currency)})</span></>
+                    )} · {p.stock} in stock · {p.category}
                   </p>
                 </div>
               </div>

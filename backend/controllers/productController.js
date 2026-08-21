@@ -12,17 +12,38 @@ export const createProduct = async (req, res, next) => {
     if (!business) {
       return res.status(400).json({ success: false, message: 'Create a business profile first' });
     }
-    const { name, description, price, currency, images, category, stock, salePrice, saleEndsAt } = req.body;
+    const { name, description, price, basePrice, currency, images, category, stock, salePrice, baseSalePrice, saleEndsAt } = req.body;
     if (!Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ success: false, message: 'Add at least one product photo' });
     }
     if (category && !(await Category.exists({ name: String(category).toLowerCase() }))) {
       return res.status(400).json({ success: false, message: 'Choose a category from the list' });
     }
-    const product = await Product.create({
-      business: business._id, name, description, price, currency, images, category, stock,
-      salePrice: salePrice ?? null, saleEndsAt: saleEndsAt ?? null,
-    });
+    // basePrice (what the seller wants to receive) wins when present — `price`
+    // is then derived in the model's pre-validate hook. A request carrying only
+    // `price` is still accepted unchanged, which is what older app builds in
+    // the stores send; the hook back-fills basePrice for those.
+    const doc = {
+      business: business._id, name, description, currency, images, category, stock,
+      saleEndsAt: saleEndsAt ?? null,
+    };
+    const usesBase = basePrice !== undefined && basePrice !== null && basePrice !== '';
+    if (usesBase) doc.basePrice = Number(basePrice);
+    else if (price !== undefined) doc.price = Number(price);
+
+    const usesBaseSale = baseSalePrice !== undefined;
+    if (usesBaseSale) {
+      doc.baseSalePrice = baseSalePrice === null || baseSalePrice === '' ? null : Number(baseSalePrice);
+    } else {
+      doc.salePrice = salePrice ?? null;
+    }
+
+    const product = new Product(doc);
+    // Tell the model which number was actually stated, so it derives the other
+    // rather than guessing from what happens to look modified.
+    product.$locals.priceSource = usesBase ? 'base' : 'list';
+    product.$locals.salePriceSource = usesBaseSale ? 'base' : 'list';
+    await product.save();
     res.status(201).json({ success: true, product });
   } catch (err) {
     next(err);
@@ -199,10 +220,27 @@ export const updateProduct = async (req, res, next) => {
     if (req.body.category && !(await Category.exists({ name: String(req.body.category).toLowerCase() }))) {
       return res.status(400).json({ success: false, message: 'Choose a category from the list' });
     }
-    const allowed = ['name', 'description', 'price', 'currency', 'images', 'category', 'stock', 'isActive', 'salePrice', 'saleEndsAt'];
+    // If the caller states a target take-home, that is authoritative and the
+    // shelf price is derived from it — ignore any `price` sent alongside, so a
+    // stale value in a form payload can't silently override the seller's intent.
+    const body = { ...req.body };
+    if (body.basePrice !== undefined && body.basePrice !== null && body.basePrice !== '') {
+      delete body.price;
+    }
+    if (body.baseSalePrice !== undefined) {
+      delete body.salePrice;
+    }
+    const allowed = ['name', 'description', 'price', 'basePrice', 'currency', 'images', 'category', 'stock', 'isActive', 'salePrice', 'baseSalePrice', 'saleEndsAt'];
     allowed.forEach((f) => {
-      if (req.body[f] !== undefined) product[f] = req.body[f];
+      if (body[f] !== undefined) product[f] = body[f];
     });
+    // Only declare an intent when this request actually carried a price. An
+    // edit that only touches stock or photos leaves both undefined, and the
+    // model then leaves the existing prices exactly as they are.
+    if (body.basePrice !== undefined) product.$locals.priceSource = 'base';
+    else if (body.price !== undefined) product.$locals.priceSource = 'list';
+    if (body.baseSalePrice !== undefined) product.$locals.salePriceSource = 'base';
+    else if (body.salePrice !== undefined) product.$locals.salePriceSource = 'list';
     await product.save();
     // Populate before responding — without this, any caller that trusts
     // this response to refresh its local state (e.g. Admin's product list)

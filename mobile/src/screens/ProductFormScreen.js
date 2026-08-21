@@ -3,17 +3,27 @@ import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, TextInput
 import { api } from '../api';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, spacing } from '../theme';
+import { usePricing } from '../pricing';
 
 export default function ProductFormScreen({ route, navigation }) {
   const editing = route.params?.product || null;
+  const pricing = usePricing();
+  // Listings created before commission-inclusive pricing have no basePrice
+  // stored yet — fall back to what their current shelf price nets.
+  const netOf = (v) => String(Math.round(Number(v) * 0.95 * 100) / 100);
   const [form, setForm] = useState({
     name: editing?.name || '',
     description: editing?.description || '',
-    price: editing ? String(editing.price) : '',
+    basePrice: editing ? String(editing.basePrice ?? netOf(editing.price)) : '',
     stock: editing ? String(editing.stock) : '',
     category: editing?.category || '',
     images: editing?.images || [],
-    salePrice: editing?.salePrice != null ? String(editing.salePrice) : '',
+    baseSalePrice:
+      editing?.baseSalePrice != null
+        ? String(editing.baseSalePrice)
+        : editing?.salePrice != null
+        ? netOf(editing.salePrice)
+        : '',
     saleEndsAt: editing?.saleEndsAt ? editing.saleEndsAt.slice(0, 10) : '',
   });
   const [categories, setCategories] = useState([]);
@@ -72,31 +82,33 @@ export default function ProductFormScreen({ route, navigation }) {
   const save = async () => {
     const fe = {};
     if (!form.name.trim()) fe.name = 'Give the product a name.';
-    if (form.price === '' || Number(form.price) <= 0) fe.price = 'Enter a price greater than 0.';
+    if (form.basePrice === '' || Number(form.basePrice) <= 0) fe.basePrice = 'Enter how much you want to receive.';
     if (form.stock === '' || Number(form.stock) < 0) fe.stock = 'Enter stock (0 or more).';
     if (!form.category) fe.category = 'Pick a category.';
     if (form.images.length === 0) fe.images = 'Add at least one photo.';
-    if (form.salePrice !== '' && !form.saleEndsAt) {
-      fe.saleEndsAt = 'Set an end date, or clear the sale price.';
+    if (form.baseSalePrice !== '' && !form.saleEndsAt) {
+      fe.saleEndsAt = 'Set an end date, or clear the sale amount.';
     }
-    if (form.saleEndsAt && form.salePrice === '') {
-      fe.salePrice = 'Set a sale price, or clear the end date.';
+    if (form.saleEndsAt && form.baseSalePrice === '') {
+      fe.baseSalePrice = 'Set a sale amount, or clear the end date.';
     }
     if (form.saleEndsAt && !/^\d{4}-\d{2}-\d{2}$/.test(form.saleEndsAt)) {
       fe.saleEndsAt = 'Use the format YYYY-MM-DD.';
     }
-    if (form.salePrice !== '' && Number(form.salePrice) >= Number(form.price)) {
-      fe.salePrice = 'Sale price must be lower than the regular price.';
+    if (form.baseSalePrice !== '' && Number(form.baseSalePrice) >= Number(form.basePrice)) {
+      fe.baseSalePrice = 'Your sale take-home must be lower than your regular take-home.';
     }
     setErrors(fe);
     if (Object.keys(fe).length) return;
     setSaving(true);
     try {
+      // Only the seller's target take-home is sent — the server derives the
+      // shelf price from it, so the two can never drift apart.
       const body = {
         ...form,
-        price: Number(form.price),
+        basePrice: Number(form.basePrice),
         stock: Number(form.stock),
-        salePrice: form.salePrice === '' ? null : Number(form.salePrice),
+        baseSalePrice: form.baseSalePrice === '' ? null : Number(form.baseSalePrice),
         saleEndsAt: form.saleEndsAt === '' ? null : form.saleEndsAt,
       };
       if (editing) await api(`/products/${editing._id}`, { method: 'PATCH', body });
@@ -116,6 +128,21 @@ export default function ProductFormScreen({ route, navigation }) {
   });
   const Err = ({ k }) => (errors[k] ? <Text style={{ color: colors.red, fontSize: 12, marginTop: 2 }}>{errors[k]}</Text> : null);
 
+  // Live "here's what this actually means" line under a take-home input, so
+  // nothing about the arrangement is hidden from the seller.
+  const Breakdown = ({ base }) => {
+    const n = Number(base);
+    if (!base || !Number.isFinite(n) || n <= 0) return null;
+    const { listPrice, commission, net } = pricing.breakdown(n);
+    return (
+      <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4, lineHeight: 16 }}>
+        Listed at <Text style={{ fontWeight: '700', color: colors.ink }}>K{listPrice.toLocaleString()}</Text>
+        {'\n'}Our {pricing.commissionPercent}% commission K{commission.toFixed(2)} · you receive{' '}
+        <Text style={{ fontWeight: '700', color: colors.ink }}>K{net.toLocaleString()}</Text>
+      </Text>
+    );
+  };
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ padding: spacing.l, paddingBottom: 60 }}>
       <TextInput {...input({ placeholder: 'Product name', value: form.name, onChangeText: (v) => setField('name', v) })} />
@@ -123,8 +150,9 @@ export default function ProductFormScreen({ route, navigation }) {
       <TextInput {...input({ placeholder: 'Description', value: form.description, multiline: true, onChangeText: (v) => setForm({ ...form, description: v }) })} style={[input({}).style, { minHeight: 80 }]} />
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}>
-          <TextInput {...input({ placeholder: 'Price (ZMW)', keyboardType: 'decimal-pad', value: form.price, onChangeText: (v) => setField('price', v) })} />
-          <Err k="price" />
+          <TextInput {...input({ placeholder: 'You receive (ZMW)', keyboardType: 'decimal-pad', value: form.basePrice, onChangeText: (v) => setField('basePrice', v) })} />
+          <Err k="basePrice" />
+          <Breakdown base={form.basePrice} />
         </View>
         <View style={{ flex: 1 }}>
           <TextInput {...input({ placeholder: 'Stock', keyboardType: 'number-pad', value: form.stock, onChangeText: (v) => setField('stock', v) })} />
@@ -133,9 +161,10 @@ export default function ProductFormScreen({ route, navigation }) {
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Sale price <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
-          <TextInput {...input({ placeholder: 'e.g. 350', keyboardType: 'decimal-pad', value: form.salePrice, onChangeText: (v) => setField('salePrice', v) })} />
-          <Err k="salePrice" />
+          <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Sale — you receive <Text style={{ color: colors.muted, fontWeight: '400' }}>(optional)</Text></Text>
+          <TextInput {...input({ placeholder: 'e.g. 350', keyboardType: 'decimal-pad', value: form.baseSalePrice, onChangeText: (v) => setField('baseSalePrice', v) })} />
+          <Err k="baseSalePrice" />
+          <Breakdown base={form.baseSalePrice} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: '700', marginTop: spacing.l }}>Sale ends</Text>

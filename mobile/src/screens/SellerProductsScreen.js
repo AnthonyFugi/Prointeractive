@@ -167,7 +167,8 @@ export default function SellerProductsScreen({ navigation }) {
                 {p.name}{p.isActive ? '' : '  (hidden)'}
               </Text>
               <Text style={{ color: colors.muted, fontSize: 12 }}>
-                {money(p.price, p.currency)} · {p.stock} in stock
+                {money(p.price, p.currency)}
+                {p.basePrice != null ? ` (you get ${money(p.basePrice, p.currency)})` : ''} · {p.stock} in stock
               </Text>
             </View>
             <Pressable onPress={() => navigation.navigate('ProductForm', { product: p, businessId: business._id })}

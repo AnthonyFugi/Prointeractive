@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import Loader from '../components/Loader.jsx';
 import { api, money } from '../api.js';
+import { usePricing } from '../pricing.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 
 export default function Admin() {
+  const pricing = usePricing();
   const [tab, setTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [businesses, setBusinesses] = useState([]);
@@ -762,9 +764,17 @@ export default function Admin() {
               onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })} />
             <div className="row">
               <div style={{ flex: 1 }}>
-                <label htmlFor="epprice">Price</label>
+                <label htmlFor="epprice">Price <span className="muted">(shelf price)</span></label>
                 <input id="epprice" type="number" min="0" step="0.01" value={editingProduct.price}
                   onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })} style={{ minWidth: 0, width: '100%' }} />
+                {/* Admin sets the shelf price directly — this is what the change
+                    does to the seller's take-home, so it isn't an invisible cut. */}
+                {Number(editingProduct.price) > 0 && (
+                  <p className="muted" style={{ margin: '0.3rem 0 0', fontSize: '0.8rem' }}>
+                    Seller receives {money(Math.round(Number(editingProduct.price) * (1 - pricing.commissionPercent / 100) * 100) / 100)}
+                    {' '}after {pricing.commissionPercent}% commission
+                  </p>
+                )}
               </div>
               <div style={{ flex: 1 }}>
                 <label htmlFor="epstock">Stock</label>
