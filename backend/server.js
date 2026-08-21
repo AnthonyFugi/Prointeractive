@@ -34,6 +34,8 @@ import mongoose from 'mongoose';
 import * as Sentry from '@sentry/node';
 import { startMaintenance } from './utils/maintenance.js';
 import { commissionPercent, markupPercent, PRICE_ROUNDING } from './utils/pricing.js';
+import { recordMetric, onboardingFunnel } from './controllers/metricController.js';
+import { protect, restrictTo } from './middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === 'production';
@@ -110,6 +112,11 @@ app.get('/api/pricing', (req, res) =>
     },
   })
 );
+
+// Onboarding funnel counters — public write (signed-out visitors are the
+// point), admin-only read.
+app.post('/api/metrics', recordMetric);
+app.get('/api/metrics/funnel', protect, restrictTo('admin'), onboardingFunnel);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/businesses', businessRoutes);

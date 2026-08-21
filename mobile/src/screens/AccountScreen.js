@@ -4,6 +4,7 @@ import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
 import { colors, money, setDisplayCurrency, spacing } from '../theme';
+import { formatPhone } from '../phone';
 
 export default function AccountScreen({ navigation }) {
   const { user, logout, refresh } = useAuth();
@@ -167,6 +168,27 @@ export default function AccountScreen({ navigation }) {
               }}
             />
             <Text style={{ color: colors.muted, fontSize: 11, marginTop: 6 }}>Shows nearby stores first in the Businesses directory.</Text>
+
+            <Text style={{ fontWeight: '700', marginBottom: 8, marginTop: 16 }}>Phone</Text>
+            <TextInput
+              placeholder="e.g. 0977 123 456"
+              placeholderTextColor={colors.muted}
+              keyboardType="phone-pad"
+              autoComplete="tel"
+              textContentType="telephoneNumber"
+              defaultValue={user.phone ? formatPhone(user.phone) : ''}
+              onBlur={async (e) => {
+                try {
+                  await api('/auth/preferences', { method: 'PATCH', body: { phone: e.nativeEvent.text.trim() } });
+                  if (refresh) await refresh();
+                } catch (_e) {}
+              }}
+              style={{
+                backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: 8,
+                paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.ink,
+              }}
+            />
+            <Text style={{ color: colors.muted, fontSize: 11, marginTop: 6 }}>So sellers can reach you on WhatsApp about your orders.</Text>
           </View>
 
           <Pressable onPress={() => navigation.navigate('ForgotPassword')}

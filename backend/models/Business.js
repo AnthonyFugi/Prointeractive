@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { normalizePhone } from '../utils/phone.js';
 
 const businessSchema = new mongoose.Schema(
   {
@@ -41,6 +42,16 @@ const slugify = (name) =>
 
 // Slug is generated once and never changes — printed links stay valid even if
 // the business renames. Suffix added only when the clean slug is taken.
+// Same normalisation as User.phone. The "Chat on WhatsApp" button is built
+// from this value, and a number stored as typed produces a dead link for some
+// sellers and a working one for others.
+businessSchema.pre('save', function (next) {
+  if (this.isModified('phone') && this.phone) {
+    this.phone = normalizePhone(this.phone) || this.phone;
+  }
+  next();
+});
+
 businessSchema.pre('save', async function (next) {
   if (this.slug) return next();
   const base = slugify(this.name) || 'business';

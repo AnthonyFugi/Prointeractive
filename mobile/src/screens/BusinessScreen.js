@@ -17,6 +17,34 @@ export default function BusinessScreen({ route, navigation }) {
   const [storeQuery, setStoreQuery] = useState('');
 
   const [refreshing, setRefreshing] = useState(false);
+  // On-platform enquiry. Mirrors the product screen's flow so a shopper can
+  // start a conversation from the storefront without going via a product.
+  const [asking, setAsking] = useState(false);
+  const [askMessage, setAskMessage] = useState('');
+  const [sendingAsk, setSendingAsk] = useState(false);
+
+  const messageBusiness = async () => {
+    if (!user) return navigation.navigate('AccountTab', { screen: 'Login' });
+    if (!askMessage.trim()) return;
+    setSendingAsk(true);
+    try {
+      await api('/inquiries', {
+        method: 'POST',
+        body: {
+          businessId: business._id,
+          subject: `Message for ${business.name}`,
+          message: askMessage.trim(),
+        },
+      });
+      setAskMessage('');
+      setAsking(false);
+      Alert.alert('Sent', 'Your message is on its way. Replies land in your Inbox.');
+    } catch (e) {
+      Alert.alert('Could not send', e.message);
+    } finally {
+      setSendingAsk(false);
+    }
+  };
 
   const load = () => Promise.all([
     api(`/businesses/${id}`).then((d) => setBusiness(d.business)).catch(() => {}),
@@ -90,6 +118,44 @@ export default function BusinessScreen({ route, navigation }) {
                 {isFav ? '✓ Following' : '+ Follow'}
               </Text>
             </Pressable>
+          ) : null}
+          <Pressable
+            onPress={() => setAsking(!asking)}
+            style={{
+              alignSelf: 'flex-start', marginTop: spacing.m, borderRadius: 999,
+              paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5,
+              borderColor: colors.navy, backgroundColor: 'transparent',
+            }}>
+            <Text style={{ color: colors.navy, fontWeight: '700', fontSize: 13 }}>
+              {asking ? 'Cancel' : 'Message this business'}
+            </Text>
+          </Pressable>
+          {asking ? (
+            <View style={{ marginTop: spacing.m }}>
+              <TextInput
+                placeholder="What would you like to ask?"
+                placeholderTextColor={colors.muted}
+                multiline
+                value={askMessage}
+                onChangeText={setAskMessage}
+                style={{
+                  backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,
+                  borderRadius: 8, padding: 12, fontSize: 14, color: colors.ink, minHeight: 90,
+                  textAlignVertical: 'top',
+                }}
+              />
+              <Pressable
+                onPress={messageBusiness}
+                disabled={sendingAsk || !askMessage.trim()}
+                style={{
+                  backgroundColor: colors.navy, borderRadius: 8, padding: 12, marginTop: spacing.s,
+                  opacity: sendingAsk || !askMessage.trim() ? 0.6 : 1,
+                }}>
+                <Text style={{ color: '#fff', fontWeight: '700', textAlign: 'center' }}>
+                  {sendingAsk ? 'Sending…' : 'Send message'}
+                </Text>
+              </Pressable>
+            </View>
           ) : null}
           {products.length > 3 ? (
             <TextInput

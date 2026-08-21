@@ -50,6 +50,9 @@ export default function ProductDetail() {
       setProduct(d.product);
     }).catch((e) => setError(e.message));
     api(`/products/${id}/reviews`).then((d) => setReviews(d.reviews)).catch(() => {});
+    // Behavioural signal. Fire-and-forget: returns 204 regardless, ignores
+    // signed-out visitors server-side, and never blocks or delays the page.
+    api(`/products/${id}/view`, { method: 'POST' }).catch(() => {});
   }, [id]);
 
   if (error) return <div className="container"><p className="error-text">{error}</p></div>;

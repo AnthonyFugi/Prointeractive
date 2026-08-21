@@ -1,10 +1,13 @@
 import { Router } from 'express';
-import { createProduct, listProducts, getProduct, updateProduct, deleteProduct, trendingProducts, setFavoriteProduct } from '../controllers/productController.js';
+import { createProduct, listProducts, getProduct, updateProduct, deleteProduct, trendingProducts, setFavoriteProduct, followingNew, recordProductView } from '../controllers/productController.js';
 import { createReview, listReviews } from '../controllers/reviewController.js';
 import { protect, restrictTo, maybeAuth } from '../middleware/auth.js';
 
 const router = Router();
 router.get('/trending', trendingProducts);
+// Both registered above '/:id' so Express doesn't read the literal as an id.
+router.get('/following-new', protect, followingNew);
+router.post('/:id/view', maybeAuth, recordProductView);
 router.post('/:id/favorite', protect, setFavoriteProduct);
 router.route('/')
   .get(maybeAuth, listProducts)

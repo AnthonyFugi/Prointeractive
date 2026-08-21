@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import Welcome from '../components/Welcome.jsx';
 import InterestPicker from '../components/InterestPicker.jsx';
-import { getLocalInterests, shouldOfferOnboarding } from '../interests.js';
+import FollowingNew from '../components/FollowingNew.jsx';
+import { getLocalInterests, shouldOfferOnboarding, needsInterestGate, hasSeenWelcome } from '../interests.js';
 
 export default function Home() {
   const { user } = useAuth();
@@ -36,7 +37,19 @@ export default function Home() {
     if (user?.interests?.length) setInterests(user.interests);
   }, [user]);
 
-  // Offered once, after sign-up, and never to sellers — see shouldOfferOnboarding.
+  // Whether this visitor has to choose before browsing. Recomputed when the
+  // user changes, and again after the picker saves, so completing it lifts the
+  // gate without a reload.
+  const [gated, setGated] = useState(() => needsInterestGate(null));
+  useEffect(() => { setGated(needsInterestGate(user)); }, [user]);
+
+  // The two dialogs must not stack. Welcome comes first for a genuinely new
+  // visitor; the picker follows once it's been dealt with. A returning visitor
+  // who has seen the welcome goes straight to the picker.
+  const [welcomeDone, setWelcomeDone] = useState(() => hasSeenWelcome());
+
+  // Signed-in shoppers who haven't chosen yet still get the picker offered
+  // directly, without the welcome card they've already seen.
   useEffect(() => {
     if (shouldOfferOnboarding(user)) setShowPicker(true);
   }, [user]);
@@ -106,13 +119,28 @@ export default function Home() {
     <div className="container">
       {/* Mounted only here, never on /product/* or /business/* — a link shared
           in a WhatsApp group must open straight onto the item. */}
-      <Welcome onPickInterests={() => setShowPicker(true)} />
-      {showPicker && (
-        <InterestPicker
-          onClose={() => setShowPicker(false)}
-          onSaved={(list) => { setInterests(list); setPage(1); }}
+      {!welcomeDone && (
+        <Welcome
+          required={gated}
+          onPickInterests={() => { setWelcomeDone(true); setShowPicker(true); }}
+          onDismiss={() => setWelcomeDone(true)}
         />
       )}
+      {welcomeDone && (showPicker || gated) && (
+        <InterestPicker
+          required={gated}
+          onClose={() => setShowPicker(false)}
+          onSaved={(list) => {
+            setInterests(list);
+            setPage(1);
+            setGated(false);   // choice made — lift the gate immediately
+          }}
+        />
+      )}
+      {/* Only for signed-in shoppers who follow someone — renders nothing
+          otherwise, rather than showing an empty box that advertises a quiet
+          platform. */}
+      {user && <FollowingNew />}
       <section className="hero hero-home">
         <div className="eyebrow">Making business interaction, Easy!</div>
         <h1>What you need, from businesses you trust.</h1>

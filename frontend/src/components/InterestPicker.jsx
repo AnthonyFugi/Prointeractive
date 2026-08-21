@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { track } from '../metrics.js';
 import { useNavigate } from 'react-router-dom';
 import {
   getLocalInterests, setLocalInterests, getPendingFollows, setPendingFollows,
@@ -17,7 +18,7 @@ import {
  * Every step is skippable. The point is a less cluttered shop, and a shopper
  * who abandons a mandatory quiz gets no shop at all.
  */
-export default function InterestPicker({ onClose, onSaved }) {
+export default function InterestPicker({ onClose, onSaved, required = false }) {
   const { user, refresh } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState('categories');
@@ -31,6 +32,10 @@ export default function InterestPicker({ onClose, onSaved }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    track(required ? 'gate_shown' : 'welcome_shown');
+  }, [required]);
 
   useEffect(() => {
     api('/categories')
@@ -53,6 +58,8 @@ export default function InterestPicker({ onClose, onSaved }) {
 
   const persist = async (list, { completed = false, skipped = false } = {}) => {
     if (completed || skipped) markOnboardingDoneLocally();
+    if (completed) track('gate_completed');
+    if (skipped) track('gate_skipped');
     // Always keep a local copy: it's what personalises the feed for a visitor
     // who hasn't signed in, and a harmless duplicate for one who has.
     setLocalInterests(list);
@@ -75,10 +82,16 @@ export default function InterestPicker({ onClose, onSaved }) {
       if (list.length) qs.set('interests', list.join(','));
       const d = await api(`/businesses/suggested?${qs}`);
       setSuggested(d.businesses || []);
-      setStep('stores');
-    } catch (e) {
-      setError(e.message);
+    } catch {
+      // Suggestions are a nice-to-have, not a gate. If the endpoint is down or
+      // an older API build is still serving (where /suggested falls through to
+      // the /:id route and 404s), carry on with an empty list rather than
+      // stranding the shopper on this step. Their interests are already saved,
+      // which is the part that actually shapes the feed.
+      setSuggested([]);
     } finally {
+      // Advance either way — never a dead end, and never a raw backend message.
+      setStep('stores');
       setSaving(false);
     }
   };
@@ -88,6 +101,7 @@ export default function InterestPicker({ onClose, onSaved }) {
       // No account yet — record the intent rather than rejecting the tap.
       // It's applied for real on sign-in, so the choice isn't wasted.
       const on = !pending.has(biz._id);
+      if (on) track('follow_intent');
       const next = new Set(pending);
       on ? next.add(biz._id) : next.delete(biz._id);
       setPending(next);
@@ -190,10 +204,19 @@ export default function InterestPicker({ onClose, onSaved }) {
             {error && <p className="error-text">{error}</p>}
 
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-red" onClick={goToStores} disabled={saving} style={{ flex: 1 }}>
-                {saving ? 'Saving…' : chosen.size ? `Continue with ${chosen.size}` : 'Continue'}
+              <button
+                className="btn btn-red"
+                onClick={goToStores}
+                // One pick is the whole ask. Disabled rather than hidden, so
+                // it's obvious what the button is waiting for.
+                disabled={saving || (required && chosen.size === 0)}
+                style={{ flex: 1 }}
+              >
+                {saving ? 'Saving…' : chosen.size ? `Continue with ${chosen.size}` : 'Pick at least one'}
               </button>
-              <button className="btn btn-ghost" onClick={skip} disabled={saving}>Skip</button>
+              {!required && (
+                <button className="btn btn-ghost" onClick={skip} disabled={saving}>Skip</button>
+              )}
             </div>
           </>
         ) : (
@@ -274,6 +297,8 @@ export default function InterestPicker({ onClose, onSaved }) {
                 {saving ? 'Saving…' : 'Start shopping'}
               </button>
               <button className="btn btn-ghost" onClick={() => setStep('categories')} disabled={saving}>Back</button>
+              {/* No gate on this step: following requires an account, and
+                  requiring one here would be the sign-in wall we ruled out. */}
             </div>
           </>
         )}

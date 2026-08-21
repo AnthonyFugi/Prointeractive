@@ -3,9 +3,10 @@ import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Tex
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { colors, spacing } from '../theme';
+import { track } from '../metrics';
 import {
   getLocalInterests, setLocalInterests, hasSeenWelcome, markWelcomeSeen, shouldOfferOnboarding,
-  getPendingFollows, setPendingFollows, markOnboardingDoneLocally,
+  getPendingFollows, setPendingFollows, markOnboardingDoneLocally, needsInterestGate,
 } from '../interests';
 
 /**
@@ -22,6 +23,9 @@ import {
 export default function OnboardingSheet({ onInterestsChanged, navigation }) {
   const { user, refresh } = useAuth();
   const [stage, setStage] = useState(null); // null | 'welcome' | 'categories' | 'stores'
+  // When true there is no dismiss on the welcome or category steps — the only
+  // ways past are choosing, signing in, or opening a shared link.
+  const [gated, setGated] = useState(false);
   const [categories, setCategories] = useState([]);
   const [chosen, setChosen] = useState(new Set());
   const [suggested, setSuggested] = useState([]);
@@ -37,9 +41,11 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
     (async () => {
       const seen = await hasSeenWelcome();
       const offer = await shouldOfferOnboarding(user);
+      const gate = await needsInterestGate(user);
       if (!alive) return;
-      if (!seen) setStage('welcome');
-      else if (offer) setStage('categories');
+      setGated(gate);
+      if (!seen) { setStage('welcome'); track('welcome_shown'); }
+      else if (offer || gate) { setStage('categories'); track(gate ? 'gate_shown' : 'welcome_shown'); }
     })();
     return () => { alive = false; };
   }, [user]);
@@ -57,7 +63,7 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
       .finally(() => setLoading(false));
   }, [stage, user]);
 
-  const close = async () => { await markWelcomeSeen(); setStage(null); };
+  const close = async () => { track('welcome_browsed'); await markWelcomeSeen(); setStage(null); };
 
   const toggle = (name) =>
     setChosen((prev) => {
@@ -68,6 +74,8 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
 
   const persist = async (list, flags = {}) => {
     if (flags.completed || flags.skipped) await markOnboardingDoneLocally();
+    if (flags.completed) track('gate_completed');
+    if (flags.skipped) track('gate_skipped');
     await setLocalInterests(list);
     if (!user) return;
     try {
@@ -86,7 +94,12 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
       const d = await api(`/businesses/suggested?${qs}`);
       setSuggested(d.businesses || []);
       setStage('stores');
-    } catch { setNote('Could not load stores — you can still browse everything.'); setStage('stores'); }
+    } catch {
+      // Suggestions are a nice-to-have. Advance with an empty list rather than
+      // stranding the shopper — their interests are already saved.
+      setSuggested([]);
+      setStage('stores');
+    }
     finally { setBusy(false); }
   };
 
@@ -94,6 +107,7 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
     if (!user) {
       // Record the intent instead of rejecting the tap — applied on sign-in.
       const on = !pending.has(b._id);
+      if (on) track('follow_intent');
       const next = new Set(pending);
       on ? next.add(b._id) : next.delete(b._id);
       setPending(next);
@@ -117,6 +131,7 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
     await persist(list, { completed: true });
     await markWelcomeSeen();
     setBusy(false);
+    setGated(false);   // choice made — gate lifted
     onInterestsChanged?.(list);
     setStage(null);
   };
@@ -139,7 +154,13 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
   if (!stage) return null;
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={close}>
+    <Modal
+      transparent
+      animationType="fade"
+      visible
+      // Android hardware back must not slip past the gate.
+      onRequestClose={gated ? () => {} : close}
+    >
       <View style={s.backdrop}>
         <View style={s.sheet}>
           {stage === 'welcome' && (
@@ -152,11 +173,13 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
                 <Text style={s.bullet}>📱  Mobile money, card, or cash on delivery.</Text>
               </View>
               <Pressable style={[s.btn, s.btnRed]} onPress={() => setStage('categories')}>
-                <Text style={s.btnRedText}>Show me what I like</Text>
+                <Text style={s.btnRedText}>{gated ? 'Get started' : 'Show me what I like'}</Text>
               </Pressable>
-              <Pressable style={[s.btn, s.btnGhost]} onPress={close}>
-                <Text style={s.btnGhostText}>Look around first</Text>
-              </Pressable>
+              {!gated && (
+                <Pressable style={[s.btn, s.btnGhost]} onPress={close}>
+                  <Text style={s.btnGhostText}>Look around first</Text>
+                </Pressable>
+              )}
             </>
           )}
 
@@ -182,14 +205,20 @@ export default function OnboardingSheet({ onInterestsChanged, navigation }) {
                   })}
                 </ScrollView>
               )}
-              <Pressable style={[s.btn, s.btnRed]} onPress={goToStores} disabled={busy}>
+              <Pressable
+                style={[s.btn, s.btnRed, gated && chosen.size === 0 && { opacity: 0.5 }]}
+                onPress={goToStores}
+                disabled={busy || (gated && chosen.size === 0)}
+              >
                 <Text style={s.btnRedText}>
-                  {busy ? 'Saving…' : chosen.size ? `Continue with ${chosen.size}` : 'Continue'}
+                  {busy ? 'Saving…' : chosen.size ? `Continue with ${chosen.size}` : 'Pick at least one'}
                 </Text>
               </Pressable>
-              <Pressable style={[s.btn, s.btnGhost]} onPress={skipPicker} disabled={busy}>
-                <Text style={s.btnGhostText}>Skip</Text>
-              </Pressable>
+              {!gated && (
+                <Pressable style={[s.btn, s.btnGhost]} onPress={skipPicker} disabled={busy}>
+                  <Text style={s.btnGhostText}>Skip</Text>
+                </Pressable>
+              )}
             </>
           )}
 

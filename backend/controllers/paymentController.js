@@ -5,6 +5,7 @@ import Business from '../models/Business.js';
 import User from '../models/User.js';
 import { isConfigured, createHostedPayment, verifyTransaction, fetchBanks } from '../utils/flutterwave.js';
 import { orderStatusEmail } from '../utils/email.js';
+import { notifyCustomerOrderStatus } from '../utils/notify.js';
 
 const APP_URL = () =>
   process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
@@ -55,6 +56,9 @@ const fulfillPayment = async (txRef, flwData) => {
       Business.findById(order.business).select('name'),
     ]);
     orderStatusEmail({ order, customerEmail: buyer?.email, businessName: biz?.name || 'the business' });
+    // The moment that most deserves a push: money left their account and the
+    // order is now real.
+    notifyCustomerOrderStatus(order, biz?.name || 'the seller');
   } else if (order.status !== 'paid') {
     // Money arrived for an order that moved on (e.g. cancelled) — flag for manual review/refund.
     payment.note = `paid while order status was "${order.status}" — review for refund`;

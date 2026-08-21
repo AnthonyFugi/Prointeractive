@@ -4,7 +4,9 @@ import Product from '../models/Product.js';
 import Business from '../models/Business.js';
 import { orderPlacedEmails, orderStatusEmail } from '../utils/email.js';
 import { sendPush } from '../utils/push.js';
+import { notifyCustomerOrderStatus, notifyCustomerOrderPlaced } from '../utils/notify.js';
 import { computeCommission } from '../utils/flutterwave.js';
+import { recordAffinity } from '../utils/affinity.js';
 
 /**
  * POST /api/orders  (customer)
@@ -86,6 +88,21 @@ export const createOrder = async (req, res, next) => {
         });
       }
     }).catch(() => {});
+    // ...and to the buyer, who until now heard nothing at all.
+    notifyCustomerOrderPlaced(order, business?.name || 'the seller');
+
+    // Buying is the only signal that cost the shopper money — weight it
+    // accordingly. Done after the order is safely saved so a scoring failure
+    // can never cost someone their purchase.
+    try {
+      const cats = await mongoose.model('Product')
+        .find({ _id: { $in: order.items.map((i) => i.product) } })
+        .select('category');
+      cats.forEach((c) => recordAffinity(req.user, c.category, 'purchase'));
+      await req.user.save({ validateBeforeSave: false });
+    } catch (e) {
+      console.error('[affinity purchase]', e.message);
+    }
 
     res.status(201).json({ success: true, order });
   } catch (err) {
@@ -97,7 +114,7 @@ export const createOrder = async (req, res, next) => {
 export const myOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ customer: req.user._id })
-      .populate('business', 'name slug')
+      .populate('business', 'name slug phone')
       .sort('-createdAt');
     res.json({ success: true, orders });
   } catch (err) {
@@ -113,7 +130,7 @@ export const businessOrders = async (req, res, next) => {
     const { status } = req.query;
     const filter = { business: business._id };
     if (status) filter.status = status;
-    const orders = await Order.find(filter).populate('customer', 'name email').sort('-createdAt');
+    const orders = await Order.find(filter).populate('customer', 'name email phone').sort('-createdAt');
     res.json({ success: true, orders });
   } catch (err) {
     next(err);
@@ -124,8 +141,8 @@ export const businessOrders = async (req, res, next) => {
 export const getOrder = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate('business', 'name slug owner')
-      .populate('customer', 'name email');
+      .populate('business', 'name slug owner phone')
+      .populate('customer', 'name email phone');
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
     const isCustomer = order.customer._id.equals(req.user._id);
@@ -208,11 +225,14 @@ export const updateOrderStatus = async (req, res, next) => {
     order.status = status;
     await order.save();
 
+    const biz = await Business.findById(order.business._id || order.business).select('name');
     if (isSeller || req.user.role === 'admin') {
       const buyer = await mongoose.model('User').findById(order.customer).select('email');
-      const biz = await Business.findById(order.business._id || order.business).select('name');
       orderStatusEmail({ order, customerEmail: buyer?.email, businessName: biz?.name || 'the business' });
     }
+    // Push to the buyer on every status move, including one they made
+    // themselves — a cancellation confirmation is still worth having.
+    notifyCustomerOrderStatus(order, biz?.name || 'the seller');
 
     res.json({ success: true, order });
   } catch (err) {

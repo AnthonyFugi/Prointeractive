@@ -2,6 +2,7 @@ import Inquiry from '../models/Inquiry.js';
 import Business from '../models/Business.js';
 import User from '../models/User.js';
 import { inquiryEmail } from '../utils/email.js';
+import { notifyNewMessage } from '../utils/notify.js';
 
 // POST /api/inquiries  (customer starts a thread with a business)
 export const createInquiry = async (req, res, next) => {
@@ -35,6 +36,13 @@ export const createInquiry = async (req, res, next) => {
       to: business.owner?.email,
       fromName: req.user.name,
       subject,
+      preview: message,
+      inquiryId: inquiry._id,
+    });
+    // Email alone wasn't reaching anyone. Push brings the seller back to the
+    // thread on Prointeractive rather than leaving the enquiry to go cold.
+    notifyNewMessage(business.owner?._id, {
+      fromName: req.user.name,
       preview: message,
       inquiryId: inquiry._id,
     });
@@ -119,20 +127,28 @@ export const replyInquiry = async (req, res, next) => {
     if (!senderIsCustomer) inquiry.status = 'answered';
     await inquiry.save();
 
-    // Notify the other party
+    // Notify the other party, on both channels.
     let recipientEmail;
+    let recipientId;
     if (senderIsCustomer) {
       const biz = await Business.findById(inquiry.business).populate('owner', 'email');
       recipientEmail = biz?.owner?.email;
+      recipientId = biz?.owner?._id;
     } else {
       const buyer = await (await import('../models/User.js')).default
         .findById(inquiry.customer).select('email');
       recipientEmail = buyer?.email;
+      recipientId = buyer?._id;
     }
     inquiryEmail({
       to: recipientEmail,
       fromName: req.user.name,
       subject: inquiry.subject,
+      preview: message,
+      inquiryId: inquiry._id,
+    });
+    notifyNewMessage(recipientId, {
+      fromName: req.user.name,
       preview: message,
       inquiryId: inquiry._id,
     });

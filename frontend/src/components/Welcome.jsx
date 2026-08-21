@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hasSeenWelcome, markWelcomeSeen } from '../interests.js';
+import { track } from '../metrics.js';
 
 /**
  * Shown once, on a first visit to the home page.
@@ -13,26 +14,32 @@ import { hasSeenWelcome, markWelcomeSeen } from '../interests.js';
  *
  * Dismissing it in any way marks it seen, so nobody meets it twice.
  */
-export default function Welcome({ onPickInterests }) {
+export default function Welcome({ onPickInterests, onDismiss, required = false }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     // Deferred a beat so it doesn't flash over a page still painting.
     if (!hasSeenWelcome()) {
-      const t = setTimeout(() => setOpen(true), 350);
+      const t = setTimeout(() => { setOpen(true); track('welcome_shown'); }, 350);
       return () => clearTimeout(t);
     }
   }, []);
 
+  // With the gate on there is no dismiss — the only way forward is to choose
+  // interests, sign in, or open a shared link (which never renders this).
   const close = () => {
+    if (required) return;
     markWelcomeSeen();
     setOpen(false);
+    track('welcome_browsed');
+    onDismiss?.();      // let Home move on to the picker
   };
 
   const go = (path) => () => {
     markWelcomeSeen();
     setOpen(false);
+    onDismiss?.();
     navigate(path);
   };
 
@@ -49,7 +56,7 @@ export default function Welcome({ onPickInterests }) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="welcome-title"
-      onClick={close}
+      onClick={required ? undefined : close}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         background: 'rgba(0,10,40,0.55)',
@@ -62,17 +69,19 @@ export default function Welcome({ onPickInterests }) {
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 460, width: '100%', margin: 0, position: 'relative' }}
       >
-        <button
-          type="button"
-          onClick={close}
-          aria-label="Close"
-          style={{
-            position: 'absolute', top: 10, right: 12, background: 'none', border: 'none',
-            fontSize: '1.35rem', lineHeight: 1, cursor: 'pointer', color: 'var(--muted)',
-          }}
-        >
-          ×
-        </button>
+        {!required && (
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Close"
+            style={{
+              position: 'absolute', top: 10, right: 12, background: 'none', border: 'none',
+              fontSize: '1.35rem', lineHeight: 1, cursor: 'pointer', color: 'var(--muted)',
+            }}
+          >
+            ×
+          </button>
+        )}
 
         <h2 id="welcome-title" style={{ marginTop: 0, marginBottom: '0.4rem' }}>
           Welcome to Prointeractive
@@ -98,14 +107,16 @@ export default function Welcome({ onPickInterests }) {
 
         <div style={{ display: 'grid', gap: '0.5rem' }}>
           <button className="btn btn-red" onClick={pick} style={{ width: '100%' }}>
-            Show me what I like
+            {required ? 'Get started' : 'Show me what I like'}
           </button>
           <button className="btn btn-navy" onClick={go('/register')} style={{ width: '100%' }}>
             Create an account
           </button>
-          <button className="btn btn-ghost" onClick={close} style={{ width: '100%' }}>
-            Look around first
-          </button>
+          {!required && (
+            <button className="btn btn-ghost" onClick={close} style={{ width: '100%' }}>
+              Look around first
+            </button>
+          )}
         </div>
 
         <p className="muted" style={{ textAlign: 'center', marginTop: '0.9rem', marginBottom: 0, fontSize: '0.9rem' }}>

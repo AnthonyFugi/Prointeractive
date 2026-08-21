@@ -1,0 +1,8 @@
+Delete these two files — they are the buyer<->seller WhatsApp chat buttons,
+which pulled conversation off the platform:
+
+  frontend/src/components/WhatsAppButton.jsx
+  mobile/src/components/WhatsAppButton.js
+
+Every import of them has been removed in the files in this patch, so nothing
+references them any more. Leaving them in place is harmless but dead.

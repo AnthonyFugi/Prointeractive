@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/Loader.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import VerifiedBadge from '../components/VerifiedBadge.jsx';
+import { formatPhone } from '../phone.js';
 
 export default function Account() {
   const { user, refresh } = useAuth();
@@ -117,6 +118,26 @@ export default function Account() {
               onBlur={async (e) => {
                 try {
                   await api('/auth/preferences', { method: 'PATCH', body: { city: e.target.value } });
+                  if (refresh) await refresh();
+                } catch (err) { alert(err.message); }
+              }}
+              style={{ maxWidth: 220 }}
+            />
+          </div>
+          <div>
+            <label htmlFor="phone">
+              Phone <span className="muted">(so sellers can reach you on WhatsApp)</span>
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="e.g. 0977 123 456"
+              defaultValue={user.phone ? formatPhone(user.phone) : ''}
+              onBlur={async (e) => {
+                try {
+                  await api('/auth/preferences', { method: 'PATCH', body: { phone: e.target.value.trim() } });
                   if (refresh) await refresh();
                 } catch (err) { alert(err.message); }
               }}

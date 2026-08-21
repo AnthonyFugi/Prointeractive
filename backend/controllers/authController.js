@@ -8,6 +8,7 @@ import Product from '../models/Product.js';
 import Inquiry from '../models/Inquiry.js';
 import { welcomeEmail, passwordResetEmail } from '../utils/email.js';
 import Category from '../models/Category.js';
+import { normalizePhone } from '../utils/phone.js';
 
 const googleClient = new OAuth2Client();
 
@@ -22,7 +23,7 @@ const sendAuth = (res, user, status = 200) => {
     success: true,
     token: signToken(user._id),
     user: {
-      id: user._id, name: user.name, email: user.email, role: user.role,
+      id: user._id, name: user.name, email: user.email, phone: user.phone || '', role: user.role,
       interests: user.interests || [],
       onboarding: user.onboarding || { completedAt: null, skippedAt: null },
     },
@@ -32,7 +33,7 @@ const sendAuth = (res, user, status = 200) => {
 // POST /api/auth/register
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, role, acceptedTerms } = req.body;
+    const { name, email, password, phone, role, acceptedTerms } = req.body;
     if (!acceptedTerms) {
       return res.status(400).json({
         success: false,
@@ -40,7 +41,13 @@ export const register = async (req, res, next) => {
       });
     }
     const safeRole = role === 'business' ? 'business' : 'customer'; // never allow self-made admins
-    const user = await User.create({ name, email, password, role: safeRole, termsAcceptedAt: new Date() });
+    // Optional at sign-up — a rejected phone must never cost someone an
+    // account. Anything unparseable is simply dropped and asked for later.
+    const user = await User.create({
+      name, email, password, role: safeRole,
+      phone: normalizePhone(phone) || '',
+      termsAcceptedAt: new Date(),
+    });
     welcomeEmail(user);
     sendAuth(res, user, 201);
   } catch (err) {
@@ -74,11 +81,11 @@ export const login = async (req, res, next) => {
 
 // GET /api/auth/me
 export const getMe = async (req, res) => {
-  const { _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses = [], favoriteProducts = [], preferences, interests = [], onboarding } = req.user;
+  const { _id, name, email, phone, role, avatarUrl, createdAt, favoriteBusinesses = [], favoriteProducts = [], preferences, interests = [], onboarding } = req.user;
   res.json({
     success: true,
     user: {
-      id: _id, name, email, role, avatarUrl, createdAt, favoriteBusinesses, favoriteProducts,
+      id: _id, name, email, phone: phone || '', role, avatarUrl, createdAt, favoriteBusinesses, favoriteProducts,
       preferences: preferences || { currency: 'ZMW', city: '' },
       interests,
       onboarding: onboarding || { completedAt: null, skippedAt: null },
@@ -232,7 +239,7 @@ export const deleteMe = async (req, res, next) => {
 // PATCH /api/auth/preferences  { currency?, city? }
 export const updatePreferences = async (req, res, next) => {
   try {
-    const { currency, city } = req.body;
+    const { currency, city, phone } = req.body;
     if (currency !== undefined) {
       if (!['ZMW', 'USD'].includes(currency)) return res.status(400).json({ success: false, message: 'Invalid currency' });
       req.user.preferences = req.user.preferences || {};
@@ -242,8 +249,22 @@ export const updatePreferences = async (req, res, next) => {
       req.user.preferences = req.user.preferences || {};
       req.user.preferences.city = String(city).trim().slice(0, 60);
     }
+    if (phone !== undefined) {
+      if (phone === '') {
+        req.user.phone = '';
+      } else {
+        const normalized = normalizePhone(phone);
+        if (!normalized) {
+          return res.status(400).json({
+            success: false,
+            message: 'That doesn\'t look like a valid phone number. Zambian numbers look like 0977 123 456.',
+          });
+        }
+        req.user.phone = normalized;
+      }
+    }
     await req.user.save();
-    res.json({ success: true, preferences: req.user.preferences });
+    res.json({ success: true, preferences: req.user.preferences, phone: req.user.phone });
   } catch (err) { next(err); }
 };
 

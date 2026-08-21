@@ -49,6 +49,12 @@ export default function ProductScreen({ route, navigation }) {
 
   useEffect(() => { load(); }, [id]);
 
+  // Behavioural signal, recorded once per product opened (not on pull-to-
+  // refresh, which would inflate the score for anyone with a poor connection).
+  useEffect(() => {
+    api(`/products/${id}/view`, { method: 'POST' }).catch(() => {});
+  }, [id]);
+
   const onRefresh = () => { setRefreshing(true); load().finally(() => setRefreshing(false)); };
   const [sendingAsk, setSendingAsk] = useState(false);
 
