@@ -6,6 +6,13 @@ import StatusBadge from '../components/StatusBadge.jsx';
 
 export default function Admin() {
   const pricing = usePricing();
+  // Admin-initiated password recovery
+  const [resetTarget, setResetTarget] = useState(null);   // user being reset
+  const [resetPassword, setResetPassword] = useState(''); // acting admin's own password
+  const [resetResult, setResetResult] = useState(null);   // { url, expiresAt }
+  const [resetError, setResetError] = useState('');
+  const [resettingUser, setResettingUser] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [businesses, setBusinesses] = useState([]);
@@ -136,6 +143,42 @@ export default function Admin() {
       await api(`/products/${prod._id}`, { method: 'PATCH', body: { isActive: !prod.isActive } });
       setAdminProducts((prev) => prev.map((x) => (x._id === prod._id ? { ...x, isActive: !prod.isActive } : x)));
     } catch (e) { setError(e.message); }
+  };
+
+  const openReset = (u) => {
+    setResetTarget(u);
+    setResetPassword('');
+    setResetResult(null);
+    setResetError('');
+    setCopied(false);
+  };
+
+  const requestResetLink = async (e) => {
+    e.preventDefault();
+    setResetError('');
+    setResettingUser(true);
+    try {
+      const d = await api(`/admin/users/${resetTarget._id}/reset-link`, {
+        method: 'POST',
+        body: { adminPassword: resetPassword },
+      });
+      setResetResult({ url: d.url, expiresAt: d.expiresAt });
+      setResetPassword(''); // don't leave the admin's own password sitting in state
+    } catch (err) {
+      setResetError(err.message);
+    } finally {
+      setResettingUser(false);
+    }
+  };
+
+  const copyResetLink = async () => {
+    try {
+      await navigator.clipboard.writeText(resetResult.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setResetError('Could not copy automatically — select the link and copy it manually.');
+    }
   };
 
   const toggleSuspend = async (u) => {
@@ -629,6 +672,12 @@ export default function Admin() {
           </div>
           <div className="row">
             {u.role !== 'admin' && (
+              <button className="btn btn-ghost btn-sm" onClick={() => openReset(u)}
+                title="Generate a one-time password reset link for this account">
+                Reset password
+              </button>
+            )}
+            {u.role !== 'admin' && (
               <button
                 className={`btn btn-sm ${u.suspended ? 'btn-navy' : 'btn-danger'}`}
                 onClick={() => toggleSuspend(u)}
@@ -749,6 +798,64 @@ export default function Admin() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {resetTarget && (
+        <div className="modal-overlay" onClick={() => !resettingUser && setResetTarget(null)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>Reset password</h3>
+            <p className="muted" style={{ marginTop: 0 }}>
+              For <strong>{resetTarget.name}</strong> · {resetTarget.email}
+            </p>
+
+            {!resetResult ? (
+              <form onSubmit={requestResetLink}>
+                <p style={{ fontSize: '0.9rem' }}>
+                  This creates a one-time link that sets a new password for this account. It expires
+                  in 15 minutes and works once. {resetTarget.name.split(' ')[0]} will be emailed to
+                  say a reset was started.
+                </p>
+                <label htmlFor="adminpw">Confirm your own password</label>
+                <input id="adminpw" type="password" autoComplete="current-password" required
+                  value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} />
+                {resetError && <p className="error-text">{resetError}</p>}
+                <div className="row" style={{ marginTop: '1rem', gap: '0.5rem' }}>
+                  <button className="btn btn-red" disabled={resettingUser}>
+                    {resettingUser ? 'Generating…' : 'Generate reset link'}
+                  </button>
+                  <button type="button" className="btn btn-ghost" disabled={resettingUser}
+                    onClick={() => setResetTarget(null)}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div>
+                <p style={{ fontSize: '0.9rem', marginTop: 0 }}>
+                  Open this link to choose a new password. It expires{' '}
+                  <strong>{new Date(resetResult.expiresAt).toLocaleTimeString()}</strong> and can only be used once.
+                </p>
+                <textarea readOnly rows={3} value={resetResult.url}
+                  onFocus={(e) => e.target.select()}
+                  style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.8rem' }} />
+                <div className="row" style={{ marginTop: '0.75rem', gap: '0.5rem' }}>
+                  <button className="btn btn-navy btn-sm" onClick={copyResetLink}>
+                    {copied ? '✓ Copied' : 'Copy link'}
+                  </button>
+                  <a className="btn btn-red btn-sm" href={resetResult.url} target="_blank" rel="noreferrer">
+                    Open now
+                  </a>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setResetTarget(null)}>Done</button>
+                </div>
+                {resetError && <p className="error-text">{resetError}</p>}
+                <p className="muted" style={{ fontSize: '0.78rem', marginTop: '0.85rem', marginBottom: 0 }}>
+                  Treat this like the password itself — anyone with the link can take the account until
+                  it expires. Don't paste it into a group chat.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

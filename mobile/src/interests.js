@@ -120,6 +120,23 @@ export async function mergeLocalInterestsIntoAccount(user) {
 }
 
 /**
+ * Whether this visitor must pick interests before browsing the shop tab.
+ *
+ * A gate, not a wall: one tap, never an account. Applies only to the shop tab —
+ * a product opened from a shared link deep-links straight to ProductScreen and
+ * never renders this.
+ */
+export async function needsInterestGate(user) {
+  if (user && (user.role === 'business' || user.role === 'admin')) return false;
+  if ((user?.interests || []).length) return false;
+  const o = user?.onboarding || {};
+  if (o.completedAt || o.skippedAt) return false;
+  if (await isOnboardingDoneLocally()) return false;
+  if ((await getLocalInterests()).length) return false;
+  return true;
+}
+
+/**
  * Whether to offer the picker. Once only, and never to sellers.
  * Async because the local completion flag lives in AsyncStorage.
  */

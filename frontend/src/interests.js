@@ -148,6 +148,30 @@ export const clearOnboardingDoneLocally = () => {
 };
 
 /**
+ * Whether this visitor must pick interests before browsing the home feed.
+ *
+ * A gate, not a wall: it asks for one tap, never an account. And it applies
+ * ONLY to the home page — /product/* and /business/* are untouched, so a link
+ * shared into a WhatsApp group opens straight onto the item for someone who
+ * has never been here before. That is the traffic that matters most, and it
+ * must not meet a form.
+ *
+ * Anyone who has already chosen — on this device or on their account — passes
+ * straight through, as do sellers and admins, whose feed isn't the point.
+ */
+export const needsInterestGate = (user) => {
+  if (user && (user.role === 'business' || user.role === 'admin')) return false;
+  if ((user?.interests || []).length) return false;
+  // Respects a skip recorded before this gate existed — we don't re-ask
+  // someone who was previously told the step was optional.
+  const o = user?.onboarding || {};
+  if (o.completedAt || o.skippedAt) return false;
+  if (isOnboardingDoneLocally()) return false;
+  if (getLocalInterests().length) return false;
+  return true;
+};
+
+/**
  * Whether to offer the interest picker to this user.
  * Offered once. Someone who completed it or deliberately skipped it is left
  * alone; sellers are skipped entirely, since the feed isn't what they came for.
