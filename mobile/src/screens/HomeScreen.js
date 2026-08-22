@@ -158,13 +158,48 @@ export default function HomeScreen({ navigation }) {
                 </Pressable>
               </View>
               {!user ? (
+                /* Was a flat navy block of text — technically tappable, but
+                   nothing said so. Now it reads as a control: a heading, a
+                   supporting line, an explicit pill on the right, and press
+                   feedback so a tap visibly registers. */
                 <Pressable
                   onPress={() => navigation.navigate('AccountTab')}
-                  style={{ backgroundColor: colors.navy, borderRadius: 10, padding: spacing.m, marginTop: spacing.m }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign in to follow stores, save items and personalise your feed"
+                  style={({ pressed }) => ({
+                    backgroundColor: colors.navy,
+                    borderRadius: 12,
+                    padding: spacing.m,
+                    marginTop: spacing.m,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: spacing.m,
+                    opacity: pressed ? 0.85 : 1,
+                    transform: [{ scale: pressed ? 0.99 : 1 }],
+                  })}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
-                    Sign in to shop smarter → follow stores, save items, and see your feed first.
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>
+                      Sign in to shop smarter
+                    </Text>
+                    <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 2 }}>
+                      Follow stores, save items, and see your feed first.
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      backgroundColor: '#fff',
+                      borderRadius: 999,
+                      paddingHorizontal: 14,
+                      paddingVertical: 7,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <Text style={{ color: colors.navy, fontWeight: '800', fontSize: 13 }}>Sign in</Text>
+                    <Text style={{ color: colors.navy, fontWeight: '800', fontSize: 13 }}>›</Text>
+                  </View>
                 </Pressable>
               ) : null}
               {user && user.role === 'customer' && (

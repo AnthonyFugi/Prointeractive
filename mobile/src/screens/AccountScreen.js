@@ -226,22 +226,76 @@ export default function AccountScreen({ navigation }) {
           </Pressable>
         </>
       ) : (
-        <>
-          <Text style={{ fontSize: 22, fontWeight: '800' }}>Welcome</Text>
-          <Text style={{ color: colors.muted, marginTop: 4 }}>Sign in to order, pay, and message businesses.</Text>
+        /* Signed out. Previously this was a title, two buttons, and about
+           two-thirds of a blank screen. The content block is now vertically
+           centred and says what an account is actually for, so the screen
+           reads as deliberate rather than unfinished. */
+        <View style={{ flex: 1, justifyContent: 'center', paddingBottom: spacing.xl }}>
+          <Text style={{ fontSize: 26, fontWeight: '800', textAlign: 'center', color: colors.ink }}>Welcome</Text>
+          <Text style={{ color: colors.muted, marginTop: 6, textAlign: 'center', fontSize: 14, lineHeight: 20 }}>
+            Sign in to order, pay, and message businesses.
+          </Text>
+
+          <View style={{
+            backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line,
+            borderRadius: 12, padding: spacing.l, marginTop: spacing.xl, gap: spacing.m,
+          }}>
+            {[
+              ['Order and pay', 'Mobile money, card, or cash on delivery.'],
+              ['Message businesses', 'Ask before you buy — replies land in your Inbox.'],
+              ['Follow your favourites', 'See their new stock first.'],
+            ].map(([title, body]) => (
+              <View key={title} style={{ flexDirection: 'row', gap: spacing.m, alignItems: 'flex-start' }}>
+                <View style={{
+                  width: 6, height: 6, borderRadius: 3, backgroundColor: colors.red, marginTop: 6,
+                }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '700', fontSize: 14, color: colors.ink }}>{title}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, marginTop: 1, lineHeight: 17 }}>{body}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
           <Pressable onPress={() => navigation.navigate('Login')}
-            style={{ backgroundColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.l, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Text style={{ fontSize: 16 }}>🔑</Text>
-            <Text style={{ color: '#fff', fontWeight: '800' }}>Sign in</Text>
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              backgroundColor: colors.navy, borderRadius: 12, padding: 15, marginTop: spacing.xl,
+              alignItems: 'center', opacity: pressed ? 0.85 : 1,
+            })}>
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Sign in</Text>
           </Pressable>
           <Pressable onPress={() => navigation.navigate('Register')}
-            style={{ borderWidth: 1.5, borderColor: colors.navy, borderRadius: 10, padding: 14, marginTop: spacing.s, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Text style={{ fontSize: 16 }}>✨</Text>
-            <Text style={{ color: colors.navy, fontWeight: '800' }}>Create account</Text>
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              borderWidth: 1.5, borderColor: colors.navy, borderRadius: 12, padding: 15,
+              marginTop: spacing.s, alignItems: 'center', opacity: pressed ? 0.85 : 1,
+            })}>
+            <Text style={{ color: colors.navy, fontWeight: '800', fontSize: 15 }}>Create account</Text>
           </Pressable>
-        </>
+
+          {/* Store review requires these reachable without an account —
+              they were only rendered in the signed-in branch. */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginTop: spacing.l }}>
+            {[
+              ['Terms', 'https://prointapp.com/terms'],
+              ['Privacy', 'https://prointapp.com/privacy'],
+              ['Product Standards', 'https://prointapp.com/product-standards'],
+            ].map(([label, url], i) => (
+              <View key={url} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {i > 0 ? <Text style={{ color: colors.line, marginHorizontal: 8 }}>|</Text> : null}
+                <Pressable onPress={() => Linking.openURL(url).catch(() => {})} hitSlop={6}>
+                  <Text style={{ color: colors.muted, fontSize: 12 }}>{label}</Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        </View>
       )}
-      <Text style={{ color: colors.muted, textAlign: 'center', marginTop: 'auto', fontSize: 12 }}>
+      <Text style={{
+        color: colors.muted, textAlign: 'center', fontSize: 12,
+        marginTop: user ? 'auto' : spacing.l, paddingTop: spacing.l,
+      }}>
         Pro·interactive — Making business interaction, Easy!
       </Text>
     </ScrollView>
