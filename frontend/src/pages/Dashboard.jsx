@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { api, money } from '../api.js';
 import StatusBadge from '../components/StatusBadge.jsx';
 import { usePricing } from '../pricing.js';
+import { useOrderAlerts, requestOrderNotifications } from '../hooks/useOrderAlerts.js';
 
 const ONLINE_NEXT = { pending: 'paid', paid: 'shipped', shipped: 'delivered' };
 const ONLINE_LABEL = { pending: 'Mark as paid', paid: 'Mark as shipped', shipped: 'Mark as delivered' };
@@ -136,6 +137,11 @@ export default function Dashboard() {
 
   // Orders
   const [orders, setOrders] = useState([]);
+  // Sellers on the web get no push notifications — this is their live alert.
+  const { newCount, clear: clearAlerts } = useOrderAlerts({ enabled: !!business });
+  const [notifyPerm, setNotifyPerm] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+  );
 
   // Payouts (Flutterwave subaccount)
   const [payout, setPayout] = useState(null);
@@ -384,8 +390,48 @@ export default function Dashboard() {
   ];
   const incomplete = setupSteps.filter((s) => !s.done);
 
+  const reloadOrders = () => {
+    api('/orders/business').then((d) => setOrders(d.orders)).catch(() => {});
+  };
+
   return (
     <div className="container">
+      {newCount > 0 && (
+        <div
+          className="panel"
+          style={{
+            marginBottom: '1rem', borderLeft: '4px solid var(--red)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem',
+          }}
+        >
+          <strong>
+            {newCount === 1 ? '1 new order just came in.' : `${newCount} new orders just came in.`}
+          </strong>
+          <button
+            className="btn btn-red btn-sm"
+            onClick={() => { setTab('orders'); clearAlerts(); reloadOrders(); }}
+          >
+            View
+          </button>
+        </div>
+      )}
+
+      {/* Asked here, behind a click, never on page load — a permission prompt
+          fired on load gets denied, and a denial is sticky. */}
+      {business && notifyPerm === 'default' && (
+        <div className="panel" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <span className="muted">
+            Get an alert on this computer the moment an order arrives.
+          </span>
+          <button
+            className="btn btn-navy btn-sm"
+            onClick={async () => setNotifyPerm(await requestOrderNotifications())}
+          >
+            Turn on alerts
+          </button>
+        </div>
+      )}
+
       <div className="row spread" style={{ marginTop: '2rem' }}>
         <div className="row" style={{ alignItems: 'center' }}>
           {business.logoUrl && (
@@ -482,8 +528,12 @@ export default function Dashboard() {
         <button className={`tab ${tab === 'products' ? 'on' : ''}`} onClick={() => setTab('products')}>
           Products ({products.length})
         </button>
-        <button className={`tab ${tab === 'orders' ? 'on' : ''}`} onClick={() => setTab('orders')}>
+        <button
+          className={`tab ${tab === 'orders' ? 'on' : ''}`}
+          onClick={() => { setTab('orders'); clearAlerts(); reloadOrders(); }}
+        >
           Orders ({orders.length})
+          {newCount > 0 && <span className="count-badge" style={{ marginLeft: 6 }}>{newCount}</span>}
         </button>
         <button className={`tab ${tab === 'store' ? 'on' : ''}`} onClick={() => setTab('store')}>
           Store settings

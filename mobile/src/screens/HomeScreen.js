@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import ProductCard from '../components/ProductCard';
 import { colors, spacing } from '../theme';
 import OnboardingSheet from './OnboardingSheet';
+import FollowingNew from '../components/FollowingNew';
 import { getLocalInterests } from '../interests';
 
 export default function HomeScreen({ navigation }) {
@@ -105,6 +106,9 @@ export default function HomeScreen({ navigation }) {
       {/* Mounted only on the shop tab. A product opened from a shared link
           deep-links straight to ProductScreen and never meets this. */}
       <OnboardingSheet onInterestsChanged={setInterests} navigation={navigation} />
+      {/* Only for signed-in shoppers who follow someone; renders nothing
+          otherwise. Mirrors the web strip. */}
+      {user ? <FollowingNew navigation={navigation} /> : null}
       <FlatList
         ref={listRef}
         onScroll={(e) => setShowScrollTop(e.nativeEvent.contentOffset.y > 600)}

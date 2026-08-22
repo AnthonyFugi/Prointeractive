@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { api } from '../api';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { useAuth } from '../context/AuthContext';
@@ -200,6 +200,25 @@ export default function AccountScreen({ navigation }) {
             style={{ borderWidth: 1.5, borderColor: colors.red, borderRadius: 10, padding: 14, marginTop: spacing.m }}>
             <Text style={{ color: colors.red, fontWeight: '800', textAlign: 'center' }}>Sign out</Text>
           </Pressable>
+          {/* Both app stores require reachable policy links, and Apple review
+              checks for them. These open the canonical web pages rather than
+              duplicating the text, so there's only one copy to keep current. */}
+          <View style={{ marginTop: spacing.xl, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.l }}>
+            {[
+              ['Terms of Service', 'https://prointapp.com/terms'],
+              ['Privacy Policy', 'https://prointapp.com/privacy'],
+              ['Product Standards', 'https://prointapp.com/product-standards'],
+            ].map(([label, url]) => (
+              <Pressable
+                key={url}
+                onPress={() => Linking.openURL(url).catch(() => {})}
+                style={{ paddingVertical: 10 }}
+              >
+                <Text style={{ color: colors.navy, fontWeight: '600', fontSize: 14 }}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
           <Pressable onPress={() => navigation.navigate('DeleteAccount')} style={{ marginTop: spacing.l }}>
             <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13, textDecorationLine: 'underline' }}>
               Delete account
